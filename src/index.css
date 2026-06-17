@@ -1,0 +1,300 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+}
+
+@layer base {
+  html {
+    font-size: 14px;
+  }
+
+  @screen sm {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @screen lg {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    @apply bg-white text-slate-900 antialiased;
+    font-family: 'Inter', sans-serif !important;
+  }
+}
+
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm font-medium;
+  }
+
+  .card {
+    @apply bg-white p-6 rounded-xl border border-slate-200 shadow-sm transition-all;
+  }
+
+  .table-responsive {
+    @apply w-full overflow-x-auto -mx-3 sm:-mx-4 lg:mx-0;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  @screen sm {
+    .table-responsive {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  @screen lg {
+    .table-responsive {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+}
+
+@layer base {
+  h1 {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold;
+  }
+
+  h2 {
+    @apply text-lg sm:text-xl lg:text-2xl font-bold;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-entry {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@media (max-width: 1024px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-100 rounded-full hover:bg-slate-200;
+}
+
+/* 3D and Enhanced UI Utilities */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   VENDOR MODULE — Clean Enterprise Input & Form Enhancements
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Base vendor input — clean white, subtle border, small shadow */
+.v-input {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.v-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.v-input:hover {
+  border-color: #cbd5e1;
+}
+
+.v-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6, 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  color: #1e293b;
+}
+
+.v-input:disabled {
+  background-color: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Select arrow */
+.v-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+/* Compact row inputs (line items table) */
+.v-input-sm {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.v-input-sm:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Label styles */
+.v-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 6px;
+}
+
+/* Textarea */
+.v-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Search bar enhanced */
+.v-search-wrap {
+  position: relative;
+}
+
+.v-search-wrap .v-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.v-search-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px 10px 38px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.v-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.v-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Field group spacing */
+.v-field-group {
+  display: grid;
+  gap: 16px;
+}
+
+/* Date picker calendar icon fix */
+input[type="date"].v-input::-webkit-calendar-picker-indicator,
+input[type="date"].v-input-sm::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+input[type="date"].v-input::-webkit-calendar-picker-indicator:hover,
+input[type="date"].v-input-sm::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.7;
+}
+
+/* Number input arrow hide */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
