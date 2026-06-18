@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './components/Layout/MainLayout';
 import TruckLoader from './components/Common/TruckLoader';
+import useLoadingStore from './store/useLoadingStore';
 
 import Login from './pages/Auth/Login';
 import ForgotPassword from './pages/Auth/ForgotPassword';
@@ -65,9 +66,12 @@ const VFallback = (
 );
 
 function App() {
+  const isLoading = useLoadingStore((state) => state.isLoading);
+
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
+      {isLoading && <TruckLoader overlay={true} />}
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />

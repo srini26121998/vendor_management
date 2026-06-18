@@ -1,4 +1,5 @@
 import axios from 'axios';
+import useLoadingStore from '../store/useLoadingStore';
 
 /**
  * Common API Client Configuration
@@ -16,6 +17,9 @@ const api = axios.create({
 // Request interceptor: Attach Auth Token
 api.interceptors.request.use(
     (config) => {
+        // Show global loader for every API request
+        useLoadingStore.getState().showLoader();
+
         // Try getting token from localStorage first (for speed) 
         // or from state management if accessible
         const token = localStorage.getItem('token');
@@ -25,6 +29,7 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        useLoadingStore.getState().hideLoader();
         return Promise.reject(error);
     }
 );
@@ -32,10 +37,16 @@ api.interceptors.request.use(
 // Response interceptor: Global Error Handling
 api.interceptors.response.use(
     (response) => {
+        // Hide global loader on success
+        useLoadingStore.getState().hideLoader();
+        
         // Return data directly for easier access in services
         return response.data;
     },
     (error) => {
+        // Hide global loader on error
+        useLoadingStore.getState().hideLoader();
+        
         // Handle specific error codes
         if (error.response) {
             const { status } = error.response;

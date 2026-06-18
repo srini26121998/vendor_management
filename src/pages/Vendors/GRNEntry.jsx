@@ -26,7 +26,6 @@ export default function GRNEntry() {
     const [selectedPO, setSelectedPO] = useState('');
     const [selectedPOData, setSelectedPOData] = useState(null);
     const [items, setItems] = useState([]);
-    const [scanning, setScanning] = useState(false);
     const [progress, setProgress] = useState(0);
     const [remarks, setRemarks] = useState('');
 
@@ -173,14 +172,6 @@ export default function GRNEntry() {
             }
             return { ...itm, status: newStatus, accepted: acc, rejected: rej };
         }));
-    };
-
-    const scan = () => {
-        setScanning(true);
-        setTimeout(() => {
-            setScanning(false);
-            toast.success('SKU Scanned: Basmati Rice (Premium)');
-        }, 1200);
     };
 
     const handleCreateProduct = async () => {
@@ -354,8 +345,11 @@ export default function GRNEntry() {
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Source Order</label>
                                     <select value={selectedPO} onChange={e => handlePOChange(e.target.value)}
-                                        className={`${inputCls} cursor-pointer`}>
-                                        <option value="">-- Select Approved PO --</option>
+                                        className={`${inputCls} ${purchaseOrders.length === 0 ? 'bg-slate-50 cursor-not-allowed text-slate-400' : 'cursor-pointer'}`}
+                                        disabled={purchaseOrders.length === 0}>
+                                        <option value="">
+                                            {purchaseOrders.length === 0 ? "-- No Data Available --" : "-- Select Approved PO --"}
+                                        </option>
                                         {purchaseOrders.map(p => (
                                             <option key={p.id} value={p.id}>{p.invoiceNumber} — {p.vendorName || p.vendor?.legalName}</option>
                                         ))}
@@ -372,9 +366,9 @@ export default function GRNEntry() {
                                                 <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">GSTIN: {selectedPOData.vendor?.gstin || '—'}</span>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="h-px bg-slate-100"></div>
-                                        
+
                                         <div className="grid grid-cols-2 gap-y-3 gap-x-2">
                                             <div>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">PO Date</p>
@@ -393,68 +387,17 @@ export default function GRNEntry() {
                                                 <p className="text-[12px] font-bold text-amber-600">{formatCurrency(selectedPOData.gstAmount || 0)}</p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="h-px bg-slate-100"></div>
-                                        
+
                                         <div className="flex items-center justify-between">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase">Payment Mode</p>
                                             <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{selectedPOData.paymentMode || '—'}</span>
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Refined Scanner Interface */}
-                                <div className={`relative group transition-all duration-500 overflow-hidden rounded-xl border-2 border-dashed ${scanning ? 'border-blue-500 bg-blue-50/30' : 'border-slate-200 bg-slate-50 hover:border-slate-300'}`}>
-                                    <div className="p-6 flex flex-col items-center justify-center min-h-[160px] relative z-10">
-                                        <AnimatePresence mode="wait">
-                                            {scanning ? (
-                                                <motion.div
-                                                    key="scanning"
-                                                    initial={{ scale: 0.9, opacity: 0 }}
-                                                    animate={{ scale: 1, opacity: 1 }}
-                                                    exit={{ scale: 0.9, opacity: 0 }}
-                                                    className="flex flex-col items-center text-center"
-                                                >
-                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md mb-3">
-                                                        <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                                    </div>
-                                                    <span className="text-[11px] font-bold text-blue-600 uppercase ">Processing SKU...</span>
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    key="idle"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    className="flex flex-col items-center text-center"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                                                        <Camera size={20} />
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase  mb-3">Strategic Scanner</span>
-                                                    <button
-                                                        onClick={scan}
-                                                        className="px-6 py-2 bg-blue-600 text-white text-[11px] font-bold rounded-lg shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
-                                                    >
-                                                        ACTIVATE CAMERA
-                                                    </button>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                    {/* Scan Line Animation */}
-                                    {scanning && (
-                                        <motion.div
-                                            initial={{ top: '0%' }}
-                                            animate={{ top: '100%' }}
-                                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                            className="absolute left-0 right-0 h-1 bg-blue-500/30 blur-sm z-0"
-                                        />
-                                    )}
-                                </div>
                             </div>
                         </VCard>
-
                         {/* Verification Progress */}
                         <VCard>
                             <div className="flex items-end justify-between mb-4">
