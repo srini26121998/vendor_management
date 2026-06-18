@@ -338,6 +338,13 @@ export const writeOffGSTHold = (gstin, period) =>
 export const updateGSTDisputeNote = (gstin, period, note) =>
   api.post('/gst/reconciliation/dispute-note', null, { params: { gstin, period, note } });
 
+// ─── GST Tax Tracker: Input & Output Tax Ledger ─────────────────────────────
+export const fetchInputTaxData = (params) =>
+  api.get('/gst/reconciliation/input-tax', { params }).catch(() => []);
+
+export const fetchOutputTaxData = (params) =>
+  api.get('/gst/reconciliation/output-tax', { params }).catch(() => []);
+
 
 // ─── Return-To-Vendor (RTV) / Reverse Logistics ───────────────────────────────
 export const fetchRTVRequests = () =>

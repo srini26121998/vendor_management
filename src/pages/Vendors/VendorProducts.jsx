@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     StatusBadge, PrimaryBtn, SecondaryBtn, VModal, ColumnConfig
@@ -19,6 +19,78 @@ import {
 } from '../../api/vendorService';
 import { VENDOR_CATEGORIES, TAX_CATEGORIES } from './vendorConstants';
 import VendorBulkImportModal from './VendorBulkImportModal';
+
+const SearchableSelect = ({ options, value, onChange, placeholder, className }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredOptions = options.filter(opt => 
+        opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div className={`relative ${className}`} ref={dropdownRef}>
+            <div 
+                className="w-full pl-4 pr-10 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none hover:border-blue-500 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50/50 transition-all cursor-pointer shadow-sm flex items-center justify-between"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+                <span className="pointer-events-none text-slate-400">▼</span>
+            </div>
+            
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 flex flex-col overflow-hidden">
+                    <div className="p-2 border-b border-slate-100">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[13px] outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    <div className="overflow-y-auto">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((opt) => (
+                                <div
+                                    key={opt.value}
+                                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors ${value === opt.value ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 font-medium'}`}
+                                    onClick={() => {
+                                        onChange(opt.value);
+                                        setIsOpen(false);
+                                        setSearchQuery('');
+                                    }}
+                                >
+                                    {opt.label}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-4 py-3 text-[13px] text-slate-500 text-center">No results found</div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function VendorProducts() {
     const navigate = useNavigate();
@@ -358,17 +430,15 @@ export default function VendorProducts() {
 
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                         <div className="flex-1 min-w-[200px] relative">
-                            <select
+                            <SearchableSelect
                                 value={vendorFilter}
-                                onChange={(e) => setVendorFilter(e.target.value)}
-                                className="w-full appearance-none pl-4 pr-10 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 transition-all cursor-pointer shadow-sm"
-                            >
-                                <option value="All Vendors">All Vendors / Suppliers</option>
-                                {vendors.map(v => (
-                                    <option key={v.id} value={v.legalName}>{v.legalName} ({v.vendorCode})</option>
-                                ))}
-                            </select>
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</span>
+                                onChange={(val) => setVendorFilter(val)}
+                                options={[
+                                    { value: 'All Vendors', label: 'All Vendors / Suppliers' },
+                                    ...vendors.map(v => ({ value: v.legalName, label: `${v.legalName} (${v.vendorCode})` }))
+                                ]}
+                                placeholder="Select Vendor"
+                            />
                         </div>
 
                         <div className="flex-1 min-w-[200px] relative">
