@@ -478,13 +478,16 @@ function InputTaxTable({ data, onView, onEdit, onDelete }) {
               </div>
             </td>
             <td className="px-4 py-3">
-              {row.batchNumber ? (
-                <span className="font-mono text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100/50">
-                  {row.batchNumber}
+              <div className="flex flex-col gap-1">
+                {row.batchNumber ? (
+                  <span className="font-mono text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100/50 w-fit" title="Batch Number">
+                    Batch: {row.batchNumber}
+                  </span>
+                ) : null}
+                <span className="font-mono text-[9px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/50 w-fit" title="GRN Number">
+                  {row.grnNumber || '—'}
                 </span>
-              ) : (
-                <span className="text-slate-300 text-[11px] font-bold">No GRN</span>
-              )}
+              </div>
             </td>
             <td className="px-4 py-3">
               <span className="font-mono text-[11px] text-slate-600 font-bold">{row.poNumber || '—'}</span>
