@@ -284,8 +284,6 @@ export default function RTVWorkflow() {
 
             // Reload returns
             await loadDynamicData();
-            setSelectedRtvForDetails(data);
-            setShowDetailsModal(true);
             setView('lobby');
         } catch (err) {
             toast.dismiss(myToast);
@@ -518,9 +516,6 @@ export default function RTVWorkflow() {
                                                 }
                                             ]}
                                             rows={filteredRtvs}
-                                            onRowClick={(row) => {
-                                                handleViewDetails(row);
-                                            }}
                                             emptyMsg="No return claims matching filters in registry"
                                         />
                                     </VCard>
@@ -1120,7 +1115,7 @@ export default function RTVWorkflow() {
                             <div>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Initiated Date</span>
                                 <span className="text-xs font-bold text-slate-700">
-                                    {new Date(selectedRtvForDetails.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {selectedRtvForDetails.createdAt ? new Date(selectedRtvForDetails.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                                 </span>
                             </div>
                             <div>
@@ -1134,6 +1129,42 @@ export default function RTVWorkflow() {
                                 <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Claim Status</span>
                                 <StatusBadge status={selectedRtvForDetails.status} size="xs" />
                             </div>
+                            <div>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Total Return Value</span>
+                                <span className="text-xs font-bold text-slate-700">
+                                    ₹{(selectedRtvForDetails.totalReturnValue || 0).toLocaleString()}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Created By</span>
+                                <span className="text-xs font-bold text-slate-700">
+                                    {selectedRtvForDetails.createdByName || 'System'}
+                                </span>
+                            </div>
+                            {selectedRtvForDetails.resolvedAt && (
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Resolved At</span>
+                                    <span className="text-xs font-bold text-slate-700">
+                                        {new Date(selectedRtvForDetails.resolvedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                </div>
+                            )}
+                            {selectedRtvForDetails.shortageReportNumber && (
+                                <div>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Shortage Report</span>
+                                    <span className="text-xs font-bold text-slate-700">
+                                        {selectedRtvForDetails.shortageReportNumber}
+                                    </span>
+                                </div>
+                            )}
+                            {selectedRtvForDetails.disputeNote && selectedRtvForDetails.status !== 'DISPUTED' && (
+                                <div className="col-span-2 md:col-span-4 mt-2">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Dispute Note</span>
+                                    <span className="text-xs font-medium text-rose-600 bg-rose-50 px-3 py-2 rounded-lg inline-block border border-rose-100 w-full">
+                                        {selectedRtvForDetails.disputeNote}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
 
@@ -1149,11 +1180,13 @@ export default function RTVWorkflow() {
                                 // Use returnedProducts from the API response if available
                                 if (selectedRtvForDetails.returnedProducts && selectedRtvForDetails.returnedProducts.length > 0) {
                                     returnItems = selectedRtvForDetails.returnedProducts.map(rp => ({
-                                        sku: rp.productSku || rp.vendorProductSku || rp.sku,
+                                        sku: rp.productSku || rp.vendorProductSku || rp.vendorSku || rp.sku,
                                         name: rp.productName || rp.name || 'Unknown Product',
-                                        qty: rp.quantity || rp.returnQuantity || rp.qty || 0,
+                                        qty: rp.quantity || rp.returnQuantity || rp.returnedQuantity || rp.qty || 0,
                                         reason: rp.reason || rp.returnReason || rp.disputeReason || 'General Return',
                                         price: rp.unitPrice || rp.price || 0,
+                                        totalValue: rp.totalValue || (rp.unitPrice * (rp.returnQuantity || rp.returnedQuantity || rp.qty || 0)) || 0,
+                                        batchNumber: rp.batchNumber || 'N/A',
                                         isRejected: true // Everything in this array is a returned product
                                     }));
                                 } else {
@@ -1215,10 +1248,12 @@ export default function RTVWorkflow() {
                                                 <tr className="bg-slate-50 border-b border-slate-100">
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase">Item Description</th>
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase">SKU Code</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-400 uppercase">Batch Number</th>
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase text-center">Qty (Returned / Accepted)</th>
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase text-center">Status</th>
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase">Justification Reason</th>
                                                     <th className="p-3 text-[10px] font-bold text-slate-400 uppercase text-right">Unit Price</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-400 uppercase text-right">Total Value</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1226,6 +1261,7 @@ export default function RTVWorkflow() {
                                                     <tr key={item.sku} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                                                         <td className="p-3 text-xs font-bold text-slate-700">{item.name}</td>
                                                         <td className="p-3 text-xs font-semibold text-slate-500 font-mono">{item.sku}</td>
+                                                        <td className="p-3 text-xs font-semibold text-slate-500 font-mono">{item.batchNumber || 'N/A'}</td>
                                                         <td className="p-3 text-xs font-bold text-slate-600 text-center">
                                                             <span className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${item.isRejected ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-slate-50 text-slate-600 border border-slate-100'}`}>
                                                                 {item.qty} Units
@@ -1244,6 +1280,7 @@ export default function RTVWorkflow() {
                                                         </td>
                                                         <td className="p-3 text-xs font-semibold text-slate-500">{item.reason || 'General Return'}</td>
                                                         <td className="p-3 text-xs font-bold text-slate-800 text-right">₹{item.price.toLocaleString()}</td>
+                                                        <td className="p-3 text-xs font-bold text-indigo-700 text-right">₹{(item.totalValue || (item.qty * item.price)).toLocaleString()}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
