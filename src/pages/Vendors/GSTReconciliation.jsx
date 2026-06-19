@@ -605,14 +605,13 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
         <table className="w-full text-sm min-w-[1000px]">
           <thead style={{ background: '#F8FAFC' }}>
             <tr className="border-b border-slate-100 text-[10px] text-slate-500 font-bold uppercase tracking-wide">
-              <SortHeader label="Sale ID" sortKey="saleId" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Invoice #" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Category" sortKey="category" currentSort={sortConfig} onSort={handleSort} />
+              <SortHeader label="Vendor Name" sortKey="vendorName" currentSort={sortConfig} onSort={handleSort} />
+              <SortHeader label="Batch Number" sortKey="batchNumber" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Customer" sortKey="customerName" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Sale Date" sortKey="saleDate" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Taxable Amount" sortKey="taxableAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
-              <SortHeader label="CGST" sortKey="cgstAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
-              <SortHeader label="SGST" sortKey="sgstAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
               <SortHeader label="Total GST" sortKey="totalGstAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
               <SortHeader label="Actions" align="center" />
             </tr>
@@ -620,11 +619,6 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
           <tbody>
             {paginatedData.map((row, i) => (
           <tr key={i} className="border-b border-slate-50 hover:bg-emerald-50/30 transition-colors group">
-            <td className="px-4 py-3">
-              <span className="font-mono text-[10px] text-slate-500 font-bold">
-                {row.saleId ? row.saleId.substring(0, 8) + '…' : '—'}
-              </span>
-            </td>
             <td className="px-4 py-3">
               <span className="font-mono text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/50">
                 {row.invoiceNumber || '—'}
@@ -634,6 +628,23 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                 {row.category || 'General'}
               </span>
+            </td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-[10px] border border-emerald-100/50 flex-shrink-0">
+                  {(row.vendorName || 'M')[0].toUpperCase()}
+                </div>
+                <span className="font-bold text-[12px] text-slate-800 truncate max-w-[160px]">{row.vendorName || 'Multiple / Unknown'}</span>
+              </div>
+            </td>
+            <td className="px-4 py-3">
+              {row.batchNumber ? (
+                  <span className="font-mono text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100/50 w-fit" title="Batch Number">
+                    {row.batchNumber}
+                  </span>
+              ) : (
+                <span className="text-[11px] text-slate-400 italic">No Batch Tracking</span>
+              )}
             </td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-2">
@@ -650,12 +661,6 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
             </td>
             <td className="px-4 py-3 text-right">
               <span className="font-bold text-[12px] text-slate-700">{formatCurrency(row.taxableAmount || 0)}</span>
-            </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[11px] text-slate-600">{formatCurrency(row.cgstAmount || 0)}</span>
-            </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[11px] text-slate-600">{formatCurrency(row.sgstAmount || 0)}</span>
             </td>
             <td className="px-4 py-3 text-right">
               <span className="font-bold text-[12px] text-emerald-700">{formatCurrency(row.totalGstAmount || 0)}</span>
@@ -680,22 +685,12 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
         ))}
             {/* Totals Row (Over entire dataset) */}
             <tr className="bg-emerald-50/50 border-t-2 border-emerald-100">
-              <td colSpan={5} className="px-4 py-3 text-right">
+              <td colSpan={6} className="px-4 py-3 text-right">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Output Tax (All Records)</span>
               </td>
               <td className="px-4 py-3 text-right">
                 <span className="font-bold text-[12px] text-slate-700">
                   {formatCurrency(data.reduce((s, r) => s + (r.taxableAmount || 0), 0))}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[11px] text-slate-600">
-                  {formatCurrency(data.reduce((s, r) => s + (r.cgstAmount || 0), 0))}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[11px] text-slate-600">
-                  {formatCurrency(data.reduce((s, r) => s + (r.sgstAmount || 0), 0))}
                 </span>
               </td>
               <td className="px-4 py-3 text-right">
@@ -732,17 +727,15 @@ function ViewDetailModal({ open, row, type, onClose }) {
       { label: 'Tax Amount', value: formatCurrency(row.gstAmount || 0), highlight: true, accent: true },
     ]
     : [
-      { label: 'Sale ID', value: row.saleId || '—' },
       { label: 'Invoice Number', value: row.invoiceNumber || '—' },
       { label: 'Category', value: row.category || 'General' },
+      { label: 'Vendor Name', value: row.vendorName || 'Multiple / Unknown' },
+      { label: 'Batch Number', value: row.batchNumber || 'No Batch Tracking' },
       { label: 'Customer', value: row.customerName || 'Walk-in Customer' },
       { label: 'Sale Date', value: row.saleDate ? new Date(row.saleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—' },
       { label: 'Payment Mode', value: row.paymentMode || '—' },
       { label: 'Taxable Amount', value: formatCurrency(row.taxableAmount || 0), highlight: true },
-      { label: 'CGST', value: formatCurrency(row.cgstAmount || 0) },
-      { label: 'SGST', value: formatCurrency(row.sgstAmount || 0) },
       { label: 'Total GST', value: formatCurrency(row.totalGstAmount || 0), highlight: true, accent: true },
-      { label: 'Grand Total', value: formatCurrency(row.grandTotal || 0), highlight: true },
     ];
 
   return (
