@@ -39,6 +39,8 @@ export const STATUS_COLORS = {
     REJECTED:      { bg: '#fdf2f8', text: '#9d174d', dot: '#ec4899', label: 'Rejected' },
     INACTIVE:      { bg: '#f8fafc', text: '#475569', dot: '#94a3b8', label: 'Inactive' },
     PAID:          { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Paid' },
+    PROCESSED:     { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Success' },
+    SUCCESS:       { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Success' },
 
     // ── RTV Reverse Logistics Statuses ──
     FLAGGED:            { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Initiated' },

@@ -406,13 +406,19 @@ export const updateSTOStatus = (id, status, approverId = null) => {
 
 // ─── Purchase Order Updates ────────────────────────────────────────────────────
 // Maps to the existing PurchaseController endpoints (Bug 3 fix):
-// PUT /api/purchase-orders/{id}           → full update
 // PUT /api/purchase-orders/{id}/status    → status-only update
+// PUT /api/purchase-orders/{id}/vendor-response → Vendor Accept/Decline
 export const updatePO = (id, payload) =>
   api.put(`/purchase-orders/${id}`, payload);
 
 export const updatePOStatus = (id, status) =>
   api.put(`/purchase-orders/${id}/status`, null, { params: { status } });
+
+export const vendorRespondToPO = (id, status, deliveryDate = null) => {
+  const params = { status };
+  if (deliveryDate) params.deliveryDate = deliveryDate;
+  return api.put(`/purchase-orders/${id}/vendor-response`, null, { params });
+};
 
 // ─── Vendor Product CRUD Endpoints ─────────────────────────────────────────────
 export const fetchAllVendorProducts = () =>
@@ -427,4 +433,26 @@ export const updateVendorProduct = (id, payload) =>
 export const deleteVendorProduct = (id) =>
   api.delete(`/vendor-products/${id}`);
 
+// ─── Reports Hub API ──────────────────────────────────────────────────────────
+// GET  /api/reports/catalog                → List available report types
+// GET  /api/reports/kpis?type=&timePeriod= → KPI summary for a report
+// POST /api/reports/data?page=&size=       → Paginated report data
+// POST /api/reports/export                 → Download Excel report
+
+export const fetchReportCatalog = () =>
+  api.get('/reports/catalog').catch(() => []);
+
+export const fetchReportKpis = (type, timePeriod = 'MONTH') =>
+  api.get('/reports/kpis', { params: { type, timePeriod } }).catch(() => null);
+
+export const fetchReportData = (payload, page = 0, size = 5) =>
+  api.post('/reports/data', payload, { params: { page, size } }).catch(() => null);
+
+export const exportReport = (payload) =>
+  api.post('/reports/export', payload, { responseType: 'blob' });
+
+// ─── Vendor Disputes ──────────────────────────────────────────────────────────
+
+export const raiseDispute = (vendorId, payload) =>
+  api.post(`/vendors/${vendorId}/disputes`, payload);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchPurchaseOrders, fetchInvoices } from '../../api/vendorService';
+import { fetchPurchaseOrders, fetchInvoices, vendorRespondToPO, raiseDispute, fetchVendors, fetchPayments } from '../../api/vendorService';
 import { VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, VModal, VendorBreadcrumb } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout, FileText, Scale, CreditCard, Settings, Download, CheckCircle, Info, ShieldCheck } from 'lucide-react';
@@ -17,12 +17,61 @@ export default function VendorPortal() {
     const [tab, setTab] = useState('po');
     const [pos, setPos] = useState([]);
     const [invoices, setInvoices] = useState([]);
+    const [payments, setPayments] = useState([]);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [currentVendorId, setCurrentVendorId] = useState(null);
+    const [disputeForm, setDisputeForm] = useState({
+        relatedInstrument: '',
+        category: 'Payment not received',
+        narrative: ''
+    });
 
     useEffect(() => {
         fetchPurchaseOrders().then(d => setPos(Array.isArray(d) ? d : []));
         fetchInvoices().then(d => setInvoices(Array.isArray(d) ? d : []));
+        fetchPayments().then(d => {
+            const data = d.data || d;
+            setPayments(Array.isArray(data) ? data : []);
+        });
+        
+        // Fetch the first available vendor to act as the "Logged In" vendor for disputes
+        fetchVendors().then(res => {
+            const data = res.data || res;
+            if (Array.isArray(data) && data.length > 0) {
+                setCurrentVendorId(data[0].id);
+            }
+        }).catch(err => console.error("Failed to fetch mock vendor ID", err));
     }, []);
+
+    const handleAcknowledge = async (id) => {
+        try {
+            await vendorRespondToPO(id, 'ACCEPTED');
+            toast.success(`PO Acknowledged successfully!`);
+            setPos(prev => prev.map(po => po.id === id ? { ...po, status: 'ACTIVE' } : po));
+        } catch (error) {
+            toast.error('Failed to acknowledge PO');
+        }
+    };
+
+    const handleDisputeSubmit = async () => {
+        if (!currentVendorId) {
+            toast.error('No vendor context found. Cannot raise dispute.');
+            return;
+        }
+        if (!disputeForm.relatedInstrument || !disputeForm.narrative) {
+            toast.error('Please fill in all dispute fields.');
+            return;
+        }
+
+        try {
+            await raiseDispute(currentVendorId, disputeForm);
+            toast.success('Dispute raised and logged successfully!');
+            setDisputeForm({ relatedInstrument: '', category: 'Payment not received', narrative: '' });
+        } catch (err) {
+            toast.error('Failed to raise dispute.');
+            console.error(err);
+        }
+    };
 
     const [settings, setSettings] = useState({
         allowPOAck: true,
@@ -120,9 +169,15 @@ export default function VendorPortal() {
                                                         <SecondaryBtn icon={<Download size={14} />} onClick={() => toast.success(`PO PDF downloaded`)} className="flex-1 md:flex-none !py-1.5 !px-4 !text-[11px]">
                                                             PDF
                                                         </SecondaryBtn>
-                                                        <PrimaryBtn icon={<CheckCircle size={14} />} onClick={() => toast.success(`Acknowledged!`)} className="flex-1 !py-1.5 !px-4 !text-[11px]">
-                                                            Acknowledge
-                                                        </PrimaryBtn>
+                                                        {((po.status || '').toUpperCase() === 'PENDING' || (po.status || '').toUpperCase() === 'SENT') ? (
+                                                            <PrimaryBtn icon={<CheckCircle size={14} />} onClick={() => handleAcknowledge(po.id)} className="flex-1 !py-1.5 !px-4 !text-[11px]">
+                                                                Acknowledge
+                                                            </PrimaryBtn>
+                                                        ) : (
+                                                            <PrimaryBtn className="flex-1 !py-1.5 !px-4 !text-[11px] opacity-50 cursor-not-allowed">
+                                                                Acknowledged
+                                                            </PrimaryBtn>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </VCard>
@@ -153,26 +208,35 @@ export default function VendorPortal() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
                                                     <label className={labelCls}>Related Instrument</label>
-                                                    <select className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
-                                                        {invoices.map(i => <option key={i.id}>{i.id} — {formatCurrency(i.totalAmount || i.invoiceAmount || 0)}</option>)}
+                                                    <select 
+                                                        value={disputeForm.relatedInstrument}
+                                                        onChange={e => setDisputeForm({ ...disputeForm, relatedInstrument: e.target.value })}
+                                                        className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
+                                                        <option value="">Select an Invoice...</option>
+                                                        {invoices.map(i => <option key={i.id} value={i.id}>{i.id} — {formatCurrency(i.totalAmount || i.invoiceAmount || 0)}</option>)}
                                                     </select>
                                                 </div>
                                                 <div>
                                                     <label className={labelCls}>Dispute Category</label>
-                                                    <select className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
-                                                        <option>Payment not received</option>
-                                                        <option>Wrong quantity</option>
-                                                        <option>Pricing mismatch</option>
-                                                        <option>Damaged goods</option>
+                                                    <select 
+                                                        value={disputeForm.category}
+                                                        onChange={e => setDisputeForm({ ...disputeForm, category: e.target.value })}
+                                                        className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
+                                                        <option value="Payment not received">Payment not received</option>
+                                                        <option value="Wrong quantity">Wrong quantity</option>
+                                                        <option value="Pricing mismatch">Pricing mismatch</option>
+                                                        <option value="Damaged goods">Damaged goods</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div>
                                                 <label className={labelCls}>Detailed Narrative</label>
                                                 <textarea rows={4} placeholder="Describe the discrepancy in detail..."
+                                                    value={disputeForm.narrative}
+                                                    onChange={e => setDisputeForm({ ...disputeForm, narrative: e.target.value })}
                                                     className="w-full text-[13px] font-medium border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none resize-none leading-relaxed" />
                                             </div>
-                                            <PrimaryBtn onClick={() => toast.success('Dispute raised!')} className="w-full justify-center !py-3.5 shadow-blue-100 shadow-lg">
+                                            <PrimaryBtn onClick={handleDisputeSubmit} className="w-full justify-center !py-3.5 shadow-blue-100 shadow-lg">
                                                 Submit Formal Dispute
                                             </PrimaryBtn>
                                         </div>
@@ -185,32 +249,68 @@ export default function VendorPortal() {
                                             <h3 className="text-[14px] font-bold text-slate-800 uppercase tracking-tight">Real-time Payment View</h3>
                                             <span className="text-[10px] font-bold text-emerald-600 uppercase ">Synced: 10m ago</span>
                                         </div>
-                                        {invoices.map((inv, i) => (
-                                            <VCard key={i} className="group hover:border-emerald-200 transition-all shadow-sm">
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
-                                                            <CreditCard size={18} />
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 group-hover:bg-white">{inv.id}</span>
-                                                                <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">{formatCurrency(inv.amount)}</h3>
+                                        {(() => {
+                                            const combinedItems = [];
+                                            payments.forEach(payment => combinedItems.push({ type: 'payment', data: payment }));
+                                            invoices.forEach(inv => {
+                                                const hasPayment = payments.some(p => p.invoiceId === inv.id || p.invoiceNumber === inv.invoiceNumber);
+                                                if (!hasPayment) combinedItems.push({ type: 'invoice', data: inv });
+                                            });
+
+                                            if (combinedItems.length === 0) {
+                                                return <div className="text-center py-8 text-sm text-slate-500">No pending or completed payments found.</div>;
+                                            }
+
+                                            return combinedItems.map((item, i) => {
+                                                const isPayment = item.type === 'payment';
+                                                const payment = isPayment ? item.data : null;
+                                                const inv = isPayment ? null : item.data;
+                                                
+                                                const isPaid = isPayment || (inv && inv.submissionStatus === 'PAID');
+                                                const status = isPaid ? 'SUCCESS' : (inv?.submissionStatus === 'APPROVED' ? 'PENDING' : inv?.submissionStatus);
+                                                
+                                                const displayPrefix = isPaid ? 'BATCH:' : 'INV:';
+                                                const displayId = isPayment
+                                                    ? (payment.bankReference || payment.paymentNumber || payment.id.split('-')[0])
+                                                    : (inv.invoiceNumber || inv.id.split('-')[0]);
+                                                    
+                                                const amount = isPayment 
+                                                    ? (payment.netPayment || payment.paymentAmount || 0) 
+                                                    : (inv.totalAmount || inv.invoiceAmount || 0);
+
+                                                return (
+                                                    <VCard key={i} className="group hover:border-emerald-200 transition-all shadow-sm">
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
+                                                                    <CreditCard size={18} />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 group-hover:bg-white">
+                                                                            {displayPrefix} {displayId}
+                                                                        </span>
+                                                                        <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">{formatCurrency(amount)}</h3>
+                                                                    </div>
+                                                                    <div className="text-[10px] font-bold text-slate-400 uppercase italic">
+                                                                        {isPaid 
+                                                                            ? `Invoice: ${isPayment ? payment.invoiceNumber || 'N/A' : inv?.invoiceNumber || 'N/A'}`
+                                                                            : `Due: ${inv?.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-IN') : 'N/A'}`
+                                                                        }
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div className="text-[10px] font-bold text-slate-400 uppercase  italic">
-                                                                   Due: {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-IN') : 'N/A'}
+                                                            <div className="flex items-center gap-3">
+                                                                <StatusBadge status={status || 'PENDING'} size="xs" />
+                                                                <button className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all border border-slate-100">
+                                                                    <Info size={14} />
+                                                                </button>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <StatusBadge status={inv.submissionStatus || inv.status} size="xs" />
-                                                        <button className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all border border-slate-100">
-                                                            <Info size={14} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </VCard>
-                                        ))}
+                                                    </VCard>
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 )}
                             </motion.div>

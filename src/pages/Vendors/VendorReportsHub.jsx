@@ -1,58 +1,68 @@
-import React, { useState, useMemo } from 'react';
-import { VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge, VendorBreadcrumb } from './VendorComponents';
+import React, { useState, useEffect } from 'react';
+import { VCard, PrimaryBtn, SecondaryBtn, StatusBadge } from './VendorComponents';
 import { VENDOR_ROUTES } from './vendorConstants';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, PieChart, BarChart3, CreditCard, Search, RefreshCcw, Download, Filter, ChevronLeft, ChevronRight, Share2, Printer, ArrowRight, ArrowUp, ArrowDown, ArrowUpDown, MessageSquare } from 'lucide-react';
+import { FileText, PieChart, BarChart3, CreditCard, Search, RefreshCcw, Download, Filter, ChevronLeft, ChevronRight, Share2, Printer, ArrowRight, ArrowUp, ArrowDown, ArrowUpDown, MessageSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import useVendorStore from '../../store/useVendorStore';
+import { fetchReportKpis, fetchReportData, exportReport } from '../../api/vendorService';
 
 const REPORT_CATEGORIES = [
     {
         key: 'master', name: 'Vendor Master Report',
         desc: 'Complete vendor directory with contact, compliance, and onboarding status.',
-        icon: <FileText size={18} />, color: '#3b82f6',
-        stats: [
-            { label: 'Total Vendors', value: '42', accent: 'blue' },
-            { label: 'Active', value: '38', accent: 'emerald' },
-            { label: 'Pending Docs', value: '3', accent: 'amber' },
-            { label: 'Risk Flagged', value: '1', accent: 'rose' }
-        ]
+        icon: <FileText size={18} />, color: '#3b82f6'
     },
     {
         key: 'po', name: 'PO Status Report',
         desc: 'Real-time tracking of all purchase orders across their lifecycle.',
-        icon: <BarChart3 size={18} />, color: '#8b5cf6',
-        stats: [
-            { label: 'Total POs', value: '156', accent: 'purple' },
-            { label: 'Open', value: '24', accent: 'blue' },
-            { label: 'Completed', value: '128', accent: 'emerald' },
-            { label: 'Cancelled', value: '4', accent: 'rose' }
-        ]
+        icon: <BarChart3 size={18} />, color: '#8b5cf6'
     },
     {
         key: 'performance', name: 'Vendor Performance',
         desc: 'Comprehensive scorecard analysis based on delivery TAT and quality.',
-        icon: <PieChart size={18} />, color: '#10b981',
-        stats: [
-            { label: 'Avg Lead Time', value: '4.2 Days', accent: 'emerald' },
-            { label: 'Quality Score', value: '94.5%', accent: 'blue' },
-            { label: 'OTIF Rate', value: '88%', accent: 'amber' },
-            { label: 'Disputes', value: '2', accent: 'rose' }
-        ]
+        icon: <PieChart size={18} />, color: '#10b981'
     },
     {
         key: 'payables', name: 'Payables Aging',
         desc: 'Strategic bucket analysis of outstanding vendor payments (0-90+ days).',
-        icon: <CreditCard size={18} />, color: '#f59e0b',
-        stats: [
-            { label: 'Total Payable', value: '₹42.8L', accent: 'amber' },
-            { label: 'Due < 30d', value: '₹12.5L', accent: 'blue' },
-            { label: 'Overdue', value: '₹4.2L', accent: 'rose' },
-            { label: 'On Hold', value: '₹1.8L', accent: 'slate' }
-        ]
+        icon: <CreditCard size={18} />, color: '#f59e0b'
     }
 ];
+
+const COLUMN_CONFIG = {
+    master: [
+        { col: 'vendorCode', label: 'Code' },
+        { col: 'name', label: 'Vendor Name' },
+        { col: 'category', label: 'Category' },
+        { col: 'gstin', label: 'GSTIN' },
+        { col: 'complianceStatus', label: 'Compliance' },
+        { col: 'status', label: 'Status' }
+    ],
+    po: [
+        { col: 'invoiceNumber', label: 'PO #' },
+        { col: 'vendorName', label: 'Vendor Name' },
+        { col: 'invoiceDate', label: 'Date' },
+        { col: 'grandTotal', label: 'Total (inc. GST)' },
+        { col: 'status', label: 'Status' }
+    ],
+    performance: [
+        { col: 'vendorCode', label: 'Code' },
+        { col: 'vendorName', label: 'Vendor Name' },
+        { col: 'tier', label: 'Tier' },
+        { col: 'overallScore', label: 'Score' },
+        { col: 'onTimeDelivery', label: 'On-Time %' },
+        { col: 'qualityScore', label: 'Quality %' }
+    ],
+    payables: [
+        { col: 'vendorName', label: 'Vendor Name' },
+        { col: 'totalOutstanding', label: 'Outstanding' },
+        { col: 'current', label: '0-30 Days' },
+        { col: 'over90Days', label: '90+ Days' },
+        { col: 'lastPaymentDate', label: 'Last Payment' },
+        { col: 'status', label: 'Status' }
+    ]
+};
 
 const PER_PAGE = 5;
 
@@ -65,7 +75,8 @@ function SortIcon({ col, sortCol, sortDir }) {
 
 export default function VendorReportsHub() {
     const navigate = useNavigate();
-    const { vendors } = useVendorStore();
+    
+    // UI State
     const [selectedKey, setSelectedKey] = useState('master');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -74,7 +85,58 @@ export default function VendorReportsHub() {
     const [sortDir, setSortDir] = useState('asc');
     const [page, setPage] = useState(1);
 
-    const selectedReport = REPORT_CATEGORIES.find(r => r.key === selectedKey);
+    // Data State
+    const [kpis, setKpis] = useState([]);
+    const [tableData, setTableData] = useState([]);
+    const [pagination, setPagination] = useState({ page: 0, pageSize: PER_PAGE, totalPages: 1, totalRecords: 0 });
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch Data on filter change
+    useEffect(() => {
+        let isMounted = true;
+        
+        const loadData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch KPIs
+                const kpiRes = await fetchReportKpis(selectedKey, timePeriod);
+                if (isMounted && kpiRes?.kpis) {
+                    setKpis(kpiRes.kpis);
+                }
+
+                // Fetch Table Data
+                const reqPayload = {
+                    reportType: selectedKey,
+                    searchQuery: search,
+                    statusFilter: statusFilter === 'all' ? null : statusFilter,
+                    sortBy: sortCol,
+                    sortDirection: sortDir,
+                    timePeriod: timePeriod
+                };
+                const dataRes = await fetchReportData(reqPayload, page - 1, PER_PAGE);
+                if (isMounted && dataRes) {
+                    setTableData(dataRes.data || []);
+                    if (dataRes.pagination) {
+                        setPagination(dataRes.pagination);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch report data:", err);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
+
+        // Debounce to avoid spamming the backend during typing
+        const timeoutId = setTimeout(() => {
+            loadData();
+        }, 300);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timeoutId);
+        };
+    }, [selectedKey, search, statusFilter, sortCol, sortDir, page, timePeriod]);
 
     const handleSort = (col) => {
         if (sortCol === col) {
@@ -93,39 +155,38 @@ export default function VendorReportsHub() {
         setPage(1);
         setSortCol('id');
         setSortDir('asc');
+        setKpis([]);
+        setTableData([]);
     };
 
-    const filtered = useMemo(() => {
-        let data = [...vendors];
-
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            data = data.filter(v =>
-                v.name.toLowerCase().includes(q) ||
-                v.id.toLowerCase().includes(q) ||
-                (v.category || '').toLowerCase().includes(q)
-            );
+    const handleExport = async () => {
+        const toastId = toast.loading('Generating Excel export...');
+        try {
+            const reqPayload = {
+                reportType: selectedKey,
+                searchQuery: search,
+                statusFilter: statusFilter === 'all' ? null : statusFilter,
+                timePeriod: timePeriod,
+                format: 'EXCEL'
+            };
+            const response = await exportReport(reqPayload);
+            const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${selectedKey}_report.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            toast.success('Export downloaded successfully!', { id: toastId });
+        } catch (err) {
+            console.error('Export error:', err);
+            toast.error('Failed to export report.', { id: toastId });
         }
-        if (statusFilter !== 'all') {
-            data = data.filter(v => v.status === statusFilter);
-        }
-        data.sort((a, b) => {
-            let va = (a[sortCol] ?? '');
-            let vb = (b[sortCol] ?? '');
-            if (typeof va === 'string') va = va.toLowerCase();
-            if (typeof vb === 'string') vb = vb.toLowerCase();
-            if (va < vb) return sortDir === 'asc' ? -1 : 1;
-            if (va > vb) return sortDir === 'asc' ? 1 : -1;
-            return 0;
-        });
-        return data;
-    }, [vendors, search, statusFilter, sortCol, sortDir]);
-
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-    const safePage = Math.min(page, totalPages);
-    const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+    };
 
     const labelCls = "text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5";
+    const columns = COLUMN_CONFIG[selectedKey] || [];
 
     return (
         <div className="w-full bg-[#F3F5F9] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
@@ -152,7 +213,7 @@ export default function VendorReportsHub() {
                             </div>
                         </div>
                         <SecondaryBtn icon={<Printer size={14} />} onClick={() => window.print()}>Print Matrix</SecondaryBtn>
-                        <PrimaryBtn icon={<Download size={14} />} onClick={() => toast.success('Exporting...')}>Export Hub</PrimaryBtn>
+                        <PrimaryBtn icon={<Download size={14} />} onClick={handleExport}>Export Hub</PrimaryBtn>
                     </div>
                 </div>
 
@@ -177,19 +238,6 @@ export default function VendorReportsHub() {
                                 ))}
                             </div>
                         </VCard>
-
-                        <VCard className="!bg-white border-blue-100 shadow-sm">
-                            <div className="flex items-center gap-2 mb-3">
-                                <FileText size={16} className="text-blue-600" />
-                                <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Report Guide</h4>
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
-                                Use the sidebar to switch between master directory, status, and performance analytics.
-                            </p>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                                <span>LAST REFRESH: JUST NOW</span>
-                            </div>
-                        </VCard>
                     </div>
 
                     {/* Main */}
@@ -202,16 +250,25 @@ export default function VendorReportsHub() {
 
                                 {/* KPI Strip */}
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                    {selectedReport.stats.map((stat, i) => (
-                                        <VCard key={i}>
-                                            <label className={labelCls}>{stat.label}</label>
-                                            <div className="text-[24px] font-bold text-slate-800 tracking-tight">{stat.value}</div>
-                                            <div className="w-full h-1 mt-3 rounded-full bg-slate-100 overflow-hidden">
-                                                <motion.div initial={{ width: 0 }} animate={{ width: '70%' }}
-                                                    className={`h-full rounded-full bg-${stat.accent}-500`} />
-                                            </div>
-                                        </VCard>
-                                    ))}
+                                    {kpis.length === 0 && isLoading ? (
+                                        Array(4).fill(0).map((_, i) => (
+                                            <VCard key={i} className="animate-pulse">
+                                                <div className="h-3 bg-slate-200 rounded w-1/2 mb-3"></div>
+                                                <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                                            </VCard>
+                                        ))
+                                    ) : (
+                                        kpis.map((stat, i) => (
+                                            <VCard key={i}>
+                                                <label className={labelCls}>{stat.label}</label>
+                                                <div className="text-[24px] font-bold text-slate-800 tracking-tight">{stat.value}</div>
+                                                <div className="w-full h-1 mt-3 rounded-full bg-slate-100 overflow-hidden">
+                                                    <motion.div initial={{ width: 0 }} animate={{ width: '70%' }}
+                                                        className={`h-full rounded-full bg-${stat.accent || 'blue'}-500`} />
+                                                </div>
+                                            </VCard>
+                                        ))
+                                    )}
                                 </div>
 
                                 {/* Filters */}
@@ -233,13 +290,12 @@ export default function VendorReportsHub() {
                                                 onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
                                                 className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-white outline-none shadow-sm">
                                                 <option value="all">All Statuses</option>
-                                                <option value="active">Active</option>
-                                                <option value="pending">Pending</option>
-                                                <option value="blocked">Blocked</option>
+                                                <option value="ACTIVE">Active / Processed</option>
+                                                <option value="PENDING">Pending / Normal</option>
+                                                <option value="OVERDUE">Overdue / Blocked</option>
                                             </select>
                                         </div>
                                         <div className="flex gap-2 w-full md:w-auto">
-                                            <PrimaryBtn icon={<RefreshCcw size={14} />} onClick={() => { setSearch(''); setStatusFilter('all'); setPage(1); toast.success('Data refreshed!'); }}>Refresh</PrimaryBtn>
                                             <SecondaryBtn icon={<Filter size={14} />}>Advanced</SecondaryBtn>
                                         </div>
                                     </div>
@@ -247,38 +303,37 @@ export default function VendorReportsHub() {
                                     <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-100">
                                         <div className="flex items-center gap-3">
                                             <span className="text-[11px] font-bold text-slate-400 uppercase ">Time Period:</span>
-                                            {['TODAY', 'WEEK', 'MONTH'].map(p => (
+                                            {['TODAY', 'WEEK', 'MONTH', 'YEAR'].map(p => (
                                                 <button key={p} onClick={() => setTimePeriod(p)}
                                                     className={`text-[10px] font-bold px-3 py-1 rounded-lg border transition-all ${timePeriod === p ? 'bg-blue-50 text-blue-600 border-blue-100' : 'text-slate-400 border-transparent hover:border-slate-200'}`}>
                                                     {p}
                                                 </button>
                                             ))}
                                         </div>
-                                        <div className="flex gap-2">
-                                            <SecondaryBtn small className="!rounded-full !px-4" onClick={() => toast.success('Exporting Excel...')}>Excel</SecondaryBtn>
-                                            <SecondaryBtn small className="!rounded-full !px-4" onClick={() => toast.success('Exporting PDF...')}>PDF</SecondaryBtn>
-                                        </div>
                                     </div>
                                 </VCard>
 
                                 {/* Table */}
-                                <VCard noPad className="overflow-hidden border-slate-200">
+                                <VCard noPad className="overflow-hidden border-slate-200 relative">
+                                    {isLoading && (
+                                        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                                            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-slate-100">
+                                                <Loader2 size={16} className="text-blue-600 animate-spin" />
+                                                <span className="text-[12px] font-bold text-slate-600">Loading data...</span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="px-5 py-3.5 border-b border-slate-100 bg-white flex items-center justify-between">
                                         <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-tight">Detailed Report Records</h3>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase ">{filtered.length} Results</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase ">{pagination.totalRecords} Results</span>
                                     </div>
 
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left min-w-[640px]">
                                             <thead className="bg-white border-b border-slate-100 text-[10px] font-bold uppercase ">
                                                 <tr>
-                                                    {[
-                                                        { col: 'id', label: 'ID' },
-                                                        { col: 'name', label: 'Vendor Name' },
-                                                        { col: 'category', label: 'Category' },
-                                                        { col: 'rating', label: 'Rating' },
-                                                        { col: 'status', label: 'Status' },
-                                                    ].map(({ col, label }) => (
+                                                    {columns.map(({ col, label }) => (
                                                         <th key={col}
                                                             onClick={() => handleSort(col)}
                                                             className={`px-5 py-3.5 text-left cursor-pointer select-none whitespace-nowrap transition-colors hover:bg-slate-100/80 ${sortCol === col ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -286,40 +341,42 @@ export default function VendorReportsHub() {
                                                             <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
                                                         </th>
                                                     ))}
-                                                    <th className="px-5 py-3.5 text-right text-slate-400">Action</th>
+                                                    {selectedKey === 'master' && (
+                                                        <th className="px-5 py-3.5 text-right text-slate-400">Action</th>
+                                                    )}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50 text-[13px]">
-                                                {paginated.length === 0 ? (
+                                                {tableData.length === 0 && !isLoading ? (
                                                     <tr>
-                                                        <td colSpan={6} className="px-5 py-10 text-center text-slate-400 font-bold text-[12px]">
+                                                        <td colSpan={10} className="px-5 py-10 text-center text-slate-400 font-bold text-[12px]">
                                                             No records match the current filters
                                                         </td>
                                                     </tr>
-                                                ) : paginated.map((v) => (
-                                                    <tr key={v.id} className="hover:bg-blue-50/30 transition-colors">
-                                                        <td className="px-5 py-3.5 font-mono font-bold text-blue-600 text-[12px]">{v.id}</td>
-                                                        <td className="px-5 py-3.5 font-bold text-slate-800">{v.name}</td>
-                                                        <td className="px-5 py-3.5">
-                                                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                                                {v.category || '—'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-5 py-3.5 font-bold text-slate-600">
-                                                            {v.rating
-                                                                ? <span className="text-amber-500">⭐ {v.rating}</span>
-                                                                : <span className="text-slate-300">—</span>}
-                                                        </td>
-                                                        <td className="px-5 py-3.5">
-                                                            <StatusBadge status={v.status} size="xs" />
-                                                        </td>
-                                                        <td className="px-5 py-3.5 text-right">
-                                                            <button
-                                                                onClick={() => navigate(`${VENDOR_ROUTES.detail}/${v.id}`)}
-                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all shadow-sm">
-                                                                Profile <ArrowRight size={11} />
-                                                            </button>
-                                                        </td>
+                                                ) : tableData.map((row, idx) => (
+                                                    <tr key={row.id || idx} className="hover:bg-blue-50/30 transition-colors">
+                                                        {columns.map(({ col }) => (
+                                                            <td key={col} className="px-5 py-3.5">
+                                                                {col === 'status' || col === 'complianceStatus' ? (
+                                                                    <StatusBadge status={row[col]} size="xs" />
+                                                                ) : col.toLowerCase().includes('amount') || col.includes('outstanding') || col.includes('current') || col.includes('Days') ? (
+                                                                    <span className="font-bold text-slate-700">₹{row[col] || 0}</span>
+                                                                ) : (
+                                                                    <span className={col.toLowerCase().includes('code') ? "font-mono font-bold text-blue-600 text-[12px]" : "font-bold text-slate-800"}>
+                                                                        {row[col] || '—'}
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                        {selectedKey === 'master' && (
+                                                            <td className="px-5 py-3.5 text-right">
+                                                                <button
+                                                                    onClick={() => navigate(`${VENDOR_ROUTES.detail}/${row.id}`)}
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all shadow-sm">
+                                                                    Profile <ArrowRight size={11} />
+                                                                </button>
+                                                            </td>
+                                                        )}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -329,27 +386,33 @@ export default function VendorReportsHub() {
                                     {/* Pagination */}
                                     <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-between gap-4 flex-wrap">
                                         <span className="text-[11px] text-slate-400 font-bold">
-                                            {filtered.length === 0
+                                            {pagination.totalRecords === 0
                                                 ? 'No records'
-                                                : `Showing ${(safePage - 1) * PER_PAGE + 1}–${Math.min(safePage * PER_PAGE, filtered.length)} of ${filtered.length} records`
+                                                : `Showing ${pagination.page * pagination.pageSize + 1}–${Math.min((pagination.page + 1) * pagination.pageSize, pagination.totalRecords)} of ${pagination.totalRecords} records`
                                             }
                                         </span>
                                         <div className="flex items-center gap-1.5">
                                             <button
-                                                disabled={safePage === 1}
+                                                disabled={!pagination.hasPrevious}
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                                                 <ChevronLeft size={14} />
                                             </button>
-                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                                                <button key={p} onClick={() => setPage(p)}
-                                                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-bold transition-all ${safePage === p ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
-                                                    {p}
-                                                </button>
-                                            ))}
+                                            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                                // Simple windowing for page numbers
+                                                let p = i + 1;
+                                                if (pagination.totalPages > 5 && page > 3) p = page - 2 + i;
+                                                if (p > pagination.totalPages) return null;
+                                                return (
+                                                    <button key={p} onClick={() => setPage(p)}
+                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-bold transition-all ${page === p ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+                                                        {p}
+                                                    </button>
+                                                )
+                                            })}
                                             <button
-                                                disabled={safePage === totalPages}
-                                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                                disabled={!pagination.hasNext}
+                                                onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
                                                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                                                 <ChevronRight size={14} />
                                             </button>
