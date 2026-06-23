@@ -110,7 +110,7 @@ const getStockStatusColor = (status) => {
 };
 
 export default function WarehouseMap() {
-    const [activeTab, setActiveTab] = useState('MAP');
+    const [activeTab, setActiveTab] = useState('MAPPING');
 
     // System State
     const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -132,6 +132,37 @@ export default function WarehouseMap() {
 
     // Update Forms State
     const [stockUpdateForm, setStockUpdateForm] = useState({ rack_id: '', product_id: '', type: 'IN', quantity: '' });
+
+    // Warehouse Mapping State
+    const [warehouses, setWarehouses] = useState([
+        { id: 'WH-01', name: 'Central Hub', type: 'Common', address: 'Mumbai', dockCount: 8, zoneLayout: 'Standard', status: 'Active', utilization: 85 },
+        { id: 'WH-02', name: 'Pune Regional', type: 'Individual', address: 'Pune', dockCount: 4, zoneLayout: 'Cold Storage', status: 'Active', utilization: 60 },
+        { id: 'WH-03', name: 'Andheri Express', type: 'Individual', address: 'Andheri', dockCount: 2, zoneLayout: 'Express', status: 'Inactive', utilization: 0 },
+    ]);
+    const [supermarkets, setSupermarkets] = useState([
+        { id: 'SM-01', name: 'Supermarket A (Mumbai Central)' },
+        { id: 'SM-02', name: 'Supermarket B (Andheri)' },
+        { id: 'SM-03', name: 'Supermarket C (Pune)' },
+        { id: 'SM-04', name: 'Supermarket D (Thane)' },
+    ]);
+    const [warehouseMapping, setWarehouseMapping] = useState({
+        'WH-01': ['SM-01', 'SM-02', 'SM-03', 'SM-04'],
+        'WH-02': ['SM-03'],
+        'WH-03': ['SM-02']
+    });
+    const [selectedMappingWarehouseId, setSelectedMappingWarehouseId] = useState('WH-01');
+
+    const handleToggleSupermarket = (whId, smId) => {
+        setWarehouseMapping(prev => {
+            const currentList = prev[whId] || [];
+            if (currentList.includes(smId)) {
+                return { ...prev, [whId]: currentList.filter(id => id !== smId) };
+            } else {
+                return { ...prev, [whId]: [...currentList, smId] };
+            }
+        });
+        toast.success('Mapping updated');
+    };
 
     // ─────────────────────────────────────────────────────────────────
     // Derived Data & Helpers
@@ -204,6 +235,7 @@ export default function WarehouseMap() {
 
     const renderTabs = () => {
         const tabs = [
+            { id: 'MAPPING', label: 'Warehouse Mapping', icon: Navigation },
             { id: 'MAP', label: 'Floor Map', icon: MapIcon },
             { id: 'CATEGORIES', label: 'Categories', icon: Layers },
             { id: 'RACKS', label: 'Rack Setup', icon: GridIcon },
@@ -849,6 +881,220 @@ export default function WarehouseMap() {
         );
     };
 
+    const handleAddWarehouse = () => {
+        const newId = `WH-0${warehouses.length + 1}`;
+        setWarehouses(prev => [...prev, {
+            id: newId,
+            name: `New Warehouse ${warehouses.length + 1}`,
+            type: 'Individual',
+            address: 'New Location',
+            dockCount: 2,
+            zoneLayout: 'Standard',
+            status: 'Active',
+            utilization: 0
+        }]);
+        setWarehouseMapping(prev => ({ ...prev, [newId]: [] }));
+        setSelectedMappingWarehouseId(newId);
+        toast.success('New warehouse added successfully!');
+    };
+
+    const renderWarehouseMapping = () => {
+        const selectedWH = warehouses.find(w => w.id === selectedMappingWarehouseId);
+        const mappedSMs = warehouseMapping[selectedMappingWarehouseId] || [];
+
+        return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Warehouse List */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <VCard className="h-full border-0 shadow-xl shadow-slate-200/40 bg-white/80 backdrop-blur-xl">
+                            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                                <div>
+                                    <h3 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Warehouse List</h3>
+                                    <p className="text-[12px] text-slate-500 font-medium mt-0.5">Select a warehouse to configure.</p>
+                                </div>
+                                <button 
+                                    onClick={handleAddWarehouse}
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] font-bold transition-all shadow-md shadow-indigo-500/30"
+                                >
+                                    <Plus size={16} /> New
+                                </button>
+                            </div>
+                            <div className="space-y-4 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
+                                {warehouses.map(wh => {
+                                    const linkedCount = (warehouseMapping[wh.id] || []).length;
+                                    const isSelected = selectedMappingWarehouseId === wh.id;
+                                    return (
+                                        <div 
+                                            key={wh.id}
+                                            onClick={() => setSelectedMappingWarehouseId(wh.id)}
+                                            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden group ${isSelected ? 'bg-white border-indigo-400 shadow-[0_8px_30px_rgb(0,0,0,0.06)] ring-1 ring-indigo-400' : 'bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-white hover:shadow-md'}`}
+                                        >
+                                            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-500 to-blue-500"></div>}
+                                            
+                                            <div className="flex justify-between items-start mb-3 pl-1">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className={`font-extrabold text-[15px] ${isSelected ? 'text-indigo-900' : 'text-slate-800 group-hover:text-indigo-600'} transition-colors`}>{wh.name}</h4>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${wh.type === 'Common' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{wh.type}</span>
+                                                    </div>
+                                                    <p className="text-[11px] font-bold text-slate-400 mt-0.5">{wh.id}</p>
+                                                </div>
+                                                <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1.5 ${wh.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${wh.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                                    {wh.status}
+                                                </div>
+                                            </div>
+                                            <div className="mt-5 pl-1">
+                                                <div className="flex justify-between text-[11px] font-bold mb-1.5">
+                                                    <span className="text-slate-500">Stock Utilization</span>
+                                                    <span className={wh.utilization > 80 ? 'text-rose-600' : 'text-emerald-600'}>{wh.utilization}%</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                                    <div className={`h-full rounded-full transition-all duration-1000 ${wh.utilization > 80 ? 'bg-gradient-to-r from-rose-400 to-rose-500' : 'bg-gradient-to-r from-emerald-400 to-emerald-500'}`} style={{ width: `${wh.utilization}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-[12px] font-bold pl-1">
+                                                <span className="text-slate-500">Linked Supermarkets:</span>
+                                                <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">{linkedCount} Stores</span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </VCard>
+                    </div>
+
+                    {/* Mapping Config */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <VCard className="h-full border-0 shadow-xl shadow-slate-200/40 bg-white/80 backdrop-blur-xl">
+                            <div className="mb-6 border-b border-slate-100 pb-4">
+                                <h3 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Mapping Configuration</h3>
+                                <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assign supermarkets to <span className="font-bold text-indigo-600">{selectedWH?.name}</span>.</p>
+                            </div>
+                            
+                            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
+                                {supermarkets.map(sm => {
+                                    const isMapped = mappedSMs.includes(sm.id);
+                                    return (
+                                        <div 
+                                            key={sm.id}
+                                            onClick={() => handleToggleSupermarket(selectedWH.id, sm.id)}
+                                            className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer group ${isMapped ? 'bg-indigo-50 border-indigo-200 shadow-[0_4px_12px_rgba(99,102,241,0.08)]' : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md'}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                {/* Sophisticated Toggle Switch */}
+                                                <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner flex items-center ${isMapped ? 'bg-indigo-500' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isMapped ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                </div>
+                                                <div>
+                                                    <h5 className={`font-extrabold text-[14px] transition-colors ${isMapped ? 'text-indigo-900' : 'text-slate-700 group-hover:text-indigo-600'}`}>{sm.name}</h5>
+                                                    <p className="text-[11px] font-bold text-slate-400 mt-0.5">{sm.id}</p>
+                                                </div>
+                                            </div>
+                                            {isMapped && <span className="text-[10px] font-extrabold text-indigo-600 bg-white px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm border border-indigo-100">Assigned</span>}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 flex items-start gap-3 shadow-sm">
+                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                    <Info size={18} />
+                                </div>
+                                <p className="text-[12px] font-medium text-slate-700 leading-relaxed">
+                                    Supports both a single common warehouse and individual warehouses per supermarket. Common warehouses can serve all stores simultaneously.
+                                </p>
+                            </div>
+                        </VCard>
+                    </div>
+
+                    {/* Warehouse Detail */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="h-full rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col border border-slate-200">
+                            {/* Decorative background glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-[80px] opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 rounded-full blur-[80px] opacity-60 -ml-20 -mb-20 pointer-events-none"></div>
+                            
+                            {/* Glass border top */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"></div>
+                            
+                            <div className="p-8 relative z-10 flex-1 flex flex-col">
+                                <div className="mb-8 border-b border-slate-100 pb-6">
+                                    <h3 className="text-[20px] font-extrabold text-slate-800 tracking-tight">Warehouse Detail</h3>
+                                    <p className="text-[13px] text-slate-500 font-medium mt-1">Real-time specs and live operations.</p>
+                                </div>
+                                
+                                {selectedWH ? (
+                                    <div className="space-y-8 flex-1 flex flex-col">
+                                        <div className="space-y-6">
+                                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
+                                                <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-2">
+                                                    <MapIcon size={12} className="text-indigo-500"/> Location Address
+                                                </p>
+                                                <p className="text-[14px] font-bold text-slate-800">{selectedWH.address} Logistics Park, Phase 2</p>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
+                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Dock Count</p>
+                                                    <p className="text-[18px] font-black text-slate-800">{selectedWH.dockCount} <span className="text-[12px] font-bold text-slate-500">Active</span></p>
+                                                </div>
+                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
+                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Zone Layout</p>
+                                                    <p className="text-[16px] font-bold text-slate-800 mt-1">{selectedWH.zoneLayout}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-3">Linked Supermarkets</p>
+                                            {mappedSMs.length > 0 ? (
+                                                <div className="flex flex-wrap gap-2.5">
+                                                    {mappedSMs.map(smId => {
+                                                        const sm = supermarkets.find(s => s.id === smId);
+                                                        return (
+                                                            <div key={smId} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[12px] font-bold rounded-xl border border-indigo-200 flex items-center gap-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                                                {sm?.name.split(' (')[0]}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-[12px] text-slate-500 italic">No supermarkets linked currently.</div>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-auto">
+                                            <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-3">Live Pending Operations</p>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-center relative overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer shadow-sm hover:shadow-md">
+                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-xl group-hover:bg-blue-100 transition-all opacity-50"></div>
+                                                    <p className="text-[28px] font-black text-blue-600 mb-0.5 relative z-10">12</p>
+                                                    <p className="text-[11px] font-bold text-blue-800 uppercase tracking-widest relative z-10">Inbound</p>
+                                                </div>
+                                                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center relative overflow-hidden group hover:border-amber-400 transition-colors cursor-pointer shadow-sm hover:shadow-md">
+                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-xl group-hover:bg-amber-100 transition-all opacity-50"></div>
+                                                    <p className="text-[28px] font-black text-amber-500 mb-0.5 relative z-10">5</p>
+                                                    <p className="text-[11px] font-bold text-amber-800 uppercase tracking-widest relative z-10">Outbound</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 flex items-center justify-center">
+                                        <p className="text-slate-500 font-bold">Select a warehouse.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    };
+
     return (
         <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
             <PageHeader
@@ -858,6 +1104,7 @@ export default function WarehouseMap() {
             {renderTabs()}
             
             <AnimatePresence mode="wait">
+                {activeTab === 'MAPPING' && renderWarehouseMapping()}
                 {activeTab === 'MAP' && renderMap()}
                 {activeTab === 'CATEGORIES' && renderCategories()}
                 {activeTab === 'RACKS' && renderRacks()}
