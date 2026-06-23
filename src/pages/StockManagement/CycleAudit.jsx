@@ -11,7 +11,11 @@ import {
     History,
     Smartphone,
     UserCog,
-    FileEdit
+    FileEdit,
+    Camera,
+    Minus,
+    Plus,
+    Activity
 } from 'lucide-react';
 import {
     PageHeader,
@@ -19,7 +23,6 @@ import {
     SectionTitle,
     PrimaryBtn,
     SecondaryBtn,
-    VendorBreadcrumb,
     StatusBadge
 } from '../Vendors/VendorComponents';
 import toast from 'react-hot-toast';
@@ -37,6 +40,14 @@ export default function CycleAudit() {
     const [auditDate, setAuditDate] = useState('');
     const [blindCount, setBlindCount] = useState(true);
     const [recountThreshold, setRecountThreshold] = useState('5');
+    const [selectedZone, setSelectedZone] = useState('');
+    const [selectedStaff, setSelectedStaff] = useState('');
+
+    const [recentSessions, setRecentSessions] = useState([
+        { name: 'Yearend Audit 2025', date: '31 Dec 2025', status: 'COMPLETED' },
+        { name: 'Flash Spot Check: Frozen', date: '15 Jan 2026', status: 'COMPLETED' },
+        { name: 'Cold-Chain Verification', date: '02 Feb 2026', status: 'IN PROGRESS' }
+    ]);
 
     // Staff State
     const [itemBarcode, setItemBarcode] = useState('');
@@ -45,11 +56,28 @@ export default function CycleAudit() {
     const [countNotes, setCountNotes] = useState('');
 
     const handleAssignAudit = () => {
-        if (!auditName || !auditDate) {
-            toast.error('Please fill in mandatory fields');
+        if (!auditName || !auditDate || !selectedZone || !selectedStaff) {
+            toast.error('Please fill in all mandatory fields.');
             return;
         }
+        
+        const newSession = {
+            name: auditName,
+            date: new Date(auditDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            status: 'ACTIVE'
+        };
+        
+        setRecentSessions(prev => [newSession, ...prev]);
         toast.success(`Audit "${auditName}" assigned successfully!`);
+        
+        // Reset form
+        setAuditName('');
+        setAuditDate('');
+        setSelectedZone('');
+        setSelectedStaff('');
+        
+        // Switch to Staff view automatically after a small delay
+        setTimeout(() => setActiveRole('Staff'), 1000);
     };
 
     const handleSubmitCount = () => {
@@ -58,34 +86,33 @@ export default function CycleAudit() {
             return;
         }
         toast.success('Physical count submitted for verification.');
+        // Reset form for next scan
+        setItemBarcode('');
+        setPhysicalCount('');
+        setRecountFlag(false);
+        setCountNotes('');
     };
 
-    const breadcrumbs = [
-        { label: 'Inventory', path: '/inventory' },
-        { label: 'Stock Management', path: '#' },
-        { label: 'Cycle Count & Physical Audit' }
-    ];
-
     return (
-        <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
-
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="w-full bg-[#F4F7FB] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
+            {/* Header section with Role Toggle */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
                 <PageHeader
-                    title="Cycle Count & Physical Audit Interface"
-                    subtitle="Audit assignment system and staff mobile counting interface with blind count enforcement."
+                    title="Cycle Audit & Inventory Count"
+                    subtitle="Assign blind audits and execute physical counts via mobile interface."
                 />
-                <div className="flex items-center bg-white border border-slate-200 p-1 rounded-2xl shadow-sm">
+                <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
                     <button
                         onClick={() => setActiveRole('Manager')}
-                        className={`px-8 py-3 rounded-xl text-[12px] font-bold transition-all ${activeRole === 'Manager' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Manager' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
-                        MANAGER VIEW
+                        <UserCog size={16} /> MANAGER VIEW
                     </button>
                     <button
                         onClick={() => setActiveRole('Staff')}
-                        className={`px-8 py-3 rounded-xl text-[12px] font-bold transition-all ${activeRole === 'Staff' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Staff' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
-                        STAFF MOBILITY
+                        <Smartphone size={16} /> STAFF MOBILITY
                     </button>
                 </div>
             </div>
@@ -94,294 +121,323 @@ export default function CycleAudit() {
                 {activeRole === 'Manager' ? (
                     <>
                         {/* MANAGER: AUDIT ASSIGNMENT FORM */}
-                        <div className="lg:col-span-7 space-y-6">
-                            <VCard>
-                                <SectionTitle>Audit Assignment Form — Manager</SectionTitle>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div className="lg:col-span-8">
+                            <VCard className="p-8 border-none shadow-sm ring-1 ring-slate-100">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                        <ClipboardCheck size={20} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-800 tracking-tight">Audit Assignment Configuration</h2>
+                                        <p className="text-sm text-slate-500">Create new count sessions and allocate resources.</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
                                     {/* Audit Name */}
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Audit Name <span className="text-rose-500">*</span></label>
-                                        <div className="relative">
-                                            <FileEdit size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Audit Name <span className="text-rose-500">*</span></label>
+                                        <div className="relative group">
+                                            <FileEdit size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                                             <input
                                                 type="text"
-                                                placeholder="e.g. Monthly Cycle Count Jan 2026..."
-                                                className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
+                                                placeholder="e.g. Q1 Annual Stock Count..."
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                                                 value={auditName}
                                                 onChange={e => setAuditName(e.target.value)}
                                             />
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Max 60 chars</p>
                                     </div>
 
                                     {/* Audit Type */}
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Audit Type <span className="text-rose-500">*</span></label>
-                                        <div className="space-y-2 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Audit Type <span className="text-rose-500">*</span></label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                             {AUDIT_TYPES.map(t => (
-                                                <label key={t} className="flex items-center gap-3 cursor-pointer group">
-                                                    <input
-                                                        type="radio"
-                                                        name="auditType"
-                                                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                                                        checked={auditType === t}
-                                                        onChange={() => setAuditType(t)}
-                                                    />
-                                                    <span className={`text-[12px] font-bold transition-colors ${auditType === t ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`}>{t}</span>
-                                                </label>
+                                                <div 
+                                                    key={t}
+                                                    onClick={() => setAuditType(t)}
+                                                    className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${auditType === t ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'}`}
+                                                >
+                                                    <span className="text-[12px] font-bold leading-tight block">{t}</span>
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
 
                                     {/* Audit Date */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Audit Date <span className="text-rose-500">*</span></label>
-                                        <div className="relative">
-                                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Audit Date <span className="text-rose-500">*</span></label>
+                                        <div className="relative group">
+                                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                                             <input
                                                 type="date"
-                                                className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700"
                                                 value={auditDate}
                                                 onChange={e => setAuditDate(e.target.value)}
                                             />
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Cannot be in the past; advance scheduling up to 30 days</p>
                                     </div>
 
                                     {/* Assign Zones */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Assign Zones <span className="text-rose-500">*</span></label>
-                                        <div className="relative">
-                                            <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <select className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none">
-                                                <option>Select zones/aisles...</option>
-                                                {ZONES.map(z => <option key={z}>{z}</option>)}
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Assign Zone <span className="text-rose-500">*</span></label>
+                                        <div className="relative group">
+                                            <Layers size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <select 
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none text-slate-700"
+                                                value={selectedZone}
+                                                onChange={(e) => setSelectedZone(e.target.value)}
+                                            >
+                                                <option value="" disabled>Select zone or aisle...</option>
+                                                {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
                                             </select>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Visual aisle map with checkboxes; assign specific aisles to specific staff</p>
                                     </div>
 
                                     {/* Assign Staff */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Assign Staff <span className="text-rose-500">*</span></label>
-                                        <div className="relative">
-                                            <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <select className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none">
-                                                <option>Select staff members...</option>
-                                                {STAFF.map(s => <option key={s}>{s}</option>)}
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Assign Staff <span className="text-rose-500">*</span></label>
+                                        <div className="relative group">
+                                            <Users size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <select 
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none text-slate-700"
+                                                value={selectedStaff}
+                                                onChange={(e) => setSelectedStaff(e.target.value)}
+                                            >
+                                                <option value="" disabled>Select staff member...</option>
+                                                {STAFF.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Active warehouse staff; drag to zone grid for zone-staff mapping</p>
-                                    </div>
-
-                                    {/* Blind Count Enforcement */}
-                                    <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Blind Count Enforcement</label>
-                                        <div className="flex items-center justify-between p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
-                                            <div className="flex items-center gap-2">
-                                                <EyeOff size={16} className="text-blue-600" />
-                                                <span className="text-[12px] font-bold text-blue-900">Enforced (Locked)</span>
-                                            </div>
-                                            <div
-                                                onClick={() => setBlindCount(!blindCount)}
-                                                className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-all ${blindCount ? 'bg-blue-600' : 'bg-slate-300'}`}
-                                            >
-                                                <div className={`w-4 h-4 bg-white rounded-full transition-all ${blindCount ? 'translate-x-6' : 'translate-x-0'}`} />
-                                            </div>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Cannot be turned off; system quantities hidden from staff during count</p>
                                     </div>
 
                                     {/* Recount Threshold % */}
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Recount Threshold %</label>
-                                        <div className="relative">
-                                            <AlertTriangle size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Recount Threshold %</label>
+                                        <div className="relative group">
+                                            <AlertTriangle size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
                                             <input
                                                 type="number"
-                                                className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
+                                                placeholder="e.g. 5"
+                                                className="w-full pl-11 pr-8 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-700"
                                                 value={recountThreshold}
                                                 onChange={e => setRecountThreshold(e.target.value)}
                                             />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">%</span>
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-slate-400">%</span>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">If variance &gt; threshold %, staff prompted to recount before submitting</p>
+                                    </div>
+
+                                    {/* Blind Count Enforcement */}
+                                    <div className="space-y-2 md:col-span-2">
+                                        <div className="flex items-center justify-between p-5 bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-xl">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-2.5 rounded-lg ${blindCount ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} transition-colors`}>
+                                                    <EyeOff size={18} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-[14px] font-bold text-slate-800">Blind Count Enforcement</h3>
+                                                    <p className="text-[12px] text-slate-500 mt-0.5">System quantities will be hidden from staff during count.</p>
+                                                </div>
+                                            </div>
+                                            <div
+                                                onClick={() => setBlindCount(!blindCount)}
+                                                className={`w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 ${blindCount ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                            >
+                                                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${blindCount ? 'translate-x-7' : 'translate-x-0'}`} />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-8 pt-8 border-t border-slate-50 flex justify-end">
-                                    <PrimaryBtn onClick={handleAssignAudit} className="px-12 py-4 rounded-2xl" icon={<ClipboardCheck size={18} />}>
-                                        Assign Audit Session
+                                <div className="mt-10 pt-6 border-t border-slate-100 flex justify-end">
+                                    <PrimaryBtn onClick={handleAssignAudit} className="px-10 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[14px]" icon={<CheckCircle2 size={18} />}>
+                                        Launch Audit Session
                                     </PrimaryBtn>
                                 </div>
                             </VCard>
                         </div>
 
                         {/* MANAGER: RECENT AUDITS / ANALYTICS */}
-                        <div className="lg:col-span-5 space-y-6">
-                            <VCard className="bg-slate-900 text-white border-0">
-                                <SectionTitle><span className="text-slate-400">Audit Health Check</span></SectionTitle>
-                                <div className="space-y-6 mt-6">
-                                    <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div className="text-[11px] font-bold text-blue-400 uppercase ">Active Coverage</div>
-                                            <div className="text-2xl font-extrabold text-white">84.2%</div>
+                        <div className="lg:col-span-4 space-y-6">
+                            <VCard className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-lg">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Activity size={18} className="text-emerald-400" />
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">Live Audit Health</h3>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="p-5 bg-white/10 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                        <div className="flex justify-between items-end mb-4">
+                                            <div className="text-[12px] font-bold text-indigo-300 uppercase tracking-wider">Active Coverage</div>
+                                            <div className="text-3xl font-black text-white">84<span className="text-lg text-slate-400">%</span></div>
                                         </div>
-                                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-blue-500 w-[84%]" />
+                                        <div className="h-2.5 w-full bg-slate-900/50 rounded-full overflow-hidden border border-white/5">
+                                            <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 w-[84%] rounded-full relative">
+                                                <div className="absolute top-0 right-0 bottom-0 left-0 bg-[linear-gradient(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-[progress_1s_linear_infinite]" />
+                                            </div>
                                         </div>
-                                        <p className="text-[10px] text-slate-500 mt-3 font-medium">16/19 Zones counted in current session</p>
+                                        <p className="text-[11px] text-slate-400 mt-3 font-medium">16 out of 19 Zones counted</p>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                                            <div className="text-[9px] font-bold text-emerald-400 uppercase  mb-1">Accurate</div>
-                                            <div className="text-xl font-extrabold text-emerald-500">92%</div>
+                                        <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Accuracy</div>
+                                            <div className="text-2xl font-black text-emerald-500">92<span className="text-sm">%</span></div>
                                         </div>
-                                        <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
-                                            <div className="text-[9px] font-bold text-rose-400 uppercase  mb-1">Variance</div>
-                                            <div className="text-xl font-extrabold text-rose-500">8.4%</div>
+                                        <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                                            <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1">Variance</div>
+                                            <div className="text-2xl font-black text-rose-500">8.4<span className="text-sm">%</span></div>
                                         </div>
                                     </div>
                                 </div>
                             </VCard>
 
-                            <VCard>
-                                <SectionTitle>Audit History</SectionTitle>
-                                <div className="space-y-4 mt-4">
-                                    {[
-                                        { name: 'Yearend Audit 2025', date: '31 Dec 2025', status: 'COMPLETED' },
-                                        { name: 'Flash Spot Check: Frozen', date: '15 Jan 2026', status: 'COMPLETED' },
-                                        { name: 'Cold-Chain Verification', date: '02 Feb 2026', status: 'IN PROGRESS' }
-                                    ].map((a, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                                                    <History size={16} />
-                                                </div>
-                                                <div>
-                                                    <div className="text-[13px] font-bold text-slate-800">{a.name}</div>
-                                                    <div className="text-[10px] font-medium text-slate-400">{a.date}</div>
-                                                </div>
+                            <VCard className="border-none shadow-sm ring-1 ring-slate-100">
+                                <h3 className="text-[13px] font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <History size={16} className="text-slate-400" /> Recent Sessions
+                                </h3>
+                                <div className="space-y-3">
+                                    {recentSessions.map((a, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3.5 rounded-xl hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition-all cursor-pointer group">
+                                            <div>
+                                                <div className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">{a.name}</div>
+                                                <div className="text-[11px] font-medium text-slate-500 mt-0.5">{a.date}</div>
                                             </div>
                                             <StatusBadge status={a.status} size="xs" />
                                         </div>
                                     ))}
                                 </div>
+                                <button className="w-full mt-4 py-2.5 text-[12px] font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                    View Full History →
+                                </button>
                             </VCard>
                         </div>
                     </>
                 ) : (
                     <>
                         {/* STAFF: MOBILE COUNT ENTRY */}
-                        <div className="lg:col-span-12 max-w-2xl mx-auto w-full">
-                            <VCard className="bg-white border-2 border-slate-200 shadow-xl rounded-[2.5rem] overflow-hidden">
-                                <div className="bg-slate-900 p-8 text-center">
-                                    <div className="w-12 h-1.5 bg-slate-800 rounded-full mx-auto mb-6" />
-                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 text-[10px] font-extrabold uppercase tracking-[0.2em] mb-4">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live Session
-                                    </div>
-                                    <h3 className="text-xl font-extrabold text-white">Assigned: A1: Cold Storage</h3>
-                                    <p className="text-[12px] text-slate-400 mt-1 font-medium">Staff: John Doe · Shift: Morning</p>
+                        <div className="col-span-1 lg:col-span-12 flex justify-center w-full">
+                            {/* Mobile Phone Mockup Container */}
+                            <div className="w-full max-w-[420px] bg-white border border-slate-200 shadow-2xl rounded-[2.5rem] overflow-hidden flex flex-col relative" style={{ minHeight: '800px' }}>
+                                {/* Notch Area (Aesthetic) */}
+                                <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-20">
+                                    <div className="w-32 h-6 bg-slate-900 rounded-b-2xl"></div>
                                 </div>
 
-                                <div className="p-8 space-y-8">
+                                {/* Header Area */}
+                                <div className="bg-slate-900 pt-10 pb-6 px-6 text-center rounded-b-3xl relative z-10 shadow-md">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 text-[10px] font-extrabold uppercase tracking-widest mb-4">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live Session
+                                    </div>
+                                    <h3 className="text-xl font-extrabold text-white leading-tight">Zone A1:<br />Cold Storage</h3>
+                                    <p className="text-[12px] text-slate-400 mt-2 font-medium bg-slate-800/50 inline-block px-3 py-1 rounded-full">User: John Doe · Shift: AM</p>
+                                </div>
+
+                                {/* Main Scanning Form */}
+                                <div className="flex-1 p-6 space-y-7 bg-slate-50/50 flex flex-col justify-center">
                                     {/* Item Barcode Scan */}
-                                    <div className="space-y-3">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-[0.1em]">Item Barcode <span className="text-rose-500">*</span></label>
-                                        <div className="relative">
-                                            <ScanLine size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <div className="space-y-2.5">
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Item Barcode <span className="text-rose-500">*</span></label>
+                                        <div className="relative group">
+                                            <ScanLine size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                                             <input
                                                 type="text"
-                                                placeholder="Scan item or type UPC..."
-                                                className="w-full pl-12 pr-4 py-4 text-[15px] font-bold border-2 border-slate-100 rounded-2xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
+                                                placeholder="Scan or type UPC..."
+                                                className="w-full pl-12 pr-14 py-4 text-[16px] font-bold border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 placeholder:font-normal shadow-sm"
                                                 value={itemBarcode}
                                                 onChange={e => setItemBarcode(e.target.value)}
                                             />
-                                            <button className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 active:scale-95 transition-all">
-                                                📷
+                                            <button className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-100 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl flex items-center justify-center transition-all active:scale-95">
+                                                <Camera size={18} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Accepts EAN, unrecognised barcodes logged as "Unknown Item" for review</p>
                                     </div>
 
                                     {/* Physical Count */}
-                                    <div className="space-y-3">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-[0.1em]">Physical Count <span className="text-rose-500">*</span></label>
-                                        <div className="flex items-center gap-4">
+                                    <div className="space-y-2.5">
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Physical Count <span className="text-rose-500">*</span></label>
+                                        <div className="flex items-center gap-3">
                                             <button
                                                 onClick={() => setPhysicalCount(prev => Math.max(0, (parseInt(prev) || 0) - 1).toString())}
-                                                className="w-16 h-16 rounded-2xl border-2 border-slate-100 bg-slate-50 text-2xl font-bold text-slate-400 hover:bg-slate-100 active:scale-90 transition-all flex items-center justify-center"
+                                                className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-rose-600 active:bg-rose-50 active:border-rose-200 transition-all flex items-center justify-center shadow-sm shrink-0"
                                             >
-                                                －
+                                                <Minus size={24} strokeWidth={3} />
                                             </button>
                                             <input
                                                 type="number"
-                                                placeholder="Enter count..."
-                                                className="flex-1 py-4 text-center text-3xl font-extrabold border-2 border-slate-100 rounded-2xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
+                                                placeholder="0"
+                                                className="w-full h-16 text-center text-4xl font-black border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-800 shadow-inner"
                                                 value={physicalCount}
                                                 onChange={e => setPhysicalCount(e.target.value)}
                                             />
                                             <button
                                                 onClick={() => setPhysicalCount(prev => ((parseInt(prev) || 0) + 1).toString())}
-                                                className="w-16 h-16 rounded-2xl border-2 border-slate-100 bg-slate-50 text-2xl font-bold text-slate-400 hover:bg-slate-100 active:scale-90 transition-all flex items-center justify-center"
+                                                className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 active:bg-emerald-50 active:border-emerald-200 transition-all flex items-center justify-center shadow-sm shrink-0"
                                             >
-                                                ＋
+                                                <Plus size={24} strokeWidth={3} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-medium italic text-center">Numeric only; no system quantity shown; can increment with ± button</p>
                                     </div>
 
                                     {/* Recount Flag */}
-                                    <label className="flex items-center gap-4 p-5 bg-orange-50/50 border-2 border-orange-100 rounded-2xl cursor-pointer group">
-                                        <input
-                                            type="checkbox"
-                                            className="w-6 h-6 rounded-lg text-orange-600 focus:ring-orange-500 border-slate-300"
-                                            checked={recountFlag}
-                                            onChange={e => setRecountFlag(e.target.checked)}
-                                        />
+                                    <label className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2 ${recountFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                                        <div className="pt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                                                checked={recountFlag}
+                                                onChange={e => setRecountFlag(e.target.checked)}
+                                            />
+                                        </div>
                                         <div>
-                                            <div className="text-[13px] font-bold text-orange-900">Recount Flag</div>
-                                            <div className="text-[10px] text-orange-600 font-medium leading-tight">Staff can flag item for recount by supervisor if unsure</div>
+                                            <div className={`text-[14px] font-bold ${recountFlag ? 'text-amber-900' : 'text-slate-700'}`}>Flag for Recount</div>
+                                            <div className={`text-[12px] mt-0.5 ${recountFlag ? 'text-amber-700' : 'text-slate-500'}`}>Request supervisor review if you are unsure about this quantity.</div>
                                         </div>
                                     </label>
 
                                     {/* Count Notes */}
-                                    <div className="space-y-3">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-[0.1em]">Count Notes</label>
+                                    <div className="space-y-2.5">
+                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Observations</label>
                                         <textarea
-                                            placeholder="Any observations (e.g. Packaging damaged)..."
+                                            placeholder="E.g., Packaging damaged, wrong bin..."
                                             rows={2}
-                                            className="w-full px-5 py-4 text-[14px] font-bold border-2 border-slate-100 rounded-2xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all resize-none"
+                                            className="w-full p-4 text-[14px] font-medium border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300"
                                             value={countNotes}
                                             onChange={e => setCountNotes(e.target.value)}
                                         />
-                                        <p className="text-[10px] text-slate-400 font-medium italic">Max 100 chars; e.g. 'Items mixed with wrong SKU'</p>
-                                    </div>
-
-                                    <div className="pt-6">
-                                        <PrimaryBtn onClick={handleSubmitCount} className="w-full py-5 rounded-[1.5rem] text-sm shadow-xl shadow-blue-200" icon={<CheckCircle2 size={20} />}>
-                                            Submit Physical Count
-                                        </PrimaryBtn>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 p-6 flex items-center justify-center gap-8 border-t-2 border-slate-100">
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase ">Progress</div>
-                                        <div className="text-[14px] font-extrabold text-slate-700">24 / 85 Items</div>
+                                {/* Footer Sticky Submit */}
+                                <div className="bg-white p-5 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                                    <button 
+                                        onClick={handleSubmitCount} 
+                                        className="w-full py-4 rounded-[1rem] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[15px] shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                                    >
+                                        <CheckCircle2 size={20} />
+                                        Record Count
+                                    </button>
+                                    
+                                    {/* Mini Progress Bar */}
+                                    <div className="mt-4 flex items-center justify-between px-2">
+                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Progress</span>
+                                        <span className="text-[12px] font-black text-slate-700">24 / 85 Items</span>
                                     </div>
-                                    <div className="w-px h-8 bg-slate-200" />
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase ">Accuracy</div>
-                                        <div className="text-[14px] font-extrabold text-emerald-600">Pending</div>
+                                    <div className="mx-2 mt-1.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-500 w-[28%] rounded-full"></div>
                                     </div>
                                 </div>
-                            </VCard>
+                            </div>
                         </div>
                     </>
                 )}
             </div>
+
+            <style dangerouslySetInnerHTML={{__html: `
+                @keyframes progress {
+                    0% { background-position: 1rem 0; }
+                    100% { background-position: 0 0; }
+                }
+            `}} />
         </div>
     );
 }
