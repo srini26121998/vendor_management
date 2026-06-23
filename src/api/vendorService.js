@@ -277,6 +277,18 @@ export const markNotificationRead = (id) =>
 export const markAllRead = () =>
   api.patch('/notifications/read-all').catch(() => null);
 
+
+
+export const searchGlobalInventory = async (query) => {
+    try {
+        const response = await api.get(`/inventory/global-search?query=${encodeURIComponent(query)}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching global inventory:', error);
+        throw error;
+    }
+};
+
 // Aggregates pending POs + under-review invoices into an approval queue.
 // Uses real backend endpoints — no dedicated /api/approvals controller needed.
 export const fetchApprovals = async () => {

@@ -7,7 +7,8 @@ import { ArrowLeft, Box, Package, Trash2, Sparkles, ReceiptText, Calendar, Walle
 import toast from 'react-hot-toast';
 import useVendorStore from '../../store/useVendorStore';
 import purchaseService from '../../api/purchaseService';
-import { fetchVendorProducts } from '../../api/vendorService';
+import { fetchVendorProducts, fetchProducts, createSTO } from '../../api/vendorService';
+import useAuthStore from '../../store/useAuthStore';
 import { useEffect, useRef } from 'react';
 
 const ITEMS_INIT = [{ id: Date.now(), productId: '', description: '', qty: 1, unit: 'PCS', rate: 0, amount: 0, gstRate: 18 }];
@@ -15,6 +16,7 @@ const ITEMS_INIT = [{ id: Date.now(), productId: '', description: '', qty: 1, un
 export default function CreateEditPO() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuthStore();
     const { vendors, loadVendors } = useVendorStore();
     const [products, setProducts] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +25,9 @@ export default function CreateEditPO() {
     const isEdit = location.state?.mode === 'edit';
 
     const [vendor, setVendor] = useState(editData?.vendor?.id || '');
+    const [requestType, setRequestType] = useState('vendor'); // 'vendor' or 'internal'
+    const [sourceOutletId, setSourceOutletId] = useState('HQ'); // For internal transfers
+    const [outletId, setOutletId] = useState(editData?.outletId || 'O1');
     const [deliveryDate, setDeliveryDate] = useState(editData?.dueDate || new Date().toISOString().split('T')[0]);
     const [paymentTerms, setPaymentTerms] = useState(editData?.paymentMode || 'Net 30');
     const [items, setItems] = useState(editData?.items?.map(it => ({
@@ -41,11 +46,17 @@ export default function CreateEditPO() {
     const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
     const [vendorSearchQuery, setVendorSearchQuery] = useState('');
     const vendorDropdownRef = useRef(null);
+    const [openProductDropdownId, setOpenProductDropdownId] = useState(null);
+    const [productSearchQuery, setProductSearchQuery] = useState('');
+    const productDropdownRef = useRef(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (vendorDropdownRef.current && !vendorDropdownRef.current.contains(event.target)) {
                 setIsVendorDropdownOpen(false);
+            }
+            if (productDropdownRef.current && !productDropdownRef.current.contains(event.target)) {
+                setOpenProductDropdownId(null);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -59,37 +70,51 @@ export default function CreateEditPO() {
     }, []);
 
     useEffect(() => {
-        if (!vendor) {
-            setProducts([]);
-            return;
-        }
-
-        // Only call API if vendor ID is a valid UUID to avoid 400 errors with mock data
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(vendor)) {
-            console.warn('Selected vendor ID is not a valid UUID. Mock data detected?', vendor);
-            setProducts([]);
-            return;
-        }
-
-        const loadVendorItems = async () => {
-            setIsLoadingProducts(true);
-            try {
-                const data = await fetchVendorProducts(vendor);
-                setProducts(Array.isArray(data) ? data : []);
-                if (!isEdit && items.length === 1 && !items[0].productId) {
-                   // Keep initial empty item
-                }
-            } catch (err) {
-                console.error('Failed to load vendor products:', err);
-                const errorMsg = err?.response?.data?.message || err?.message || 'Server error';
-                toast.error(`Could not load catalog: ${errorMsg}`);
-            } finally {
-                setIsLoadingProducts(false);
+        if (requestType === 'vendor') {
+            if (!vendor) {
+                setProducts([]);
+                return;
             }
-        };
-        loadVendorItems();
-    }, [vendor]);
+
+            // Only call API if vendor ID is a valid UUID to avoid 400 errors with mock data
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(vendor)) {
+                console.warn('Selected vendor ID is not a valid UUID. Mock data detected?', vendor);
+                setProducts([]);
+                return;
+            }
+
+            const loadVendorItems = async () => {
+                setIsLoadingProducts(true);
+                try {
+                    const data = await fetchVendorProducts(vendor);
+                    setProducts(Array.isArray(data) ? data : []);
+                } catch (err) {
+                    console.error('Failed to load vendor products:', err);
+                    const errorMsg = err?.response?.data?.message || err?.message || 'Server error';
+                    toast.error(`Could not load catalog: ${errorMsg}`);
+                } finally {
+                    setIsLoadingProducts(false);
+                }
+            };
+            loadVendorItems();
+        } else if (requestType === 'internal') {
+            const loadGlobalItems = async () => {
+                setIsLoadingProducts(true);
+                try {
+                    const data = await fetchProducts();
+                    setProducts(Array.isArray(data) ? data : []);
+                } catch (err) {
+                    console.error('Failed to load global products:', err);
+                    const errorMsg = err?.response?.data?.message || err?.message || 'Server error';
+                    toast.error(`Could not load catalog: ${errorMsg}`);
+                } finally {
+                    setIsLoadingProducts(false);
+                }
+            };
+            loadGlobalItems();
+        }
+    }, [vendor, requestType]);
 
     const updateItem = (id, field, val) =>
         setItems(it => it.map(item => {
@@ -121,6 +146,52 @@ export default function CreateEditPO() {
     const gstLabel = uniqueGstRates.length === 1 ? `GST (${uniqueGstRates[0]}%)` : `Total GST`;
 
     const submit = async () => {
+        if (requestType === 'internal') {
+            if (sourceOutletId === outletId) {
+                toast.error("Source and Destination outlets cannot be the same");
+                return;
+            }
+            if (activeItems.length === 0) {
+                toast.error("Please add at least one product");
+                return;
+            }
+            
+            setIsSubmitting(true);
+            try {
+                const getOutletName = (id) => {
+                    const map = {
+                        'HQ': 'HQ Warehouse',
+                        'O1': 'Main Branch',
+                        'O2': 'Bandra West Outlet',
+                        'O3': 'Powai Branch',
+                        'O4': 'Thane Branch'
+                    };
+                    return map[id] || 'Unknown';
+                };
+                
+                for (const item of activeItems) {
+                    await createSTO({
+                        productId: item.storeProductId || item.productId,
+                        sourceBranchName: getOutletName(sourceOutletId),
+                        destBranchName: getOutletName(outletId),
+                        transferQuantity: item.qty,
+                        transferDate: deliveryDate,
+                        transferMode: 'Internal Request',
+                        priority: 'Normal',
+                        capitalSaved: 0
+                    }, user?.id);
+                }
+                toast.success('Internal Transfer Request created successfully');
+                navigate(VENDOR_ROUTES.stockTransferAdvanced);
+            } catch (err) {
+                console.error('Failed to submit internal request:', err);
+                toast.error(err?.response?.data?.message || 'Failed to submit request');
+            } finally {
+                setIsSubmitting(false);
+            }
+            return;
+        }
+
         if (!vendor) {
             toast.error('Please select a vendor');
             return;
@@ -130,6 +201,7 @@ export default function CreateEditPO() {
         try {
             const payload = {
                 vendorId: vendor,
+                outletId: outletId,
                 paymentMode: 'CREDIT', 
                 invoiceDate: new Date().toISOString().split('T')[0],
                 status: 'pending',
@@ -186,17 +258,46 @@ export default function CreateEditPO() {
                         <VCard>
                             <h3 className={labelCls}>Order Configuration</h3>
                             <div className="space-y-4">
-                                <div className="relative" ref={vendorDropdownRef}>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Primary Vendor</label>
-                                    <div 
-                                        className={`${inputCls} cursor-pointer flex justify-between items-center`}
-                                        onClick={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
+                                {/* ── Request Type Toggle ── */}
+                                <div className="flex bg-slate-100 p-1 rounded-lg">
+                                    <button
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-md transition-all ${requestType === 'vendor' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        onClick={() => setRequestType('vendor')}
                                     >
-                                        <span className={vendor ? 'text-slate-700' : 'text-slate-500'}>{vendors.find(v => v.id === vendor)?.name || 'Select Vendor...'}</span>
-                                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isVendorDropdownOpen ? 'rotate-180' : ''}`} />
+                                        🏢 External Vendor
+                                    </button>
+                                    <button
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-md transition-all ${requestType === 'internal' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        onClick={() => setRequestType('internal')}
+                                    >
+                                        🏪 Internal Branch
+                                    </button>
+                                </div>
+
+                                {requestType === 'internal' ? (
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Request From Outlet</label>
+                                        <select value={sourceOutletId} onChange={e => setSourceOutletId(e.target.value)}
+                                            className={`${inputCls} appearance-none text-[12px]`}>
+                                            <option value="HQ">HQ (Central Warehouse)</option>
+                                            <option value="O1">Main Branch — Andheri</option>
+                                            <option value="O2">Bandra West Outlet</option>
+                                            <option value="O3">Powai Branch</option>
+                                            <option value="O4">Thane Branch</option>
+                                        </select>
                                     </div>
-                                    
-                                    <AnimatePresence>
+                                ) : (
+                                    <div className="relative" ref={vendorDropdownRef}>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Primary Vendor</label>
+                                        <div 
+                                            className={`${inputCls} cursor-pointer flex justify-between items-center`}
+                                            onClick={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
+                                        >
+                                            <span className={vendor ? 'text-slate-700' : 'text-slate-500'}>{vendors.find(v => v.id === vendor)?.name || 'Select Vendor...'}</span>
+                                            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isVendorDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </div>
+                                        
+                                        <AnimatePresence>
                                         {isVendorDropdownOpen && (
                                             <motion.div
                                                 initial={{ opacity: 0, y: -10 }}
@@ -255,6 +356,18 @@ export default function CreateEditPO() {
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Destination Outlet</label>
+                                    <select value={outletId} onChange={e => setOutletId(e.target.value)}
+                                        className={`${inputCls} appearance-none text-[12px]`}>
+                                        <option value="HQ">HQ (Central Warehouse)</option>
+                                        <option value="O1">Main Branch — Andheri</option>
+                                        <option value="O2">Bandra West Outlet</option>
+                                        <option value="O3">Powai Branch</option>
+                                        <option value="O4">Thane Branch</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Expected Delivery</label>
@@ -319,39 +432,79 @@ export default function CreateEditPO() {
                                         <div key={item.id} className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                                             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                                                 <div className="flex-1 w-full group flex flex-col justify-center">
-                                                    <div className="relative w-full">
-                                                        {/* Visual Layer: Icon + Label */}
-                                                        <div className="flex items-center gap-3 pointer-events-none absolute inset-0">
-                                                            <PlusCircle size={20} className={`${!vendor || isLoadingProducts ? 'text-slate-300' : 'text-blue-500 group-hover:scale-110'} transition-all`} />
-                                                            <span className={`text-[16px] font-bold ${!vendor || isLoadingProducts ? 'text-slate-400' : 'text-slate-800 group-hover:text-blue-600'} transition-colors`}>
-                                                                {items.find(it => it.id === item.id)?.description || 'Select Product...'}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Interactive Layer: Hidden Select */}
-                                                        <select
-                                                            value={item.productId}
-                                                            onChange={e => {
-                                                                const p = products.find(prod => prod.id === e.target.value);
-                                                                updateItem(item.id, 'productId', e.target.value);
-                                                                if (p) {
-                                                                    updateItem(item.id, 'description', p.productName);
-                                                                    updateItem(item.id, 'rate', p.purchasePrice || 0);
-                                                                    updateItem(item.id, 'unit', p.unitOfMeasure || 'PCS');
-                                                                    updateItem(item.id, 'gstRate', p.gstRate !== undefined ? p.gstRate : 18);
-                                                                    if (p.mappedProductId) {
-                                                                        updateItem(item.id, 'storeProductId', p.mappedProductId);
-                                                                    }
+                                                    <div className="relative w-full" ref={openProductDropdownId === item.id ? productDropdownRef : null}>
+                                                        <div 
+                                                            className={`flex items-center gap-3 p-2 -ml-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors ${(!vendor && requestType === 'vendor') || isLoadingProducts ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            onClick={() => {
+                                                                if ((!vendor && requestType === 'vendor') || isLoadingProducts) return;
+                                                                if (openProductDropdownId === item.id) {
+                                                                    setOpenProductDropdownId(null);
+                                                                } else {
+                                                                    setOpenProductDropdownId(item.id);
+                                                                    setProductSearchQuery('');
                                                                 }
                                                             }}
-                                                            disabled={!vendor || isLoadingProducts}
-                                                            className="w-full h-8 opacity-0 cursor-pointer disabled:cursor-not-allowed"
                                                         >
-                                                            <option value="">{isLoadingProducts ? 'Loading Catalog...' : !vendor ? 'Select Vendor First' : 'Select Product...'}</option>
-                                                            {products.map(p => (
-                                                                <option key={p.id} value={p.id}>{p.productName}</option>
-                                                            ))}
-                                                        </select>
+                                                            <PlusCircle size={20} className={`${(!vendor && requestType === 'vendor') || isLoadingProducts ? 'text-slate-300' : 'text-blue-500 group-hover:scale-110'} transition-all`} />
+                                                            <span className={`text-[16px] font-bold ${(!vendor && requestType === 'vendor') || isLoadingProducts ? 'text-slate-400' : 'text-slate-800 group-hover:text-blue-600'} transition-colors flex-1`}>
+                                                                {items.find(it => it.id === item.id)?.description || 'Select Product...'}
+                                                            </span>
+                                                            <ChevronDown size={16} className={`text-slate-400 transition-transform ${openProductDropdownId === item.id ? 'rotate-180' : ''}`} />
+                                                        </div>
+
+                                                        <AnimatePresence>
+                                                            {openProductDropdownId === item.id && (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, y: -10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, y: -10 }}
+                                                                    transition={{ duration: 0.15 }}
+                                                                    className="absolute z-50 w-[300px] mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden left-0"
+                                                                >
+                                                                    <div className="p-2 border-b border-slate-100 bg-slate-50">
+                                                                        <div className="relative">
+                                                                            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                                            <input 
+                                                                                type="text" 
+                                                                                autoFocus
+                                                                                placeholder="Search products..." 
+                                                                                value={productSearchQuery}
+                                                                                onChange={(e) => setProductSearchQuery(e.target.value)}
+                                                                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-md text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="max-h-60 overflow-y-auto py-1">
+                                                                        {products.filter(p => (p.productName || p.name || '').toLowerCase().includes(productSearchQuery.toLowerCase())).length === 0 ? (
+                                                                            <div className="px-4 py-3 text-center text-[12px] text-slate-500">
+                                                                                No products found
+                                                                            </div>
+                                                                        ) : (
+                                                                            products.filter(p => (p.productName || p.name || '').toLowerCase().includes(productSearchQuery.toLowerCase())).map(p => (
+                                                                                <div 
+                                                                                    key={p.id} 
+                                                                                    className={`px-4 py-2 text-[13px] cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${item.productId === p.id ? 'bg-blue-50/50 text-blue-600 font-medium' : 'text-slate-700'}`}
+                                                                                    onClick={() => {
+                                                                                        updateItem(item.id, 'productId', p.id);
+                                                                                        updateItem(item.id, 'description', p.productName || p.name);
+                                                                                        updateItem(item.id, 'rate', p.purchasePrice || p.price || 0);
+                                                                                        updateItem(item.id, 'unit', p.unitOfMeasure || 'PCS');
+                                                                                        updateItem(item.id, 'gstRate', p.gstRate !== undefined ? p.gstRate : 18);
+                                                                                        if (p.mappedProductId) {
+                                                                                            updateItem(item.id, 'storeProductId', p.mappedProductId);
+                                                                                        }
+                                                                                        setOpenProductDropdownId(null);
+                                                                                    }}
+                                                                                >
+                                                                                    <span>{p.productName || p.name}</span>
+                                                                                    {item.productId === p.id && <Check size={14} className="text-blue-600" />}
+                                                                                </div>
+                                                                            ))
+                                                                        )}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
                                                     </div>
                                                     
                                                     <div className="text-[10px] font-bold mt-2.5 uppercase tracking-wider ml-8 flex items-center gap-2">
@@ -418,7 +571,7 @@ export default function CreateEditPO() {
                                     <PrimaryBtn onClick={submit} disabled={isSubmitting} className="!px-4 !py-1.5 !text-[9px] !shadow-blue-200 shadow-lg disabled:opacity-50">
                                         <div className="flex items-center gap-2">
                                             {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />}
-                                            <span>{isEdit ? 'Update PO' : 'Submit PO'}</span>
+                                            <span>{requestType === 'internal' ? 'Submit Request' : (isEdit ? 'Update PO' : 'Submit PO')}</span>
                                         </div>
                                     </PrimaryBtn>
                                 </div>

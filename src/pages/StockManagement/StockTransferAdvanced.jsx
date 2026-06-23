@@ -1,646 +1,1071 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search,
-    ArrowRightLeft,
-    Calendar,
-    Filter,
-    Store,
-    Package,
-    Truck,
-    AlertCircle,
-    Plus,
-    History,
-    TrendingUp,
-    Clock,
-    FileText,
-    CheckCircle2
+    ArrowRight, Package, Search, Truck, CheckCircle2,
+    FileText, Printer, X, Plus, Minus, Building2,
+    Store, Warehouse, ChevronRight, Clock, AlertTriangle,
+    ArrowRightLeft, RefreshCw, MapPin, Zap, Filter,
+    TrendingUp, ShoppingCart, Send, Eye
 } from 'lucide-react';
-import {
-    PageHeader,
-    VCard,
-    SectionTitle,
-    PrimaryBtn,
-    SecondaryBtn,
-    VendorBreadcrumb,
-    StatusBadge
-} from '../Vendors/VendorComponents';
-import toast from 'react-hot-toast';
-import { fetchSTOs, createSTO, updateSTOStatus, fetchProducts } from '../../api/vendorService';
+import { fetchProducts, createSTO, fetchSTOs, updateSTOStatus } from '../../api/vendorService';
 import useAuthStore from '../../store/useAuthStore';
+import toast from 'react-hot-toast';
 
-const STORES = ['Main Warehouse', 'Downtown Store', 'Suburb Outlet', 'Airport Hub', 'Regional Distribution Center'];
-const TRANSFER_MODES = ['Own Vehicle', 'Third-party Logistics', 'Manual Carry (small items)'];
-const PRIORITIES = ['Normal', 'Urgent', 'Critical'];
+/* ─────────────────────────────────────────────────────────────────────────────
+   Scoped Styles
+───────────────────────────────────────────────────────────────────────────── */
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-export default function StockTransferAdvanced() {
-    // Search & Filter State
-    const [searchSKU, setSearchSKU] = useState('');
-    const [sourceStoreFilter, setSourceStoreFilter] = useState('All Stores (auto-identify surplus)');
-    const [destStoreFilter, setDestStoreFilter] = useState('All Stores (auto-identify shortage)');
-    const [varianceThreshold, setVarianceThreshold] = useState('10');
-    const [dateRange, setDateRange] = useState('This Month');
+  .sta-root * { box-sizing: border-box; }
+  .sta-root { font-family: 'Inter', sans-serif; }
 
-    // Creation Form State
-    const [sourceStore, setSourceStore] = useState('');
-    const [destStore, setDestStore] = useState('');
-    const [selectedProduct, setSelectedProduct] = useState(null);
-    const [searchProductQuery, setSearchProductQuery] = useState('');
-    const [showProductDropdown, setShowProductDropdown] = useState(false);
-    const [transferQty, setTransferQty] = useState('');
-    const [transferDate, setTransferDate] = useState('');
-    const [transferMode, setTransferMode] = useState('');
-    const [priority, setPriority] = useState('Normal');
-    const [notes, setNotes] = useState('');
-    const [stos, setStos] = useState([]);
-    const [products, setProducts] = useState([]);
+  /* Hide number input spinners */
+  .sta-qty-input::-webkit-inner-spin-button,
+  .sta-qty-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .sta-qty-input { -moz-appearance: textfield; }
 
-    const { user } = useAuthStore();
+  /* Custom scrollbar */
+  .sta-scroll::-webkit-scrollbar { width: 4px; }
+  .sta-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sta-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+  .sta-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-    useEffect(() => {
-        loadSTOs();
-        loadProducts();
-    }, []);
+  /* Outlet card hover */
+  .sta-outlet-card { transition: all 0.18s ease; }
+  .sta-outlet-card:hover:not(.disabled) { transform: translateY(-1px); }
 
-    const loadSTOs = () => {
-        fetchSTOs()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                setStos(list);
-            })
-            .catch(err => {
-                console.error("Failed to load STOs from backend", err);
-            });
+  /* Product row hover */
+  .sta-product-row { transition: all 0.15s ease; }
+
+  /* Table row hover */
+  .sta-tr:hover { background: #f8fafc; }
+
+  /* Pulse dot */
+  @keyframes sta-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+  .sta-pulse { animation: sta-pulse 2s ease-in-out infinite; }
+
+  /* Spin */
+  @keyframes sta-spin { to { transform: rotate(360deg); } }
+  .sta-spin { animation: sta-spin 0.8s linear infinite; }
+
+  /* Slide-in */
+  @keyframes sta-slide-in { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+  .sta-slide-in { animation: sta-slide-in 0.22s ease; }
+`;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Constants
+───────────────────────────────────────────────────────────────────────────── */
+const OUTLETS = [
+    { id: 'HQ', name: 'HQ Warehouse',  sub: 'Central Store',     icon: Warehouse,  color: '#6366f1', light: '#eef2ff', ring: '#c7d2fe' },
+    { id: 'O1', name: 'Main Branch',   sub: 'Andheri, Mumbai',   icon: Building2,  color: '#0ea5e9', light: '#f0f9ff', ring: '#bae6fd' },
+    { id: 'O2', name: 'Bandra West',   sub: 'Mumbai',            icon: Store,      color: '#10b981', light: '#f0fdf4', ring: '#a7f3d0' },
+    { id: 'O3', name: 'Powai Branch',  sub: 'Mumbai',            icon: Store,      color: '#f59e0b', light: '#fffbeb', ring: '#fde68a' },
+    { id: 'O4', name: 'Thane Branch',  sub: 'Thane',             icon: Store,      color: '#8b5cf6', light: '#f5f3ff', ring: '#ddd6fe' },
+];
+
+const STATUS_CFG = {
+    DRAFT:      { label: 'Draft',      color: '#64748b', bg: '#f1f5f9', dot: '#94a3b8' },
+    IN_TRANSIT: { label: 'In Transit', color: '#0ea5e9', bg: '#e0f2fe', dot: '#0ea5e9' },
+    RECEIVED:   { label: 'Received',   color: '#10b981', bg: '#d1fae5', dot: '#10b981' },
+    CANCELLED:  { label: 'Cancelled',  color: '#ef4444', bg: '#fee2e2', dot: '#ef4444' },
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Challan Modal
+───────────────────────────────────────────────────────────────────────────── */
+function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
+    const challanNo = `DC-${Date.now().toString().slice(-8)}`;
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const printRef = useRef();
+
+    const handlePrint = () => {
+        const content = printRef.current.innerHTML;
+        const win = window.open('', '', 'width=860,height=660');
+        win.document.write(`<html><head><title>Delivery Challan – ${challanNo}</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+            *{box-sizing:border-box}
+            body{font-family:'Inter',Arial,sans-serif;padding:40px;font-size:13px;color:#1e293b;background:#fff}
+            table{width:100%;border-collapse:collapse;margin:20px 0}
+            th,td{border:1px solid #e2e8f0;padding:10px 14px;text-align:left}
+            th{background:#f8fafc;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#64748b}
+            .hdr{border-bottom:3px solid #6366f1;margin-bottom:24px;padding-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
+            .title{font-size:26px;font-weight:900;color:#1e293b;letter-spacing:-0.5px}
+            .sub{color:#94a3b8;font-size:11px;margin-top:4px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+            .route{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+            .rb{padding:14px 18px;border-radius:10px;border:1.5px solid #e2e8f0}
+            .rb-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+            .rb-name{font-size:16px;font-weight:900}
+            .rb-sub{font-size:11px;font-weight:600;margin-top:2px;color:#64748b}
+            .total-row td{font-weight:800;background:#f8fafc}
+            .footer{margin-top:48px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px}
+            .sig{border-top:2px solid #cbd5e1;padding-top:10px;margin-top:32px;font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+            .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe}
+        </style>
+        </head><body>${content}</body></html>`);
+        win.document.close();
+        win.print();
     };
 
-    const loadProducts = () => {
-        fetchProducts()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                setProducts(list);
-            })
-            .catch(err => {
-                console.error("Failed to load products from backend", err);
-            });
-    };
-
-    const handleCreateSTO = () => {
-        if (!sourceStore || !destStore || !transferQty || !selectedProduct) {
-            toast.error('Please fill in all mandatory fields (*) and select a product');
-            return;
-        }
-
-        if (sourceStore === destStore) {
-            toast.error('Source and Destination stores cannot be the same');
-            return;
-        }
-
-        const qty = parseFloat(transferQty);
-        if (isNaN(qty) || qty <= 0) {
-            toast.error('Transfer quantity must be a positive number');
-            return;
-        }
-
-        createSTO({
-            productId: selectedProduct.id,
-            sourceBranchName: sourceStore,
-            destBranchName: destStore,
-            transferQuantity: qty,
-            transferDate: transferDate || new Date().toISOString().split('T')[0],
-            transferMode: transferMode || 'Own Vehicle',
-            priority: priority,
-            capitalSaved: 0
-        }, user?.id)
-        .then(() => {
-            toast.success('STO saved to Spring Boot database! 🚀');
-            setTransferQty('');
-            setNotes('');
-            setSelectedProduct(null);
-            setSearchProductQuery('');
-            loadSTOs();
-        })
-        .catch(err => {
-            console.error("Failed to create STO in backend", err);
-            toast.error(err.response?.data?.message || 'Failed to create STO in backend');
-        });
-    };
-
-    const handleUpdateStatus = (id, newStatus) => {
-        updateSTOStatus(id, newStatus, user?.id)
-            .then(() => {
-                toast.success(`STO updated to ${newStatus}! ✅`);
-                loadSTOs();
-            })
-            .catch(err => {
-                console.error("Failed to update STO status", err);
-                toast.error(err.response?.data?.message || "Failed to update status on server");
-            });
-    };
-
-    const filteredSTOs = stos.filter(sto => {
-        // Filter by SKU / Product Name
-        if (searchSKU && !sto.productName?.toLowerCase().includes(searchSKU.toLowerCase())) {
-            return false;
-        }
-        // Filter by Source Store
-        if (sourceStoreFilter !== 'All Stores (auto-identify surplus)' && sto.sourceBranchName !== sourceStoreFilter) {
-            return false;
-        }
-        // Filter by Destination Store
-        if (destStoreFilter !== 'All Stores (auto-identify shortage)' && sto.destBranchName !== destStoreFilter) {
-            return false;
-        }
-        return true;
-    });
-
-    const breadcrumbs = [
-        { label: 'Inventory', path: '/inventory' },
-        { label: 'Stock Management', path: '#' },
-        { label: 'Inter-Store Transfer' }
-    ];
+    if (!isOpen) return null;
+    const totalItems = cart.reduce((a, c) => a + c.qty, 0);
 
     return (
-        <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
-            <PageHeader
-                title="Inter-Store Stock Transfer (STO) Screen"
-                subtitle="Comparison dashboard for identifying surplus/shortage across stores with one-click STO generation."
-                badge="High Performance"
-            />
-
-            {/* SECTION 1: STO SEARCH & FILTER CONTROLS */}
-            <VCard className="mb-6">
-                <SectionTitle>STO Search & Filter Controls</SectionTitle>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
-                    {/* Search / Product */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Search STO Product</label>
-                        <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Filter log by product..."
-                                className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                value={searchSKU}
-                                onChange={e => setSearchSKU(e.target.value)}
-                            />
+        <div style={{
+            position: 'fixed', inset: 0, zIndex: 300,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+            backdropFilter: 'blur(10px)', background: 'rgba(15,23,42,0.65)'
+        }}>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.93, y: 24 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.93 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                style={{
+                    background: '#fff', borderRadius: 24, width: '100%', maxWidth: 680,
+                    overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '92vh',
+                    boxShadow: '0 32px 80px rgba(0,0,0,0.22)'
+                }}
+            >
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FileText size={20} color="#fff" />
                         </div>
-                        <p className="text-[9px] text-slate-400 font-medium leading-tight">Filters active transfers table dynamically</p>
-                    </div>
-
-                    {/* Source Store */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Source Store</label>
-                        <div className="relative">
-                            <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <select
-                                className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                value={sourceStoreFilter}
-                                onChange={e => setSourceStoreFilter(e.target.value)}
-                            >
-                                <option>All Stores (auto-identify surplus)</option>
-                                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                        <div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Delivery Challan</div>
+                            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, fontFamily: 'monospace', marginTop: 1 }}>{challanNo}</div>
                         </div>
                     </div>
-
-                    {/* Destination Store */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destination Store</label>
-                        <div className="relative">
-                            <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <select
-                                className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                value={destStoreFilter}
-                                onChange={e => setDestStoreFilter(e.target.value)}
-                            >
-                                <option>All Stores (auto-identify shortage)</option>
-                                {STORES.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Stock Variance Threshold */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock Variance Threshold</label>
-                        <div className="relative">
-                            <TrendingUp size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="number"
-                                className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                value={varianceThreshold}
-                                onChange={e => setVarianceThreshold(e.target.value)}
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">%</span>
-                        </div>
-                        <p className="text-[9px] text-slate-400 font-medium leading-tight">Min surplus % above max level to flag for STO</p>
-                    </div>
-
-                    {/* Date Range */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date Range</label>
-                        <div className="relative">
-                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <select
-                                className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                value={dateRange}
-                                onChange={e => setDateRange(e.target.value)}
-                            >
-                                <option>This Month</option>
-                                <option>Last Month</option>
-                                <option>Last 90 Days</option>
-                                <option>Custom Range</option>
-                            </select>
-                        </div>
-                    </div>
+                    <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, background: '#f1f5f9', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <X size={16} color="#64748b" />
+                    </button>
                 </div>
-            </VCard>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Comparison Dashboard (Visual Aid) */}
-                <div className="lg:col-span-4 space-y-6">
-                    <VCard className="h-full bg-slate-900 text-white border-0">
-                        <div className="flex items-center justify-between mb-6">
-                            <SectionTitle><span className="text-slate-400">Comparison Dashboard</span></SectionTitle>
-                            <span className="text-[10px] font-bold bg-blue-500 text-white px-2 py-0.5 rounded-lg animate-pulse">LIVE ANALYTICS</span>
+                {/* Body */}
+                <div ref={printRef} style={{ flex: 1, overflowY: 'auto', padding: 28 }} className="sta-scroll">
+                    <div className="hdr" style={{ borderBottom: '3px solid #6366f1', paddingBottom: 18, marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div className="title" style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>DELIVERY CHALLAN</div>
+                            <div className="sub" style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: 4 }}>Internal Stock Transfer Document</div>
                         </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Challan No.</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', fontFamily: 'monospace', marginTop: 2 }}>{challanNo}</div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginTop: 2 }}>{today}</div>
+                        </div>
+                    </div>
 
-                        <div className="space-y-6">
-                            {STORES.map((s, i) => (
-                                <div key={i} className="group cursor-pointer">
-                                    <div className="flex justify-between items-end mb-2">
-                                        <div>
-                                            <div className="text-[9px] font-bold text-slate-500 uppercase ">{i === 0 ? 'Surplus Source' : i === 1 ? 'Target Destination' : 'Balanced'}</div>
-                                            <div className="text-[13px] font-bold group-hover:text-blue-400 transition-colors">{s}</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className={`text-[15px] font-extrabold ${i === 0 ? 'text-emerald-400' : i === 1 ? 'text-rose-400' : 'text-slate-400'}`}>
-                                                {i === 0 ? '+142' : i === 1 ? '-58' : '405'}
-                                            </div>
-                                            <div className="text-[8px] font-bold text-slate-500">UNITS</div>
-                                        </div>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full transition-all duration-1000 ${i === 0 ? 'bg-emerald-500 w-[95%]' : i === 1 ? 'bg-rose-500 w-[20%]' : 'bg-slate-600 w-[60%]'}`}
-                                        />
-                                    </div>
-                                </div>
+                    {/* Route */}
+                    <div className="route" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'center', marginBottom: 24 }}>
+                        <div className="rb" style={{ padding: '14px 18px', borderRadius: 12, background: fromOutlet?.light, border: `1.5px solid ${fromOutlet?.ring}` }}>
+                            <div className="rb-label" style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: fromOutlet?.color, marginBottom: 6 }}>📦 From</div>
+                            <div className="rb-name" style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>{fromOutlet?.name}</div>
+                            <div className="rb-sub" style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 2 }}>{fromOutlet?.sub}</div>
+                        </div>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <ArrowRight size={16} color="#fff" />
+                        </div>
+                        <div className="rb" style={{ padding: '14px 18px', borderRadius: 12, background: toOutlet?.light, border: `1.5px solid ${toOutlet?.ring}` }}>
+                            <div className="rb-label" style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: toOutlet?.color, marginBottom: 6 }}>🏪 To</div>
+                            <div className="rb-name" style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>{toOutlet?.name}</div>
+                            <div className="rb-sub" style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 2 }}>{toOutlet?.sub}</div>
+                        </div>
+                    </div>
+
+                    {/* Items Table */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                        <thead>
+                            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                                {['#', 'Product Name', 'SKU / Barcode', 'Qty', 'Unit'].map((h, i) => (
+                                    <th key={h} style={{ padding: '10px 14px', textAlign: i === 3 ? 'right' : 'left', fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {cart.map((item, i) => (
+                                <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#94a3b8', fontSize: 12 }}>{i + 1}</td>
+                                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#1e293b', fontSize: 13 }}>{item.name}</td>
+                                    <td style={{ padding: '10px 14px', color: '#64748b', fontFamily: 'monospace', fontSize: 12 }}>{item.sku || '—'}</td>
+                                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#6366f1', fontSize: 15, textAlign: 'right' }}>{item.qty}</td>
+                                    <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 12 }}>Units</td>
+                                </tr>
                             ))}
-                        </div>
+                            <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+                                <td colSpan={3} style={{ padding: '12px 14px', fontWeight: 800, color: '#1e293b', textAlign: 'right', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Total Items</td>
+                                <td style={{ padding: '12px 14px', fontWeight: 900, color: '#0f172a', fontSize: 18, textAlign: 'right' }}>{totalItems}</td>
+                                <td />
+                            </tr>
+                        </tbody>
+                    </table>
 
-                        <div className="mt-10 rounded-2xl bg-white border border-slate-200 shadow-lg overflow-hidden">
-                            {/* Header strip */}
-                            <div className="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-500 flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sm">💡</div>
-                                <div>
-                                    <div className="text-[11px] font-bold text-white uppercase  leading-none">Smart Recommendation</div>
-                                    <div className="text-[9px] text-blue-200 font-bold mt-0.5">AI-Optimised Transfer Suggestion</div>
+                    {/* Signatures */}
+                    <div className="footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginTop: 52 }}>
+                        {['Prepared By', 'Dispatched By', 'Received By'].map(label => (
+                            <div key={label}>
+                                <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: 10, marginTop: 32 }}>
+                                    <div style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</div>
+                                    <div style={{ fontSize: 11, color: '#e2e8f0', marginTop: 4, fontStyle: 'italic' }}>Sign &amp; Stamp</div>
                                 </div>
-                                <span className="ml-auto px-2 py-0.5 bg-white/20 text-white text-[9px] font-bold rounded-full uppercase tracking-wider border border-white/30">Auto</span>
                             </div>
-
-                            {/* Body */}
-                            <div className="px-5 py-4 text-slate-900">
-                                {/* Stats row */}
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    <div className="text-center p-2.5 rounded-xl bg-blue-50 border border-blue-100">
-                                        <div className="text-[18px] font-bold text-blue-700 leading-none">60</div>
-                                        <div className="text-[8px] font-bold text-blue-500 uppercase tracking-wider mt-1">Units</div>
-                                    </div>
-                                    <div className="text-center p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                                        <div className="text-[9px] font-bold text-slate-700 leading-tight">Main Warehouse</div>
-                                        <div className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-1">Source</div>
-                                    </div>
-                                    <div className="text-center p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
-                                        <div className="text-[9px] font-bold text-emerald-700 leading-tight">Downtown</div>
-                                        <div className="text-[7px] font-bold text-emerald-500 uppercase tracking-wider mt-1">Destination</div>
-                                    </div>
-                                </div>
-
-                                {/* Recommendation text */}
-                                <p className="text-[11px] text-slate-500 leading-relaxed font-bold mb-1">
-                                    Moving <span className="text-slate-800">60 units</span> from <span className="text-slate-800">Main Warehouse</span> → <span className="text-slate-800">Downtown Store</span>
-                                </p>
-                                <div className="flex items-center gap-1.5 mb-4">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span className="text-[11px] font-bold text-emerald-600">Optimises delivery latency by 14%</span>
-                                </div>
-
-                                <button
-                                    onClick={() => {
-                                        setSourceStore('Main Warehouse');
-                                        setDestStore('Downtown Store');
-                                        setTransferQty('60');
-                                        if (products.length > 0) {
-                                            const p = products[0];
-                                            setSelectedProduct(p);
-                                            setSearchProductQuery(`${p.name} (${p.sku})`);
-                                        }
-                                        toast.success('Suggestion applied! STO pre-filled.');
-                                    }}
-                                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl transition-all uppercase  shadow-sm hover:shadow-md hover:shadow-blue-100">
-                                    Apply Suggestion
-                                </button>
-                            </div>
-                        </div>
-                    </VCard>
+                        ))}
+                    </div>
                 </div>
 
-                {/* STO Creation Form */}
-                <div className="lg:col-span-8">
-                    <VCard>
-                        <SectionTitle>STO Creation Form</SectionTitle>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                            {/* Source Store */}
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Source Store <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <select
-                                        className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                        value={sourceStore}
-                                        onChange={e => setSourceStore(e.target.value)}
-                                    >
-                                        <option value="">Select Store with surplus...</option>
-                                        {STORES.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
+                {/* Footer */}
+                <div style={{ display: 'flex', gap: 12, padding: '16px 28px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                    <button onClick={handlePrint} style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        padding: '12px 0', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                        color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(99,102,241,0.35)', transition: 'all 0.2s'
+                    }}>
+                        <Printer size={16} /> Print Challan
+                    </button>
+                    <button onClick={onClose} style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '12px 0', background: '#fff', border: '2px solid #e2e8f0',
+                        color: '#64748b', fontSize: 13, fontWeight: 700, borderRadius: 12, cursor: 'pointer'
+                    }}>
+                        Close
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Outlet Selector Card
+───────────────────────────────────────────────────────────────────────────── */
+function OutletCard({ outlet, isSelected, onClick, disabled }) {
+    const Icon = outlet.icon;
+    return (
+        <div
+            onClick={disabled ? undefined : onClick}
+            className="sta-outlet-card"
+            style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '11px 14px', borderRadius: 12, cursor: disabled ? 'not-allowed' : 'pointer',
+                border: isSelected ? `2px solid ${outlet.color}` : '2px solid #f1f5f9',
+                background: isSelected ? outlet.light : '#fff',
+                opacity: disabled ? 0.38 : 1,
+                boxShadow: isSelected ? `0 4px 16px ${outlet.color}22` : 'none',
+            }}
+        >
+            <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isSelected ? outlet.color : '#f1f5f9',
+                transition: 'all 0.18s'
+            }}>
+                <Icon size={17} color={isSelected ? '#fff' : '#94a3b8'} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? outlet.color : '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{outlet.name}</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{outlet.sub}</div>
+            </div>
+            {isSelected && <CheckCircle2 size={16} color={outlet.color} style={{ flexShrink: 0 }} />}
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Status Badge
+───────────────────────────────────────────────────────────────────────────── */
+function StatusBadge({ status }) {
+    const cfg = STATUS_CFG[status] || STATUS_CFG.DRAFT;
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 10px', borderRadius: 99,
+            background: cfg.bg, color: cfg.color,
+            fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap'
+        }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, display: 'inline-block' }} />
+            {cfg.label}
+        </span>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Main Component
+───────────────────────────────────────────────────────────────────────────── */
+export default function StockTransferAdvanced() {
+    const { user } = useAuthStore();
+
+    const [fromOutletId, setFromOutletId] = useState('HQ');
+    const [toOutletId, setToOutletId]     = useState('O3');
+
+    const [products, setProducts]             = useState([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
+    const [searchQuery, setSearchQuery]       = useState('');
+
+    const [cart, setCart]       = useState([]);
+
+    const [stos, setStos]           = useState([]);
+    const [loadingSTOs, setLoadingSTOs] = useState(false);
+    const [stoSearch, setStoSearch]   = useState('');
+
+    const [showChallan, setShowChallan] = useState(false);
+    const [submitting, setSubmitting]   = useState(false);
+
+    const fromOutlet = OUTLETS.find(o => o.id === fromOutletId);
+    const toOutlet   = OUTLETS.find(o => o.id === toOutletId);
+    const routeOk    = toOutletId && fromOutletId !== toOutletId;
+
+    /* ── Load products ── */
+    useEffect(() => {
+        setLoadingProducts(true);
+        fetchProducts()
+            .then(res => { const l = Array.isArray(res?.data ?? res) ? (res?.data ?? res) : []; setProducts(l); })
+            .catch(() => setProducts([]))
+            .finally(() => setLoadingProducts(false));
+    }, []);
+
+    /* ── Load STOs ── */
+    const loadSTOs = () => {
+        setLoadingSTOs(true);
+        fetchSTOs()
+            .then(res => { const l = Array.isArray(res?.data ?? res) ? (res?.data ?? res) : []; setStos(l); })
+            .catch(() => setStos([]))
+            .finally(() => setLoadingSTOs(false));
+    };
+    useEffect(() => { loadSTOs(); }, []);
+
+    /* ── Filtered products ── */
+    const filteredProducts = products.filter(p => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (p.name || '').toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q);
+    });
+
+    /* ── Cart actions ── */
+    const addToCart = (product) => setCart(prev => {
+        const exists = prev.find(i => i.id === product.id);
+        if (exists) return prev.map(i => i.id === product.id ? { ...i, qty: Math.min(i.qty + 1, i.maxQty) } : i);
+        return [...prev, { id: product.id, name: product.name, sku: product.sku || product.barcode || '', qty: 1, maxQty: product.currentStock || 999 }];
+    });
+
+    const updateCartQty = (id, delta) => setCart(prev =>
+        prev.map(i => i.id === id ? { ...i, qty: Math.max(1, Math.min(i.maxQty, i.qty + delta)) } : i)
+    );
+
+    const setCartQty = (id, val) => {
+        const num = parseInt(val, 10);
+        if (isNaN(num) || num < 1) return;
+        setCart(prev => prev.map(i => i.id === id ? { ...i, qty: Math.min(i.maxQty, num) } : i));
+    };
+
+    const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
+
+    /* ── Dispatch ── */
+    const handleDispatch = async () => {
+        if (cart.length === 0) { toast.error('Add at least one item to the cart.'); return; }
+        if (!routeOk) { toast.error('Select different source & destination outlets.'); return; }
+        setSubmitting(true);
+        try {
+            for (const item of cart) {
+                await createSTO({
+                    productId: item.id,
+                    sourceBranchName: fromOutlet.name,
+                    destBranchName: toOutlet.name,
+                    transferQuantity: item.qty,
+                    transferDate: new Date().toISOString().split('T')[0],
+                    transferMode: 'Own Vehicle',
+                    priority: 'Normal',
+                    capitalSaved: 0
+                }, user?.id);
+            }
+            toast.success(`🚛 ${cart.length} STO${cart.length > 1 ? 's' : ''} dispatched successfully!`);
+            setCart([]);
+            loadSTOs();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to create STO. Try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    /* ── Status update ── */
+    const handleStatusUpdate = (id, newStatus) => {
+        updateSTOStatus(id, newStatus, user?.id)
+            .then(() => { toast.success(`STO updated to ${newStatus}!`); loadSTOs(); })
+            .catch(err => toast.error(err?.response?.data?.message || 'Failed to update status'));
+    };
+
+    /* ── Filtered STO log ── */
+    const filteredSTOs = stos.filter(s => {
+        if (!stoSearch) return true;
+        const q = stoSearch.toLowerCase();
+        return (s.productName || '').toLowerCase().includes(q)
+            || (s.stoNumber || '').toLowerCase().includes(q)
+            || (s.sourceBranchName || '').toLowerCase().includes(q)
+            || (s.destBranchName || '').toLowerCase().includes(q);
+    });
+
+    const totalCartQty = cart.reduce((a, c) => a + c.qty, 0);
+
+    /* ───────────────────────────────────────────────────────────────────────── */
+    return (
+        <>
+            <style>{styles}</style>
+            <div className="sta-root" style={{ minHeight: '100vh', background: '#f0f4f8', padding: '24px 20px' }}>
+
+                {/* ── Page Header ─────────────────────────────────────── */}
+                <div style={{ marginBottom: 28 }}>
+                    {/* Breadcrumb */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 14 }}>
+                        <span style={{ color: '#64748b' }}>Inventory</span>
+                        <ChevronRight size={12} />
+                        <span style={{ color: '#64748b' }}>Stock Management</span>
+                        <ChevronRight size={12} />
+                        <span style={{ color: '#6366f1' }}>Stock Transfer</span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 14,
+                                    background: 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 6px 18px rgba(99,102,241,0.35)'
+                                }}>
+                                    <ArrowRightLeft size={20} color="#fff" />
                                 </div>
-                                <p className="text-[10px] text-slate-400 font-medium italic">Pre-filled from comparison view; editable</p>
+                                <div>
+                                    <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.6px', margin: 0 }}>Stock Transfer</h1>
+                                    <p style={{ fontSize: 13, color: '#64748b', margin: 0, fontWeight: 500 }}>Dispatch stock between outlets &amp; generate delivery challans</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Header actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {/* Live badge */}
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: 7,
+                                padding: '7px 14px', borderRadius: 99,
+                                background: '#f0fdf4', border: '1.5px solid #bbf7d0'
+                            }}>
+                                <span className="sta-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+                                <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>Live Sync</span>
                             </div>
 
-                            {/* Destination Store */}
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Destination Store <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <Store size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <select
-                                        className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                        value={destStore}
-                                        onChange={e => setDestStore(e.target.value)}
-                                    >
-                                        <option value="">Select Store with shortage...</option>
-                                        {STORES.filter(s => s !== sourceStore).map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-medium italic">Cannot be same as source store</p>
-                            </div>
+                            {/* Refresh */}
+                            <button onClick={loadSTOs} style={{
+                                width: 38, height: 38, borderRadius: 10, background: '#fff',
+                                border: '1.5px solid #e2e8f0', cursor: 'pointer', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+                            }}>
+                                <RefreshCw size={15} color="#64748b" />
+                            </button>
+                        </div>
+                    </div>
 
-                            {/* Searchable Product Autocomplete Dropdown */}
-                            <div className="space-y-2 relative">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Select Catalog Product <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <Package size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search product by name or SKU..."
-                                        className="w-full pl-9 pr-24 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                        value={searchProductQuery}
-                                        onChange={e => {
-                                            setSearchProductQuery(e.target.value);
-                                            setShowProductDropdown(true);
-                                        }}
-                                        onFocus={() => setShowProductDropdown(true)}
-                                        onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+                    {/* Step indicator */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 20, background: '#fff', borderRadius: 14, padding: '12px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                        {[
+                            { step: 1, label: 'Select Route', sub: 'Choose source & destination', done: routeOk },
+                            { step: 2, label: 'Add Products', sub: 'Pick items to transfer', done: cart.length > 0 },
+                            { step: 3, label: 'Review Cart', sub: 'Set quantities', done: cart.length > 0 && routeOk },
+                            { step: 4, label: 'Dispatch', sub: 'Create STO & send', done: false },
+                        ].map((s, idx) => (
+                            <React.Fragment key={s.step}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                    <div style={{
+                                        width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        background: s.done ? '#6366f1' : '#f1f5f9',
+                                        color: s.done ? '#fff' : '#94a3b8',
+                                        fontWeight: 800, fontSize: 13, flexShrink: 0
+                                    }}>
+                                        {s.done ? <CheckCircle2 size={16} color="#fff" /> : s.step}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: s.done ? '#6366f1' : '#475569' }}>{s.label}</div>
+                                        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{s.sub}</div>
+                                    </div>
+                                </div>
+                                {idx < 3 && (
+                                    <div style={{ flex: 1, minWidth: 24, height: 2, background: idx < 2 && s.done ? 'linear-gradient(90deg,#6366f1,#8b5cf6)' : '#e2e8f0', margin: '0 12px', borderRadius: 2 }} />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
+
+                {/* ── Main 3-panel grid ───────────────────────────────── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 340px', gap: 16, marginBottom: 20, alignItems: 'start' }}>
+
+                    {/* ── LEFT: Route Selector ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                        {/* FROM panel */}
+                        <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+                            <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <MapPin size={14} color="#6366f1" />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>From</div>
+                                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>Transfer source</div>
+                                </div>
+                            </div>
+                            <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {OUTLETS.map(o => (
+                                    <OutletCard
+                                        key={`from-${o.id}`}
+                                        outlet={o}
+                                        isSelected={fromOutletId === o.id}
+                                        onClick={() => { if (toOutletId === o.id) setToOutletId(''); setFromOutletId(o.id); }}
+                                        disabled={false}
                                     />
-                                    {selectedProduct && (
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedProduct(null);
-                                                setSearchProductQuery('');
-                                            }}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold px-2 py-1 rounded-lg"
-                                        >
-                                            Clear Selection
-                                        </button>
-                                    )}
-                                </div>
+                                ))}
+                            </div>
+                        </div>
 
-                                {showProductDropdown && (
-                                    <div className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-100 rounded-2xl shadow-xl divide-y divide-slate-50">
-                                        {products.filter(p => 
-                                            p.name?.toLowerCase().includes(searchProductQuery.toLowerCase()) || 
-                                            p.sku?.toLowerCase().includes(searchProductQuery.toLowerCase())
-                                        ).length === 0 ? (
-                                            <div className="p-4 text-center text-[12px] text-slate-400 font-bold italic">
-                                                No matching products found.
-                                            </div>
-                                        ) : (
-                                            products.filter(p => 
-                                                p.name?.toLowerCase().includes(searchProductQuery.toLowerCase()) || 
-                                                p.sku?.toLowerCase().includes(searchProductQuery.toLowerCase())
-                                            ).map(p => (
-                                                <div
-                                                    key={p.id}
-                                                    onClick={() => {
-                                                        setSelectedProduct(p);
-                                                        setSearchProductQuery(`${p.name} (${p.sku})`);
-                                                        setShowProductDropdown(false);
-                                                    }}
-                                                    className="p-3 hover:bg-slate-50 cursor-pointer transition-colors flex justify-between items-center"
-                                                >
-                                                    <div>
-                                                        <div className="text-[12px] font-bold text-slate-800">{p.name}</div>
-                                                        <div className="text-[10px] text-slate-400 font-mono">SKU: {p.sku} | HSN: {p.hsnCode || 'N/A'}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-[11px] font-extrabold text-blue-600">Stock: {p.currentStock || 0}</div>
-                                                        <div className="text-[9px] text-slate-400 uppercase font-bold">MRP: ₹{p.mrp || 0}</div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
+                        {/* Arrow bridge */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,transparent,#c7d2fe)' }} />
+                            <div style={{
+                                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 4px 14px rgba(99,102,241,0.35)'
+                            }}>
+                                <ArrowRight size={17} color="#fff" />
+                            </div>
+                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(270deg,transparent,#ddd6fe)' }} />
+                        </div>
+
+                        {/* TO panel */}
+                        <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+                            <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Truck size={14} color="#8b5cf6" />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>To</div>
+                                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>Destination outlet</div>
+                                </div>
+                            </div>
+                            <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {OUTLETS.map(o => (
+                                    <OutletCard
+                                        key={`to-${o.id}`}
+                                        outlet={o}
+                                        isSelected={toOutletId === o.id}
+                                        onClick={() => setToOutletId(o.id)}
+                                        disabled={fromOutletId === o.id}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── CENTER: Product Catalog ── */}
+                    <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', minHeight: 560 }}>
+                        {/* Catalog header */}
+                        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Product Catalog</h3>
+                                    <p style={{ margin: '3px 0 0', fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
+                                        {loadingProducts ? 'Loading…' : `${filteredProducts.length} of ${products.length} products`}
+                                    </p>
+                                </div>
+                                {fromOutlet && (
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                                        borderRadius: 99, background: fromOutlet.light, border: `1.5px solid ${fromOutlet.ring}`
+                                    }}>
+                                        <Package size={12} color={fromOutlet.color} />
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: fromOutlet.color }}>{fromOutlet.name}</span>
                                     </div>
                                 )}
-                                <p className="text-[10px] text-slate-400 font-medium italic">Dynamically loaded from Spring Boot catalog</p>
                             </div>
 
-                            {/* Transfer Quantity */}
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Transfer Quantity <span className="text-rose-500">*</span></label>
+                            {/* Search bar */}
+                            <div style={{ position: 'relative' }}>
+                                <Search size={15} color="#94a3b8" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                                 <input
-                                    type="number"
-                                    placeholder="Units to transfer..."
-                                    className="w-full px-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                    value={transferQty}
-                                    onChange={e => setTransferQty(e.target.value)}
+                                    type="text"
+                                    placeholder="Search by product name or SKU…"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    style={{
+                                        width: '100%', paddingLeft: 42, paddingRight: 14, paddingTop: 10, paddingBottom: 10,
+                                        background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 12,
+                                        fontSize: 13, fontWeight: 500, color: '#1e293b', outline: 'none',
+                                        fontFamily: 'inherit', transition: 'all 0.18s'
+                                    }}
+                                    onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.background = '#fff'; }}
+                                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; }}
                                 />
-                                <p className="text-[10px] text-emerald-500 font-bold italic leading-tight">Checks bin and store capacity limits automatically</p>
-                            </div>
-
-                            {/* Transfer Date */}
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Transfer Date <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input
-                                        type="date"
-                                        className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                        value={transferDate}
-                                        onChange={e => setTransferDate(e.target.value)}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-medium italic">Defaults to today's date if left empty</p>
-                            </div>
-
-                            {/* Transfer Mode */}
-                            <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Transfer Mode <span className="text-rose-500">*</span></label>
-                                <div className="relative">
-                                    <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <select
-                                        className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                        value={transferMode}
-                                        onChange={e => setTransferMode(e.target.value)}
-                                    >
-                                        <option value="">Select mode...</option>
-                                        {TRANSFER_MODES.map(m => <option key={m} value={m}>{m}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Priority */}
-                            <div className="space-y-2 md:col-span-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Priority</label>
-                                <div className="flex gap-4 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                                    {PRIORITIES.map(p => (
-                                        <label key={p} className="flex items-center gap-2 cursor-pointer group">
-                                            <input
-                                                type="radio"
-                                                name="priority"
-                                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                                                checked={priority === p}
-                                                onChange={() => setPriority(p)}
-                                            />
-                                            <span className={`text-[12px] font-bold transition-colors ${priority === p ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-700'}`}>{p}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-medium italic">Critical flags logistics team; Urgent requires supervisor review</p>
-                            </div>
-
-                            {/* Notes */}
-                            <div className="space-y-2 md:col-span-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Notes</label>
-                                <div className="relative">
-                                    <FileText size={14} className="absolute left-3 top-4 text-slate-400" />
-                                    <textarea
-                                        placeholder="Transfer instructions..."
-                                        rows={3}
-                                        className="w-full pl-9 pr-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all resize-none"
-                                        value={notes}
-                                        onChange={e => setNotes(e.target.value)}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-400 font-medium italic">Max 200 chars; visible to both stores</p>
                             </div>
                         </div>
 
-                        <div className="mt-8 pt-8 border-t border-slate-50 flex justify-end gap-3">
-                            <SecondaryBtn onClick={() => {
-                                setSourceStore('');
-                                setDestStore('');
-                                setSelectedProduct(null);
-                                setSearchProductQuery('');
-                                setTransferQty('');
-                                setNotes('');
-                            }} className="px-8">Reset Form</SecondaryBtn>
-                            <PrimaryBtn onClick={handleCreateSTO} className="px-12" icon={<ArrowRightLeft size={16} />}>
-                                Confirm & Create STO
-                            </PrimaryBtn>
-                        </div>
-                    </VCard>
-                </div>
-            </div>
+                        {/* Product list */}
+                        <div className="sta-scroll" style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {loadingProducts ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 14 }}>
+                                    <div className="sta-spin" style={{ width: 34, height: 34, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#6366f1' }} />
+                                    <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading products…</span>
+                                </div>
+                            ) : filteredProducts.length === 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
+                                    <div style={{ width: 60, height: 60, borderRadius: 18, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Package size={28} color="#cbd5e1" />
+                                    </div>
+                                    <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>No products found</span>
+                                    {searchQuery && <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>Try a different search term</span>}
+                                </div>
+                            ) : (
+                                filteredProducts.map(product => {
+                                    const inCart = cart.find(i => i.id === product.id);
+                                    const stock = product.currentStock || 0;
+                                    const stockStatus = stock <= 0 ? 'out' : stock <= 10 ? 'low' : 'ok';
+                                    const stockColor = stockStatus === 'out' ? '#ef4444' : stockStatus === 'low' ? '#f59e0b' : '#10b981';
 
-            {/* SECTION 3: ACTIVE TRANSFERS LOG */}
-            <div className="mt-8">
-                <VCard>
-                    <div className="flex items-center justify-between mb-4">
-                        <SectionTitle>Active Stock Transfer Orders (STO) Log</SectionTitle>
-                        <span className="text-[10px] font-bold bg-[#1e293b] text-white px-2 py-0.5 rounded-lg border border-slate-700">REALTIME SYNCED</span>
+                                    return (
+                                        <div
+                                            key={product.id}
+                                            className="sta-product-row"
+                                            onClick={() => stockStatus !== 'out' && addToCart(product)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                                                borderRadius: 12, cursor: stockStatus === 'out' ? 'not-allowed' : 'pointer',
+                                                border: inCart ? '2px solid #c7d2fe' : '2px solid #f1f5f9',
+                                                background: inCart ? '#eef2ff' : '#fff',
+                                                opacity: stockStatus === 'out' ? 0.5 : 1,
+                                                boxShadow: inCart ? '0 2px 10px rgba(99,102,241,0.12)' : 'none',
+                                            }}
+                                            onMouseEnter={e => { if (!inCart && stockStatus !== 'out') e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.borderColor = inCart ? '#c7d2fe' : '#f1f5f9'; e.currentTarget.style.boxShadow = inCart ? '0 2px 10px rgba(99,102,241,0.12)' : 'none'; }}
+                                        >
+                                            {/* Icon */}
+                                            <div style={{
+                                                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                background: inCart ? '#6366f1' : '#f8fafc',
+                                            }}>
+                                                <Package size={18} color={inCart ? '#fff' : '#94a3b8'} />
+                                            </div>
+
+                                            {/* Info */}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>
+                                                <div style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8', fontFamily: 'monospace', marginTop: 2 }}>{product.sku || product.barcode || 'No SKU'}</div>
+                                            </div>
+
+                                            {/* Stock */}
+                                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                <div style={{ fontSize: 15, fontWeight: 800, color: stockColor }}>{stock}</div>
+                                                <div style={{ fontSize: 9, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                                    {stockStatus === 'out' ? 'Out of stock' : stockStatus === 'low' ? 'Low stock' : 'In stock'}
+                                                </div>
+                                            </div>
+
+                                            {/* Add/check */}
+                                            <div style={{
+                                                width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                background: inCart ? '#6366f1' : stockStatus === 'out' ? '#f1f5f9' : '#f1f5f9',
+                                            }}>
+                                                {inCart ? <CheckCircle2 size={16} color="#fff" /> : <Plus size={16} color={stockStatus === 'out' ? '#cbd5e1' : '#6366f1'} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+
+                    {/* ── RIGHT: Transfer Cart ── */}
+                    <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', minHeight: 560 }}>
+                        {/* Cart header */}
+                        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                        <ShoppingCart size={16} color="#6366f1" />
+                                        {cart.length > 0 && (
+                                            <span style={{
+                                                position: 'absolute', top: -5, right: -5, width: 17, height: 17,
+                                                borderRadius: '50%', background: '#6366f1', color: '#fff',
+                                                fontSize: 9, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                border: '2px solid #fff'
+                                            }}>{cart.length}</span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Transfer Cart</div>
+                                        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, marginTop: 1 }}>
+                                            {cart.length === 0 ? 'No items added' : `${cart.length} item${cart.length !== 1 ? 's' : ''} · ${totalCartQty} units total`}
+                                        </div>
+                                    </div>
+                                </div>
+                                {cart.length > 0 && (
+                                    <button onClick={() => setCart([])} style={{ background: '#fff8f8', border: '1.5px solid #fecaca', color: '#ef4444', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                                        Clear all
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Route summary */}
+                            {routeOk ? (
+                                <div style={{
+                                    marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                                    borderRadius: 12, background: 'linear-gradient(135deg,#eef2ff,#f5f3ff)',
+                                    border: '1.5px solid #c7d2fe'
+                                }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: fromOutlet?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '40%' }}>{fromOutlet?.name}</span>
+                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#a5b4fc,#c4b5fd)', borderRadius: 2 }} />
+                                    <ArrowRight size={13} color="#8b5cf6" style={{ flexShrink: 0 }} />
+                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#c4b5fd,#a5b4fc)', borderRadius: 2 }} />
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: toOutlet?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '40%' }}>{toOutlet?.name}</span>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                                    borderRadius: 12, background: '#fffbeb', border: '1.5px solid #fde68a'
+                                }}>
+                                    <AlertTriangle size={14} color="#f59e0b" style={{ flexShrink: 0 }} />
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Select different source &amp; destination</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Cart items */}
+                        <div className="sta-scroll" style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <AnimatePresence>
+                                {cart.length === 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 220, gap: 14, opacity: 0.5 }}>
+                                        <div style={{ width: 68, height: 68, borderRadius: 20, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <ShoppingCart size={32} color="#cbd5e1" />
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8' }}>Cart is empty</div>
+                                            <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 4, fontWeight: 500 }}>Click products in the catalog<br />to add them here</div>
+                                        </div>
+                                    </div>
+                                ) : cart.map(item => (
+                                    <motion.div
+                                        key={item.id}
+                                        initial={{ opacity: 0, x: 20, scale: 0.97 }}
+                                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                                        exit={{ opacity: 0, x: -20, scale: 0.97 }}
+                                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                                        style={{
+                                            padding: '14px 14px 12px',
+                                            borderRadius: 14,
+                                            border: '1.5px solid #e2e8f0',
+                                            background: '#fafbfc'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+                                            <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                                                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', lineHeight: '1.3' }}>{item.name}</div>
+                                                {item.sku && <div style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8', marginTop: 2 }}>{item.sku}</div>}
+                                            </div>
+                                            <button
+                                                onClick={() => removeFromCart(item.id)}
+                                                style={{
+                                                    width: 26, height: 26, borderRadius: 8, background: '#fff',
+                                                    border: '1.5px solid #e2e8f0', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    flexShrink: 0
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = '#fca5a5'; e.currentTarget.style.background = '#fff8f8'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}
+                                            >
+                                                <X size={12} color="#94a3b8" />
+                                            </button>
+                                        </div>
+
+                                        {/* Quantity stepper */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, border: '1.5px solid #e2e8f0', padding: '4px 6px' }}>
+                                            <button
+                                                onClick={() => updateCartQty(item.id, -1)}
+                                                style={{
+                                                    width: 30, height: 30, borderRadius: 8, background: '#f8fafc',
+                                                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; }}
+                                            >
+                                                <Minus size={13} color="#64748b" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                className="sta-qty-input"
+                                                value={item.qty}
+                                                onChange={e => setCartQty(item.id, e.target.value)}
+                                                min={1} max={item.maxQty}
+                                                style={{
+                                                    flex: 1, textAlign: 'center', fontWeight: 800, fontSize: 16, color: '#0f172a',
+                                                    border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit'
+                                                }}
+                                            />
+                                            <button
+                                                onClick={() => updateCartQty(item.id, 1)}
+                                                style={{
+                                                    width: 30, height: 30, borderRadius: 8, background: '#f8fafc',
+                                                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#eef2ff'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; }}
+                                            >
+                                                <Plus size={13} color="#6366f1" />
+                                            </button>
+                                        </div>
+                                        <div style={{ fontSize: 10, color: '#cbd5e1', fontWeight: 600, textAlign: 'center', marginTop: 6 }}>
+                                            Available: {item.maxQty} units
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Cart actions */}
+                        <div style={{ padding: '14px 16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 10, background: '#fafbfc', borderRadius: '0 0 18px 18px' }}>
+                            {/* Summary row */}
+                            {cart.length > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 10, background: '#fff', border: '1.5px solid #e2e8f0' }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Total units to transfer</span>
+                                    <span style={{ fontSize: 16, fontWeight: 900, color: '#6366f1' }}>{totalCartQty}</span>
+                                </div>
+                            )}
+
+                            {/* Preview challan */}
+                            <button
+                                onClick={() => setShowChallan(true)}
+                                disabled={cart.length === 0}
+                                style={{
+                                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                    padding: '11px 0', borderRadius: 12,
+                                    border: cart.length > 0 ? '2px solid #c7d2fe' : '2px solid #e2e8f0',
+                                    background: cart.length > 0 ? '#eef2ff' : '#f8fafc',
+                                    color: cart.length > 0 ? '#6366f1' : '#cbd5e1',
+                                    fontSize: 13, fontWeight: 700, cursor: cart.length > 0 ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.18s', fontFamily: 'inherit'
+                                }}
+                            >
+                                <Eye size={15} /> Preview Delivery Challan
+                            </button>
+
+                            {/* Dispatch */}
+                            <button
+                                onClick={handleDispatch}
+                                disabled={submitting || cart.length === 0 || !routeOk}
+                                style={{
+                                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                    padding: '13px 0', borderRadius: 12, border: 'none',
+                                    background: (cart.length > 0 && routeOk && !submitting)
+                                        ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+                                        : '#e2e8f0',
+                                    color: (cart.length > 0 && routeOk && !submitting) ? '#fff' : '#94a3b8',
+                                    fontSize: 14, fontWeight: 800, cursor: (cart.length > 0 && routeOk && !submitting) ? 'pointer' : 'not-allowed',
+                                    boxShadow: (cart.length > 0 && routeOk && !submitting) ? '0 6px 20px rgba(99,102,241,0.4)' : 'none',
+                                    transition: 'all 0.2s', fontFamily: 'inherit'
+                                }}
+                            >
+                                {submitting ? (
+                                    <>
+                                        <div className="sta-spin" style={{ width: 16, height: 16, border: '2.5px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%' }} />
+                                        Dispatching…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={16} />
+                                        Dispatch Stock Transfer
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── STO Log Table ──────────────────────────────────────── */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+
+                    {/* Table header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 11, background: '#f8fafc', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={17} color="#6366f1" />
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Transfer Order Log</h3>
+                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
+                                    {loadingSTOs ? 'Loading…' : `${filteredSTOs.length} of ${stos.length} orders`}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Search */}
+                        <div style={{ position: 'relative' }}>
+                            <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                            <input
+                                type="text"
+                                placeholder="Search orders…"
+                                value={stoSearch}
+                                onChange={e => setStoSearch(e.target.value)}
+                                style={{
+                                    width: 240, paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
+                                    background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 10,
+                                    fontSize: 13, fontWeight: 500, color: '#1e293b', outline: 'none', fontFamily: 'inherit'
+                                }}
+                                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/50">
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">STO Number</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Source Store</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Dest Store</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Product Name</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Qty</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Priority</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400">Status</th>
-                                    <th className="py-3 px-4 text-[10px] font-extrabold uppercase text-slate-400 text-center">Actions</th>
+                                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #f1f5f9' }}>
+                                    {['STO Number', 'Route', 'Product', 'Qty', 'Date', 'Priority', 'Status', 'Action'].map(h => (
+                                        <th key={h} style={{ padding: '12px 18px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }}>{h}</th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredSTOs.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="8" className="py-8 text-center text-[12px] text-slate-400 font-bold italic">
-                                            No active stock transfer orders found in backend database matching current search filter.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredSTOs.map((sto) => (
-                                        <tr key={sto.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                                            <td className="py-4 px-4 text-[11px] font-bold text-blue-600 font-mono">
-                                                {sto.stoNumber || (sto.id ? sto.id.substring(0, 8).toUpperCase() : 'PENDING')}
-                                            </td>
-                                            <td className="py-4 px-4 text-[12px] font-bold text-slate-700">{sto.sourceBranchName}</td>
-                                            <td className="py-4 px-4 text-[12px] font-bold text-slate-700">{sto.destBranchName}</td>
-                                            <td className="py-4 px-4 text-[11px] font-bold text-slate-600">{sto.productName || 'Unknown Product'}</td>
-                                            <td className="py-4 px-4 text-[12px] font-extrabold text-slate-800">{sto.transferQuantity}</td>
-                                            <td className="py-4 px-4">
-                                                <span className={`px-2 py-0.5 text-[9px] font-bold rounded-lg border uppercase ${
-                                                    sto.priority === 'Critical' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                    sto.priority === 'Urgent' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                                    'bg-slate-50 text-slate-600 border-slate-100'
-                                                }`}>
-                                                    {sto.priority}
+                                {loadingSTOs ? (
+                                    <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                                            <div className="sta-spin" style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%' }} />
+                                            <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading orders…</span>
+                                        </div>
+                                    </td></tr>
+                                ) : filteredSTOs.length === 0 ? (
+                                    <tr><td colSpan={8} style={{ padding: '56px 0', textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0.5 }}>
+                                            <div style={{ width: 60, height: 60, borderRadius: 18, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <ArrowRightLeft size={28} color="#cbd5e1" />
+                                            </div>
+                                            <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>No stock transfer orders found</span>
+                                            {stoSearch && <span style={{ fontSize: 11, color: '#cbd5e1' }}>Try clearing your search filter</span>}
+                                        </div>
+                                    </td></tr>
+                                ) : filteredSTOs.map((sto, idx) => {
+                                    const statusCfg = STATUS_CFG[sto.status] || STATUS_CFG.DRAFT;
+                                    const dt = sto.transferDate
+                                        ? new Date(sto.transferDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
+                                        : '—';
+                                    const priorityColor = sto.priority === 'Critical' ? { bg: '#fef2f2', color: '#dc2626' } : sto.priority === 'Urgent' ? { bg: '#fffbeb', color: '#d97706' } : { bg: '#f1f5f9', color: '#64748b' };
+
+                                    return (
+                                        <tr key={sto.id} className="sta-tr" style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.12s' }}>
+                                            {/* STO Number */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#6366f1', background: '#eef2ff', padding: '3px 8px', borderRadius: 7 }}>
+                                                    {sto.stoNumber || `STO-${(sto.id || '').toString().slice(0, 8).toUpperCase()}`}
                                                 </span>
                                             </td>
-                                            <td className="py-4 px-4">
-                                                <span className={`px-2 py-0.5 text-[9px] font-bold rounded-lg border uppercase ${
-                                                    sto.status === 'RECEIVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                    sto.status === 'IN_TRANSIT' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                    sto.status === 'DRAFT' ? 'bg-slate-50 text-slate-600 border-slate-100' :
-                                                    'bg-amber-50 text-amber-600 border-amber-100'
-                                                }`}>
-                                                    {sto.status}
+
+                                            {/* Route */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block' }}>{sto.sourceBranchName}</span>
+                                                    <ArrowRight size={11} color="#94a3b8" style={{ flexShrink: 0 }} />
+                                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block' }}>{sto.destBranchName}</span>
+                                                </div>
+                                            </td>
+
+                                            {/* Product */}
+                                            <td style={{ padding: '14px 18px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, color: '#1e293b' }}>
+                                                {sto.productName || '—'}
+                                            </td>
+
+                                            {/* Qty */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', background: '#f8fafc', padding: '2px 10px', borderRadius: 7, border: '1px solid #e2e8f0' }}>
+                                                    {sto.transferQuantity}
                                                 </span>
                                             </td>
-                                            <td className="py-4 px-4 text-center">
+
+                                            {/* Date */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                    <Clock size={11} color="#cbd5e1" />
+                                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>{dt}</span>
+                                                </div>
+                                            </td>
+
+                                            {/* Priority */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', padding: '3px 9px', borderRadius: 99, background: priorityColor.bg, color: priorityColor.color }}>
+                                                    {sto.priority || 'Normal'}
+                                                </span>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td style={{ padding: '14px 18px' }}>
+                                                <StatusBadge status={sto.status} />
+                                            </td>
+
+                                            {/* Action */}
+                                            <td style={{ padding: '14px 18px' }}>
                                                 {sto.status === 'DRAFT' && (
                                                     <button
-                                                        onClick={() => handleUpdateStatus(sto.id, 'IN_TRANSIT')}
-                                                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase shadow-sm transition-all animate-pulse"
+                                                        onClick={() => handleStatusUpdate(sto.id, 'IN_TRANSIT')}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: 5,
+                                                            padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                                                            background: '#6366f1', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
+                                                        }}
                                                     >
-                                                        Dispatch
+                                                        <Truck size={12} /> Dispatch
                                                     </button>
                                                 )}
                                                 {sto.status === 'IN_TRANSIT' && (
                                                     <button
-                                                        onClick={() => handleUpdateStatus(sto.id, 'RECEIVED')}
-                                                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg uppercase shadow-sm transition-all"
+                                                        onClick={() => handleStatusUpdate(sto.id, 'RECEIVED')}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: 5,
+                                                            padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                                                            background: '#10b981', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
+                                                        }}
                                                     >
-                                                        Receive
+                                                        <CheckCircle2 size={12} /> Mark Received
                                                     </button>
                                                 )}
                                                 {sto.status === 'RECEIVED' && (
-                                                    <span className="text-[10px] font-bold text-slate-400 italic">Completed</span>
-                                                )}
-                                                {sto.status !== 'DRAFT' && sto.status !== 'IN_TRANSIT' && sto.status !== 'RECEIVED' && (
-                                                    <span className="text-[10px] font-bold text-slate-400 italic">{sto.status}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                        <CheckCircle2 size={14} color="#10b981" />
+                                                        <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981' }}>Completed</span>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
-                                    ))
-                                )}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
-                </VCard>
+                </div>
+
+                {/* Challan Modal */}
+                <AnimatePresence>
+                    {showChallan && (
+                        <ChallanModal
+                            isOpen={showChallan}
+                            onClose={() => setShowChallan(false)}
+                            cart={cart}
+                            fromOutlet={fromOutlet}
+                            toOutlet={toOutlet}
+                        />
+                    )}
+                </AnimatePresence>
             </div>
-        </div>
+        </>
     );
 }

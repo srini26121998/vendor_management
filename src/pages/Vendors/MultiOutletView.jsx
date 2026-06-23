@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchPurchaseOrders } from '../../api/vendorService';
+import { fetchPurchaseOrders, searchGlobalInventory } from '../../api/vendorService';
 import { VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, VendorBreadcrumb, VModal } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, MapPin, TrendingUp, Package, AlertTriangle, CheckCircle, XCircle, ArrowRight, Activity, Box, ArrowLeftRight, Search } from 'lucide-react';
+import { Building2, MapPin, TrendingUp, Package, AlertTriangle, CheckCircle, XCircle, ArrowRight, Activity, Box, ArrowLeftRight, Search, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const OUTLETS = [
-    { id: 'O1', name: 'Main Branch — Andheri', location: 'Mumbai', stock: 84, pending: 2, sales: '₹2.4L/day', icon: '🏢' },
-    { id: 'O2', name: 'Bandra West Outlet', location: 'Mumbai', stock: 92, pending: 0, sales: '₹1.8L/day', icon: '🏪' },
-    { id: 'O3', name: 'Powai Branch', location: 'Mumbai', stock: 61, pending: 5, sales: '₹1.2L/day', alert: true, icon: '🏭' },
-    { id: 'O4', name: 'Thane Branch', location: 'Thane', stock: 78, pending: 1, sales: '₹0.9L/day', icon: '🏛️' },
+    { id: 'O1', name: 'Main Branch — Andheri', location: 'Mumbai', stock: 84, pending: 2, sales: '₹2.4L/day', icon: <Building2 size={24} /> },
+    { id: 'O2', name: 'Bandra West Outlet', location: 'Mumbai', stock: 92, pending: 0, sales: '₹1.8L/day', icon: <Building2 size={24} /> },
+    { id: 'O3', name: 'Powai Branch', location: 'Mumbai', stock: 61, pending: 5, sales: '₹1.2L/day', alert: true, icon: <Building2 size={24} /> },
+    { id: 'O4', name: 'Thane Branch', location: 'Thane', stock: 78, pending: 1, sales: '₹0.9L/day', icon: <Building2 size={24} /> },
 ];
 
 export default function MultiOutletView() {
@@ -19,6 +19,9 @@ export default function MultiOutletView() {
     const [selectedId, setSelectedId] = useState('O1');
     const [transferModal, setTransferModal] = useState(false);
     const [transferData, setTransferData] = useState({ source: 'O2', item: 'Organic Wheat (10kg)', qty: 50 });
+
+    const [globalSearch, setGlobalSearch] = useState('');
+    const [searchResults, setSearchResults] = useState(null);
 
     const [pendingPOs, setPendingPOs] = useState([]);
 
@@ -29,7 +32,7 @@ export default function MultiOutletView() {
     }, []);
 
     const selected = OUTLETS.find(o => o.id === selectedId);
-    const labelCls = "text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1";
+    const labelCls = "text-[12px] font-semibold text-slate-500 uppercase tracking-wider block mb-2";
 
     const handleTransfer = () => {
         toast.promise(
@@ -43,19 +46,50 @@ export default function MultiOutletView() {
         setTransferModal(false);
     };
 
+    const handleSearch = async (e) => {
+        const query = e.target.value;
+        setGlobalSearch(query);
+        if (query.length > 2) {
+            try {
+                const results = await searchGlobalInventory(query);
+                if (results && results.length > 0 && results[0].outlets) {
+                    setSearchResults(results[0].outlets);
+                } else {
+                    setSearchResults([]);
+                }
+            } catch (err) {
+                console.error("Search failed", err);
+                setSearchResults([]);
+            }
+        } else {
+            setSearchResults(null);
+        }
+    };
+
+    const initiateTransferFromSearch = (sourceOutletId, stockName) => {
+        setTransferData({ source: sourceOutletId, item: stockName || globalSearch, qty: '' });
+        setTransferModal(true);
+    };
+
     return (
-        <div className="w-full bg-[#F3F5F9] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
+        <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
             <div className="max-w-[1400px] mx-auto space-y-6">
 
                 {/* ── Header ── */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-[20px] font-bold text-slate-800 tracking-tight">Multi-Outlet Central View</h1>
+                        <div className="text-[13px] font-medium text-indigo-600 mb-1 flex items-center gap-2">
+                            <Activity size={14} /> Network Overview
+                        </div>
+                        <h1 className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">Multi-Outlet Control</h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        <PrimaryBtn icon={<Box size={16} />} onClick={() => setTransferModal(true)}>
-                            Stock Transfer
-                        </PrimaryBtn>
+                        <button onClick={() => navigate('/vendors/inventory/warehouse-map')} className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-[13px] font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2 shadow-sm">
+                            <MapPin size={16} /> Warehouse Map
+                        </button>
+                        <button onClick={() => setTransferModal(true)} className="px-4 py-2.5 bg-indigo-600 text-white text-[13px] font-semibold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all flex items-center gap-2 shadow-sm">
+                            <Box size={16} /> Initiate Transfer
+                        </button>
                     </div>
                 </div>
 
@@ -63,181 +97,230 @@ export default function MultiOutletView() {
 
                     {/* ── Sidebar: Outlet List ── */}
                     <div className="space-y-6">
-                        <VCard noPad className="overflow-hidden border-slate-200">
-                            <div className="p-4 border-b border-slate-50 bg-slate-50/30">
-                                <h3 className="text-[12px] font-bold text-slate-400 uppercase ">Select Outlet</h3>
+                        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                                <h3 className="text-[13px] font-bold text-slate-800 flex items-center gap-2">
+                                    <Building2 size={16} className="text-indigo-500" /> Facilities
+                                </h3>
                             </div>
-                            <div className="p-2 space-y-1">
-                                {OUTLETS.map(outlet => (
-                                    <button key={outlet.id} onClick={() => setSelectedId(outlet.id)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${selectedId === outlet.id ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[14px] font-bold ${selectedId === outlet.id ? 'bg-white/20' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
-                                            {outlet.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                                        </div>
-                                        <div className="text-left overflow-hidden">
-                                            <div className="text-[13px] font-bold truncate">{outlet.name}</div>
-                                            <div className={`text-[9px] font-bold uppercase ${selectedId === outlet.id ? 'text-blue-100' : 'text-slate-400'}`}>{outlet.location}</div>
-                                        </div>
-                                        {outlet.alert && <div className={`ml-auto w-2 h-2 rounded-full ${selectedId === outlet.id ? 'bg-white' : 'bg-rose-500'}`} />}
-                                    </button>
-                                ))}
+                            <div className="p-3 space-y-1">
+                                {OUTLETS.map(outlet => {
+                                    const isSelected = selectedId === outlet.id;
+                                    return (
+                                        <button key={outlet.id} onClick={() => setSelectedId(outlet.id)}
+                                            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${isSelected ? 'bg-indigo-50 border border-indigo-100 shadow-sm' : 'hover:bg-slate-50 border border-transparent'}`}>
+                                            
+                                            <div className="flex-1 text-left">
+                                                <div className={`text-[14px] font-bold mb-0.5 ${isSelected ? 'text-indigo-900' : 'text-slate-700 group-hover:text-slate-900'}`}>{outlet.name}</div>
+                                                <div className={`text-[11px] font-semibold uppercase tracking-wider ${isSelected ? 'text-indigo-500' : 'text-slate-400'}`}>{outlet.location}</div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2">
+                                                {outlet.alert && <div className={`w-2 h-2 rounded-full animate-pulse ${isSelected ? 'bg-rose-500' : 'bg-rose-400'}`} />}
+                                                <ChevronRight size={16} className={`${isSelected ? 'text-indigo-500' : 'text-slate-300 opacity-0 group-hover:opacity-100'} transition-all transform ${isSelected ? 'translate-x-1' : ''}`} />
+                                            </div>
+                                        </button>
+                                    )
+                                })}
                             </div>
-                        </VCard>
+                        </div>
 
-                        <VCard className="!bg-white !border-blue-100 shadow-sm">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Activity size={16} className="text-blue-600" />
-                                <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Global Chain Status</h4>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[11px] text-slate-500 font-medium">Avg Stock Health</span>
-                                    <span className="text-[11px] font-bold text-emerald-600">82%</span>
+                        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg shadow-indigo-900/20 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20 transform translate-x-10 -translate-y-10"></div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <Activity size={18} className="text-indigo-300" />
+                                    <h4 className="text-[12px] font-bold text-indigo-100 uppercase tracking-widest">Network Health</h4>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[11px] text-slate-500 font-medium">Regional Coverage</span>
-                                    <span className="text-[11px] font-bold text-blue-600">4 Zones</span>
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="flex justify-between items-end mb-1.5">
+                                            <span className="text-[12px] text-indigo-200 font-medium">Global Fulfillment Rate</span>
+                                            <span className="text-[16px] font-bold text-white">94%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-800/50 rounded-full h-1">
+                                            <div className="bg-emerald-400 h-1 rounded-full" style={{ width: '94%' }}></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                                        <span className="text-[12px] text-indigo-200 font-medium">Active Zones</span>
+                                        <span className="text-[14px] font-bold text-white">4 Regions</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </VCard>
-                    </div>
-
-                    {/* ── Main Content: Outlet Dashboard ── */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <AnimatePresence mode="wait">
-                            <motion.div key={selectedId} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-                                <VCard className="border-slate-200">
-                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl border border-blue-100 shadow-sm">
-                                                {selected.icon}
-                                            </div>
-                                            <div>
-                                                <h2 className="text-[18px] font-bold text-slate-800 tracking-tight">{selected.name}</h2>
-                                                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase  mt-0.5">
-                                                    <MapPin size={12} className="text-slate-300" /> {selected.location} · <span className="text-emerald-500">Live View</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {selected.alert && (
-                                            <div className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 animate-pulse">
-                                                <AlertTriangle size={14} /> Low Stock Critical
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                                            <label className={labelCls}>Stock Health</label>
-                                            <div className="flex items-end justify-between mb-2">
-                                                <div className="text-[24px] font-bold text-slate-800">{selected.stock}%</div>
-                                                <div className={`text-[11px] font-bold px-2 py-0.5 rounded ${selected.stock >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                    {selected.stock >= 80 ? 'Stable' : 'Risk'}
-                                                </div>
-                                            </div>
-                                            <div className="w-full bg-white border border-slate-200 rounded-full h-1.5 overflow-hidden">
-                                                <motion.div initial={{ width: 0 }} animate={{ width: `${selected.stock}%` }} className={`h-full rounded-full ${selected.stock >= 80 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                            </div>
-                                        </div>
-                                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                                            <label className={labelCls}>Pending GRNs</label>
-                                            <div className="text-[24px] font-bold text-slate-800 flex items-center gap-3">
-                                                {selected.pending}
-                                                <Package size={20} className="text-slate-300" />
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Awaiting verification</p>
-                                        </div>
-                                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                                            <label className={labelCls}>Daily Revenue</label>
-                                            <div className="text-[24px] font-bold text-slate-800 flex items-center gap-3">
-                                                {selected.sales}
-                                                <TrendingUp size={20} className="text-emerald-500" />
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Last 24 hours</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3">
-                                        <PrimaryBtn icon={<ArrowLeftRight size={14} />} className="flex-1 justify-center !py-3 shadow-blue-100 shadow-lg" onClick={() => setTransferModal(true)}>
-                                            Transfer Stock to Outlet
-                                        </PrimaryBtn>
-                                        <SecondaryBtn icon={<TrendingUp size={14} />} className="flex-1 justify-center !py-3" onClick={() => navigate(VENDOR_ROUTES.reports)}>
-                                            View Full Analytics
-                                        </SecondaryBtn>
-                                    </div>
-                                </VCard>
-                            </motion.div>
-                        </AnimatePresence>
-
-                        {/* Awaiting HQ Approval Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-[14px] font-bold text-slate-800 uppercase tracking-tight">Chain POs Awaiting HQ Approval</h3>
-                                <button onClick={() => navigate(VENDOR_ROUTES.approvalQueue)} className="text-[10px] font-bold text-blue-600 uppercase  hover:underline flex items-center gap-1">
-                                    View Queue <ArrowRight size={10} />
-                                </button>
-                            </div>
-                            <div className="space-y-3">
-                                {pendingPOs.map((po, i) => (
-                                    <VCard key={i} className="group hover:border-blue-200 transition-all shadow-sm">
-                                        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                                            <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                <Package size={20} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-3 mb-1.5">
-                                                    <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{po.id}</span>
-                                                    <h3 className="text-[16px] font-bold text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors">{po.vendor}</h3>
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    <span className="text-slate-800 font-bold">{formatCurrency(po.amount)}</span>
-                                                    <span className="opacity-30">|</span>
-                                                    <span>{po.items} Items Total</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 w-full md:w-auto shrink-0">
-                                                <button onClick={() => toast.success(`Approved!`)}
-                                                    className="flex-1 md:flex-none px-5 py-2.5 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100 flex items-center justify-center gap-2 uppercase ">
-                                                    <CheckCircle size={14} /> Approve
-                                                </button>
-                                                <button onClick={() => toast.error(`Rejected`)}
-                                                    className="flex-1 md:flex-none px-5 py-2.5 bg-white text-rose-600 border border-rose-100 text-[11px] font-bold rounded-lg hover:bg-rose-50 transition-all flex items-center justify-center gap-2 uppercase ">
-                                                    <XCircle size={14} /> Reject
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </VCard>
-                                ))}
                             </div>
                         </div>
                     </div>
 
+                    {/* ── Main Content: Outlet Dashboard ── */}
+                    <div className="lg:col-span-3 space-y-6">
+
+                        {/* ── Global Inventory Search ── */}
+                        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 relative overflow-hidden">
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                            
+                            <label className="text-[12px] font-bold text-indigo-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Search size={14} /> Global Inventory Locator
+                            </label>
+                            <div className="relative group">
+                                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Search any SKU (e.g., 'Wheat', 'Milk') to instantly locate stock across all facilities..."
+                                    value={globalSearch}
+                                    onChange={handleSearch}
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl text-[14px] font-medium text-slate-800 outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all placeholder:text-slate-400"
+                                />
+                            </div>
+
+                            <AnimatePresence>
+                                {searchResults && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                        animate={{ opacity: 1, height: 'auto', marginTop: 24 }}
+                                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                        className="border-t border-slate-100 overflow-hidden pt-6"
+                                    >
+                                        <div className="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-4">Availability: <span className="text-indigo-600">{globalSearch}</span></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {searchResults.map((res, i) => (
+                                                <div key={i} className="bg-white border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all p-4 rounded-xl flex flex-col justify-between">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <span className="text-[13px] font-bold text-slate-800">{res.outletName || res.outlet}</span>
+                                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ${res.status === 'Excess' ? 'bg-indigo-50 text-indigo-700' : (res.status === 'Critical' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700')}`}>
+                                                            {res.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-end justify-between">
+                                                        <div>
+                                                            <div className="text-[24px] font-extrabold text-slate-900 leading-none">{res.stock}</div>
+                                                            <div className="text-[11px] text-slate-500 font-medium mt-1">Units Available</div>
+                                                        </div>
+                                                        {res.status === 'Excess' && res.outletId !== selectedId && (
+                                                            <button
+                                                                onClick={() => initiateTransferFromSearch(res.outletId, globalSearch)}
+                                                                className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-[11px] font-bold rounded-lg hover:bg-indigo-600 hover:text-white transition-colors"
+                                                            >
+                                                                Transfer
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                            <motion.div key={selectedId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                                <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
+                                    
+                                    {/* Outlet Header */}
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-50 text-slate-600 rounded-2xl flex items-center justify-center shadow-inner border border-slate-200/60">
+                                                {selected.icon}
+                                            </div>
+                                            <div>
+                                                <h2 className="text-[24px] font-extrabold text-slate-900 tracking-tight mb-1">{selected.name}</h2>
+                                                <div className="flex items-center gap-3 text-[13px] font-medium text-slate-500">
+                                                    <span className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400" /> {selected.location}</span>
+                                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                                    <span className="flex items-center gap-1.5 text-emerald-600"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span> Live Telemetry</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {selected.alert && (
+                                            <div className="px-4 py-2 bg-rose-50 text-rose-700 rounded-xl border border-rose-100 text-[12px] font-bold flex items-center gap-2 shadow-sm">
+                                                <AlertTriangle size={16} className="text-rose-500" /> Critical Stock Levels
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Metrics Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                                        <div className="p-5 rounded-xl bg-slate-50/80 border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                                            <label className={labelCls}>Stock Health Index</label>
+                                            <div className="flex items-end justify-between mb-4">
+                                                <div className="text-[32px] font-extrabold text-slate-900 leading-none">{selected.stock}%</div>
+                                                <div className={`text-[12px] font-bold px-2.5 py-1 rounded-lg ${selected.stock >= 80 ? 'bg-emerald-100/50 text-emerald-700' : 'bg-amber-100/50 text-amber-700'}`}>
+                                                    {selected.stock >= 80 ? 'Optimal' : 'At Risk'}
+                                                </div>
+                                            </div>
+                                            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <motion.div initial={{ width: 0 }} animate={{ width: `${selected.stock}%` }} transition={{ duration: 1, ease: "easeOut" }} className={`h-full rounded-full ${selected.stock >= 80 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="p-5 rounded-xl bg-slate-50/80 border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <label className={labelCls}>Pending GRNs</label>
+                                                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                                    <Package size={16} />
+                                                </div>
+                                            </div>
+                                            <div className="text-[32px] font-extrabold text-slate-900 leading-none mb-1">{selected.pending}</div>
+                                            <p className="text-[12px] text-slate-500 font-medium">Awaiting QA verification</p>
+                                        </div>
+                                        
+                                        <div className="p-5 rounded-xl bg-slate-50/80 border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <label className={labelCls}>24h Revenue</label>
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                                    <TrendingUp size={16} />
+                                                </div>
+                                            </div>
+                                            <div className="text-[32px] font-extrabold text-slate-900 leading-none mb-1">{selected.sales}</div>
+                                            <p className="text-[12px] text-slate-500 font-medium">Compared to yesterday</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Footer */}
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100">
+                                        <button onClick={() => setTransferModal(true)} className="flex-1 px-6 py-3.5 bg-indigo-600 text-white text-[14px] font-semibold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                                            <ArrowLeftRight size={18} /> Route Inventory to {selected.name.split(' ')[0]}
+                                        </button>
+                                        <button onClick={() => navigate(VENDOR_ROUTES.reports)} className="flex-1 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 text-[14px] font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2">
+                                            <Activity size={18} /> Deep Dive Analytics
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+
+                    </div>
                 </div>
             </div>
 
             {/* ── Transfer Stock Modal ── */}
-            <VModal open={transferModal} onClose={() => setTransferModal(false)} title="Inter-Outlet Stock Transfer" width="max-w-xl">
+            <VModal open={transferModal} onClose={() => setTransferModal(false)} title="Execute Inventory Transfer" width="max-w-2xl">
                 <div className="space-y-6">
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-                        <Info size={18} className="text-blue-600 mt-0.5" />
-                        <p className="text-[12px] text-blue-800 leading-relaxed">
-                            You are initiating a stock transfer to <strong>{selected?.name}</strong>. Please specify the source outlet and the inventory items to be moved.
-                        </p>
+                    <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100 flex items-start gap-4">
+                        <div className="mt-0.5 bg-indigo-100 p-1.5 rounded-lg text-indigo-600">
+                            <Info size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-[14px] font-bold text-indigo-900 mb-1">Transfer Protocol Initiated</h4>
+                            <p className="text-[13px] text-indigo-700/80 leading-relaxed">
+                                Routing stock to <strong className="text-indigo-900">{selected?.name}</strong>. Please confirm source facility and allocate quantities below.
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label className={labelCls}>Source Outlet</label>
+                            <label className={labelCls}>Source Facility</label>
                             <select value={transferData.source} onChange={e => setTransferData(prev => ({ ...prev, source: e.target.value }))}
-                                className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50 focus:border-blue-500 outline-none">
+                                className="w-full text-[14px] font-semibold border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 hover:bg-white focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all">
                                 {OUTLETS.filter(o => o.id !== selectedId).map(o => (
                                     <option key={o.id} value={o.id}>{o.name}</option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className={labelCls}>Item Category</label>
-                            <select className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50 focus:border-blue-500 outline-none">
+                            <label className={labelCls}>Commodity Type</label>
+                            <select className="w-full text-[14px] font-semibold border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 hover:bg-white focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all">
                                 <option>Grains & Pulses</option>
                                 <option>Dairy Products</option>
                                 <option>Packaging Material</option>
@@ -246,35 +329,41 @@ export default function MultiOutletView() {
                     </div>
 
                     <div>
-                        <label className={labelCls}>Search Inventory Item</label>
-                        <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" placeholder="Start typing item name (e.g. Wheat, Rice)..."
-                                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-[13px] font-medium focus:border-blue-500 outline-none transition-all" />
+                        <label className={labelCls}>Target SKU Locator</label>
+                        <div className="relative group">
+                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                            <input type="text" placeholder="Scan or type SKU name..."
+                                className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl bg-slate-50 hover:bg-white focus:bg-white text-[14px] font-medium focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all" />
                         </div>
                     </div>
 
-                    <VCard noPad className="border-slate-100">
-                        <div className="p-4 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Selection</span>
-                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">In Stock</span>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                            <span className="text-[12px] font-bold text-slate-600 uppercase tracking-wider">Selected Payload</span>
+                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/50 px-2.5 py-1 rounded-md">Verified In Stock</span>
                         </div>
-                        <div className="p-4 flex items-center justify-between">
+                        <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white">
                             <div>
-                                <p className="text-[13px] font-bold text-slate-800">{transferData.item}</p>
-                                <p className="text-[10px] text-slate-400 font-medium">SKU: WH-10KG-01 · Source Stock: 420 Units</p>
+                                <p className="text-[15px] font-bold text-slate-900 mb-1">{transferData.item}</p>
+                                <div className="flex items-center gap-2 text-[12px] text-slate-500 font-medium">
+                                    <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">WH-10KG-01</span>
+                                    <span>·</span>
+                                    <span>Source Avail: <strong className="text-slate-700">420 Units</strong></span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
                                 <input type="number" value={transferData.qty} onChange={e => setTransferData(prev => ({ ...prev, qty: e.target.value }))}
-                                    className="w-16 text-center text-[13px] font-bold border border-slate-200 rounded-lg py-1.5 focus:border-blue-500 outline-none" />
-                                <span className="text-[11px] font-bold text-slate-400">Units</span>
+                                    className="w-20 text-center text-[16px] font-bold border border-slate-200 rounded-lg py-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all bg-white" />
+                                <span className="text-[13px] font-bold text-slate-500 pr-2">Units</span>
                             </div>
                         </div>
-                    </VCard>
+                    </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
-                        <SecondaryBtn onClick={() => setTransferModal(false)}>Cancel</SecondaryBtn>
-                        <PrimaryBtn onClick={handleTransfer} className="px-8 shadow-blue-100 shadow-lg">Confirm Transfer</PrimaryBtn>
+                    <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                        <button onClick={() => setTransferModal(false)} className="px-6 py-3 text-[14px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">Cancel Operation</button>
+                        <button onClick={handleTransfer} className="px-8 py-3 bg-indigo-600 text-white text-[14px] font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all flex items-center gap-2">
+                            <CheckCircle size={18} /> Execute Transfer
+                        </button>
                     </div>
                 </div>
             </VModal>
