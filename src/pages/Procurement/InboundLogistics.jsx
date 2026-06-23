@@ -17,6 +17,7 @@ import {
     StatusBadge
 } from '../Vendors/VendorComponents';
 import TruckLoader from '../../components/Common/TruckLoader';
+import useInboundStore from '../../store/useInboundStore';
 
 
 const STORE_LIST = ['Warehouse Alpha - Mumbai', 'Distribution Center - Pune', 'Cold Storage - Surat', 'Express Hub - Navi Mumbai'];
@@ -187,40 +188,113 @@ function DockScheduler() {
         store: '',
         date: '',
         slot: '',
+        dockType: '', // Added dock type
         vehicleType: '',
         vehicleReg: '',
         driverName: '',
         driverMobile: '',
         estLoad: '',
-        poNumbers: '',
+        poNumbers: 'PO-99281-00',
         specialReq: ''
     });
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [appointmentId, setAppointmentId] = useState('');
+    const [availablePOs, setAvailablePOs] = useState([]);
+
+    const bookSlot = useInboundStore(state => state.bookSlot);
+    const appointments = useInboundStore(state => state.appointments);
 
     useEffect(() => {
         const handler = (e) => {
             if (e.detail === 'GATE_DENY') {
                 setView('gate');
                 setFormData(prev => ({ ...prev, vehicleReg: 'MH 99 XX 0000' }));
-                // We'll need a way to pass this to GuardGateView if it was a separate component with its own state,
-                // but here they are in the same file. However, GuardGateView is a separate function.
-                // Let's just make GuardGateView accept props or use the same state if possible.
             }
         };
         window.addEventListener('triggerScenario', handler);
         return () => window.removeEventListener('triggerScenario', handler);
     }, []);
 
+    useEffect(() => {
+        // Dynamically load available Purchase Orders
+        const loadPOs = async () => {
+            try {
+                const { fetchPurchaseOrders } = await import('../../api/vendorService');
+                const poRes = await fetchPurchaseOrders();
+                const pos = Array.isArray(poRes) ? poRes : poRes?.data || [];
+                
+                // Set to fetched POs, but fallback to mock data if the API is unreachable or empty (for UI testing)
+                if (pos.length > 0) {
+                    setAvailablePOs(pos);
+                } else {
+                    setAvailablePOs([
+                        { id: 'PO-202606-001', label: 'PO-202606-001 (Global Supplies Ltd.)' },
+                        { id: 'PO-202606-002', label: 'PO-202606-002 (Fresh Farms Inc.)' },
+                        { id: 'PO-99281-00', label: 'PO-99281-00 (Local Distributor)' },
+                        { id: 'PO-44582-12', label: 'PO-44582-12 (Warehouse Beta)' }
+                    ]);
+                }
+            } catch (err) {
+                setAvailablePOs([
+                    { id: 'PO-202606-001', label: 'PO-202606-001 (Global Supplies Ltd.)' },
+                    { id: 'PO-202606-002', label: 'PO-202606-002 (Fresh Farms Inc.)' },
+                    { id: 'PO-99281-00', label: 'PO-99281-00 (Local Distributor)' },
+                    { id: 'PO-44582-12', label: 'PO-44582-12 (Warehouse Beta)' }
+                ]);
+            }
+        };
+        loadPOs();
+    }, []);
+
     const handleBooking = () => {
-        if (!formData.store || !formData.date || !formData.slot) {
+        if (!formData.store || !formData.date || !formData.slot || !formData.vehicleType || !formData.vehicleReg || !formData.driverName || !formData.driverMobile || !formData.dockType || !formData.poNumbers) {
             toast.error('Please fill all mandatory fields (*)');
             return;
         }
-        const id = `DA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const id = bookSlot(formData);
         setAppointmentId(id);
         setIsConfirmed(true);
-        toast.success('Appointment Scheduled Successfully!');
+        toast.success('Appointment Submitted for Approval!');
+    };
+
+    const handleDownloadPDF = () => {
+        toast.success('Generating PDF Gate Pass...');
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        iframe.contentDocument.write(`
+            <html>
+                <head>
+                    <title>Gate Pass - ${appointmentId}</title>
+                    <style>
+                        body { font-family: sans-serif; text-align: center; padding: 40px; }
+                        .ticket { border: 2px dashed #ccc; padding: 40px; border-radius: 20px; display: inline-block; }
+                        h1 { color: #333; margin-bottom: 5px; }
+                        h2 { color: #666; margin-top: 0; font-size: 16px; }
+                        .qr { width: 120px; height: 120px; margin: 30px auto; display: block; }
+                        .details { text-align: left; margin-top: 30px; font-size: 14px; color: #444; line-height: 1.6; }
+                    </style>
+                </head>
+                <body>
+                    <div class="ticket">
+                        <h1>CONFIRMED BOOKING</h1>
+                        <h2>APPOINTMENT #${appointmentId}</h2>
+                        <svg class="qr" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+                        <p style="font-weight: bold; margin: 0; font-size: 12px; letter-spacing: 1px;">SCAN AT GUARD GATE</p>
+                        <div class="details">
+                            <div><strong>Store:</strong> ${formData.store}</div>
+                            <div><strong>Date:</strong> ${formData.date}</div>
+                            <div><strong>Slot:</strong> ${formData.slot}</div>
+                            <div><strong>Vehicle:</strong> ${formData.vehicleReg}</div>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        iframe.contentDocument.close();
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
     };
 
     return (
@@ -237,21 +311,37 @@ function DockScheduler() {
                 </div>
                 <div className="flex items-center bg-white border border-slate-200 p-1 rounded-2xl shadow-sm">
                     <button
-                        onClick={() => setView('booking')}
-                        className={`px-8 py-3 rounded-xl text-[11px] font-bold transition-all ${view === 'booking' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                        onClick={() => setView('calendar')}
+                        className={`px-6 py-2 rounded-xl text-[11px] font-bold transition-all ${view === 'calendar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
                     >
-                        MANAGER VIEW
+                        DOCK CALENDAR
+                    </button>
+                    <button
+                        onClick={() => setView('booking')}
+                        className={`px-6 py-2 rounded-xl text-[11px] font-bold transition-all ${view === 'booking' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                    >
+                        VENDOR BOOKING
+                    </button>
+                    <button
+                        onClick={() => setView('my_bookings')}
+                        className={`px-6 py-2 rounded-xl text-[11px] font-bold transition-all ${view === 'my_bookings' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                    >
+                        MY BOOKINGS
                     </button>
                     <button
                         onClick={() => setView('gate')}
-                        className={`px-8 py-3 rounded-xl text-[11px] font-bold transition-all ${view === 'gate' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
+                        className={`px-6 py-2 rounded-xl text-[11px] font-bold transition-all ${view === 'gate' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-400 hover:bg-slate-50'}`}
                     >
-                        STAFF MOBILITY
+                        GUARD GATE
                     </button>
                 </div>
             </div>
 
-            {view === 'booking' ? (
+            {view === 'calendar' ? (
+                <DockCalendarView />
+            ) : view === 'my_bookings' ? (
+                <MyBookingsView />
+            ) : view === 'booking' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Booking Form */}
                     <div className="lg:col-span-8">
@@ -271,6 +361,15 @@ function DockScheduler() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Vendor Name / ID</label>
+                                    <input
+                                        type="text"
+                                        disabled
+                                        value="Global Supplies Ltd. (V-8820)"
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                                    />
+                                </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">Store / Warehouse <span className="text-rose-500">*</span></label>
                                     <select
@@ -300,15 +399,20 @@ function DockScheduler() {
                                 <div className="md:col-span-2">
                                     <label className="text-[10px] font-bold text-slate-500 uppercase  mb-3 block">Preferred Time Slot <span className="text-rose-500">*</span></label>
                                     <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
-                                        {['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map(slot => (
-                                            <button
-                                                key={slot}
-                                                onClick={() => setFormData({ ...formData, slot })}
-                                                className={`py-2 rounded-xl border text-[10px] font-bold transition-all ${formData.slot === slot ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-500 hover:border-blue-200 hover:bg-blue-50'}`}
-                                            >
-                                                {slot}
-                                            </button>
-                                        ))}
+                                        {['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map(slot => {
+                                            const isBooked = formData.date && formData.store && appointments.some(a => a.date === formData.date && a.store === formData.store && a.slot === slot);
+                                            return (
+                                                <button
+                                                    key={slot}
+                                                    type="button"
+                                                    onClick={() => !isBooked && setFormData({ ...formData, slot })}
+                                                    disabled={isBooked}
+                                                    className={`py-2 rounded-xl border text-[10px] font-bold transition-all ${isBooked ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : formData.slot === slot ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-100 text-slate-500 hover:border-blue-200 hover:bg-blue-50'}`}
+                                                >
+                                                    {slot}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                     <p className="text-[9px] font-bold text-slate-400 mt-2 ml-1">Visual grid: Blue=Selected, White=Available, Grey=Booked, Red=Blocked</p>
                                 </div>
@@ -318,6 +422,18 @@ function DockScheduler() {
                                     <div className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 italic">
                                         {formData.slot ? 'Dock #04 Assigned' : 'Auto-assigned on slot selection'}
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">Dock Type Required <span className="text-rose-500">*</span></label>
+                                    <select
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:bg-white focus:border-blue-500 outline-none transition-all"
+                                        value={formData.dockType}
+                                        onChange={(e) => setFormData({ ...formData, dockType: e.target.value })}
+                                    >
+                                        <option value="">Select dock type...</option>
+                                        {['Ambient', 'Cold Storage', 'Dry Goods'].map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
                                 </div>
 
                                 <div>
@@ -377,14 +493,17 @@ function DockScheduler() {
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">PO Numbers</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Comma-separated PO numbers..."
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">PO Numbers <span className="text-rose-500">*</span></label>
+                                    <select
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:bg-white focus:border-blue-500 outline-none transition-all"
                                         value={formData.poNumbers}
                                         onChange={(e) => setFormData({ ...formData, poNumbers: e.target.value })}
-                                    />
+                                    >
+                                        <option value="" disabled>-- Select Purchase Order --</option>
+                                        {availablePOs.map(po => (
+                                            <option key={po.id} value={po.id}>{po.id} {po.label ? `- ${po.label.split('(')[1].replace(')','')}` : ''}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div className="md:col-span-2">
@@ -401,7 +520,7 @@ function DockScheduler() {
 
                             <div className="mt-10 flex justify-end">
                                 <PrimaryBtn onClick={handleBooking} icon={<CheckCircle size={18} />} className="!px-10 !py-4 shadow-lg shadow-blue-200">
-                                    Confirm Appointment
+                                    Submit Request
                                 </PrimaryBtn>
                             </div>
                         </VCard>
@@ -417,10 +536,10 @@ function DockScheduler() {
                                     className="space-y-6"
                                 >
                                     <VCard className="p-6 border-emerald-100 bg-emerald-50/30 text-center shadow-lg">
-                                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
                                             <CheckCircle size={32} />
                                         </div>
-                                        <h3 className="text-xl font-bold text-slate-800">Booking Confirmed</h3>
+                                        <h3 className="text-xl font-bold text-slate-800">Booking Submitted</h3>
                                         <p className="text-[11px] font-bold text-slate-500 uppercase mt-1">Appointment # {appointmentId}</p>
 
                                         <div className="mt-6 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm flex flex-col items-center">
@@ -428,13 +547,13 @@ function DockScheduler() {
                                                 <QrCode size={120} className="text-slate-800" />
                                             </div>
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">SCAN AT GUARD GATE</p>
-                                            <SecondaryBtn small className="w-full" icon={<Save size={14} />}>Download PNG</SecondaryBtn>
+                                            <SecondaryBtn small className="w-full" icon={<Save size={14} />} onClick={handleDownloadPDF}>Download PDF Gate Pass</SecondaryBtn>
                                         </div>
 
                                         <div className="mt-4 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm text-left">
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase">Status</span>
-                                                <StatusBadge status="CONFIRMED" size="xs" />
+                                                <StatusBadge status="PENDING" size="xs" />
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase">Confirmation Sent To</span>
@@ -462,14 +581,133 @@ function DockScheduler() {
     );
 }
 
+function DockCalendarView() {
+    const appointments = useInboundStore(state => state.appointments);
+    const [selectedAppt, setSelectedAppt] = useState(null);
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <VCard className="p-6">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight mb-4">Dock Availability Heatmap</h3>
+                    <div className="grid grid-cols-7 gap-2">
+                        {Array.from({ length: 14 }).map((_, i) => {
+                            const date = new Date();
+                            date.setDate(date.getDate() + i);
+                            const dateStr = date.toISOString().split('T')[0];
+                            const bookings = appointments.filter(a => a.date === dateStr).length;
+                            
+                            const isHigh = bookings > 5;
+                            const isMed = bookings > 2 && bookings <= 5;
+                            const isLow = bookings > 0 && bookings <= 2;
+                            
+                            return (
+                                <div key={i} className={`h-16 rounded-lg border flex flex-col items-center justify-center p-1 transition-all hover:scale-105 cursor-default shadow-sm
+                                    ${isHigh ? 'bg-rose-100 border-rose-200' : 
+                                      isMed ? 'bg-amber-100 border-amber-200' : 
+                                      isLow ? 'bg-indigo-100 border-indigo-200' : 
+                                      'bg-emerald-50 border-emerald-100'} `}>
+                                    <span className="text-[9px] font-bold text-slate-500 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                    <span className={`text-sm font-black ${isHigh ? 'text-rose-600' : isMed ? 'text-amber-600' : isLow ? 'text-indigo-600' : 'text-emerald-600'}`}>{date.getDate()}</span>
+                                    {bookings > 0 && <span className="text-[8px] font-bold text-slate-400 mt-0.5">{bookings} Appts</span>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                    <div className="flex flex-wrap gap-4 mt-4 justify-center text-[10px] font-bold text-slate-500">
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-emerald-50 border border-emerald-100 rounded"></div> Open</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-indigo-100 border border-indigo-200 rounded"></div> Light</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-amber-100 border border-amber-200 rounded"></div> Filling</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-rose-100 border border-rose-200 rounded"></div> Full</div>
+                    </div>
+                </VCard>
+                <VCard className="p-6 lg:col-span-2">
+                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight mb-4">Upcoming Appointments</h3>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                        {appointments.length === 0 ? (
+                            <div className="text-center p-8 text-slate-400 text-sm font-bold border-2 border-dashed rounded-xl border-slate-200">
+                                No appointments scheduled yet. Use Vendor Booking.
+                            </div>
+                        ) : appointments.map(appt => (
+                            <div 
+                                key={appt.id} 
+                                onClick={() => setSelectedAppt(appt)}
+                                className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-all bg-white shadow-sm cursor-pointer hover:shadow-md"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                                        <Truck size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-800 uppercase">{appt.id}</p>
+                                        <p className="text-[11px] font-bold text-slate-500">{appt.date} • {appt.slot} • {appt.vehicleReg}</p>
+                                    </div>
+                                </div>
+                                <StatusBadge status={appt.status} />
+                            </div>
+                        ))}
+                    </div>
+                </VCard>
+            </div>
+
+            <VModal open={!!selectedAppt} onClose={() => setSelectedAppt(null)} title="Appointment Details">
+                {selectedAppt && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">{selectedAppt.id}</h3>
+                                <p className="text-xs font-bold text-slate-500 uppercase mt-0.5">{selectedAppt.store}</p>
+                            </div>
+                            <StatusBadge status={selectedAppt.status} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">Date & Time</p>
+                                <p className="text-sm font-bold text-slate-700">{selectedAppt.date} <br/> {selectedAppt.slot}</p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">Vehicle</p>
+                                <p className="text-sm font-bold text-slate-700">{selectedAppt.vehicleReg} <br/> <span className="text-[11px] font-bold text-slate-500">{selectedAppt.vehicleType}</span></p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">Driver Info</p>
+                                <p className="text-sm font-bold text-slate-700">{selectedAppt.driverName} <br/> <span className="text-[11px] font-bold text-slate-500">{selectedAppt.driverMobile}</span></p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">Load & POs</p>
+                                <p className="text-sm font-bold text-slate-700">{selectedAppt.estLoad ? `${selectedAppt.estLoad} KG` : 'N/A'} <br/> <span className="text-[11px] font-bold text-slate-500">PO: {selectedAppt.poNumbers || 'None'}</span></p>
+                            </div>
+                        </div>
+                        {selectedAppt.specialReq && (
+                            <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                                <p className="text-[10px] font-bold text-amber-700 uppercase mb-1 flex items-center gap-1"><AlertCircle size={12}/> Special Requirements</p>
+                                <p className="text-xs font-bold text-amber-900">{selectedAppt.specialReq}</p>
+                            </div>
+                        )}
+                        <div className="pt-4 flex justify-end">
+                            <SecondaryBtn onClick={() => setSelectedAppt(null)}>Close</SecondaryBtn>
+                        </div>
+                    </div>
+                )}
+            </VModal>
+        </div>
+    );
+}
+
 function GuardGateView() {
+    const [view, setView] = useState('entry'); // 'entry', 'exit'
     const [scannedId, setScannedId] = useState('');
     const [isScanning, setIsScanning] = useState(false);
-    const [scanResult, setScanResult] = useState(null); // 'allow', 'deny'
+    const [scanResult, setScanResult] = useState(null);
+    const [vehicleReg, setVehicleReg] = useState('');
+    const appointments = useInboundStore(state => state.appointments);
+    const logGateEntry = useInboundStore(state => state.logGateEntry);
+    const logGateExit = useInboundStore(state => state.logGateExit);
 
     useEffect(() => {
         const handler = (e) => {
             if (e.detail === 'GATE_DENY') {
+                setView('entry');
                 setScannedId('ERR-403');
                 setScanResult('deny');
             }
@@ -478,26 +716,59 @@ function GuardGateView() {
         return () => window.removeEventListener('triggerScenario', handler);
     }, []);
 
-    const handleScan = () => {
+    const handleEntryScan = () => {
         setIsScanning(true);
         setTimeout(() => {
             setIsScanning(false);
-            if (scannedId.length > 5) {
+            const appt = appointments.find(a => a.id === scannedId);
+            if (appt && appt.status === 'Confirmed') {
                 setScanResult('allow');
-                toast.success('Access Granted! Proceed to Dock #04');
+                logGateEntry(appt.id);
+                toast.success(`Access Granted! Proceed to Dock (Vehicle: ${appt.vehicleReg})`);
+            } else if (appt && appt.status === 'Pending') {
+                setScanResult('deny');
+                toast.error('Access Denied: Appointment is still Pending Approval.');
             } else {
                 setScanResult('deny');
-                toast.error('Access Denied: Invalid Appointment ID');
+                toast.error('Access Denied: Invalid or Expired Appointment ID');
             }
-        }, 1500);
+        }, 1000);
     };
 
+    const handleExitScan = () => {
+        setIsScanning(true);
+        setTimeout(() => {
+            setIsScanning(false);
+            const appt = appointments.find(a => a.vehicleReg.toLowerCase() === vehicleReg.toLowerCase() && ['Arrived', 'Received', 'Rejected'].includes(a.status));
+            if (appt) {
+                if(appt.status === 'Arrived') {
+                    setScanResult('deny');
+                    toast.error('Warning: Vehicle has not completed receiving process! Cannot exit.');
+                } else {
+                    setScanResult('allow');
+                    logGateExit(appt.id);
+                    toast.success('Exit Logged. Gate pass closed.');
+                }
+            } else {
+                setScanResult('deny');
+                toast.error('No valid active entry found for this vehicle ready for exit.');
+            }
+        }, 1000);
+    };
+
+    const activeVehicles = appointments.filter(a => a.status === 'Arrived');
+
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+                <div className="flex justify-center gap-4 mb-6">
+                    <button onClick={() => { setView('entry'); setScanResult(null); setScannedId(''); }} className={`px-6 py-2 rounded-full text-xs font-bold uppercase transition-all ${view === 'entry' ? 'bg-slate-800 text-white' : 'bg-white text-slate-500 border border-slate-200 shadow-sm'}`}>Vehicle Entry</button>
+                    <button onClick={() => { setView('exit'); setScanResult(null); setVehicleReg(''); }} className={`px-6 py-2 rounded-full text-xs font-bold uppercase transition-all ${view === 'exit' ? 'bg-slate-800 text-white' : 'bg-white text-slate-500 border border-slate-200 shadow-sm'}`}>Vehicle Exit</button>
+                </div>
             <VCard className={`p-10 shadow-2xl transition-all duration-500 border-2 ${scanResult === 'allow' ? 'bg-emerald-50 border-emerald-200' : scanResult === 'deny' ? 'bg-rose-50 border-rose-200' : 'bg-white border-slate-100'}`}>
                 <div className="text-center mb-10">
-                    <h3 className={`text-xl font-bold uppercase ${scanResult ? 'text-slate-800' : 'text-slate-700'}`}>Guard Gate Interface</h3>
-                    <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-wider">Vehicle Check-in & Validation</p>
+                    <h3 className={`text-xl font-bold uppercase ${scanResult ? 'text-slate-800' : 'text-slate-700'}`}>{view === 'entry' ? 'Vehicle Entry Validation' : 'Vehicle Exit Logging'}</h3>
+                    <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-wider">{view === 'entry' ? 'Cross-check vs booked slot' : 'Confirm goods loaded/unloaded & exit'}</p>
                 </div>
 
                 <div className="max-w-md mx-auto bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 relative overflow-hidden">
@@ -505,37 +776,47 @@ function GuardGateView() {
 
                     <div className="relative z-10 space-y-6">
                         <div className="text-center">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 block">QR SCANNER / MANUAL ENTRY</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 block">{view === 'entry' ? 'SCAN / ENTER APPOINTMENT ID' : 'ENTER VEHICLE PLATE NUMBER'}</label>
                             <div className="relative group">
                                 <Scan className={`absolute left-4 top-1/2 -translate-y-1/2 ${isScanning ? 'text-blue-500 animate-pulse' : 'text-slate-300'}`} size={20} />
-                                <input
-                                    type="text"
-                                    placeholder="Scan or enter Dock Appointment ID..."
-                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-[13px] font-bold focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all uppercase "
-                                    value={scannedId}
-                                    onChange={(e) => setScannedId(e.target.value)}
-                                />
+                                {view === 'entry' ? (
+                                    <input
+                                        type="text"
+                                        placeholder="Scan or enter DA-XXXX..."
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-[13px] font-bold focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all uppercase"
+                                        value={scannedId}
+                                        onChange={(e) => setScannedId(e.target.value)}
+                                    />
+                                ) : (
+                                    <input
+                                        type="text"
+                                        placeholder="Enter Vehicle Plate..."
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-[13px] font-bold focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all uppercase"
+                                        value={vehicleReg}
+                                        onChange={(e) => setVehicleReg(e.target.value)}
+                                    />
+                                )}
                             </div>
                         </div>
 
                         {isScanning ? (
                             <div className="py-4">
-                                <TruckLoader message="Verifying Vehicle..." />
+                                <TruckLoader message={view === 'entry' ? "Verifying Booking..." : "Verifying Entry Record..."} />
                             </div>
                         ) : (
                             <>
                                 <PrimaryBtn
-                                    onClick={handleScan}
-                                    disabled={isScanning || !scannedId}
+                                    onClick={view === 'entry' ? handleEntryScan : handleExitScan}
+                                    disabled={view === 'entry' ? !scannedId : !vehicleReg}
                                     className={`w-full !py-5 !rounded-2xl shadow-xl transition-all ${isScanning ? 'opacity-70' : ''}`}
-                                    icon={isScanning ? <RefreshCw className="animate-spin" size={18} /> : <Camera size={18} />}
+                                    icon={<Camera size={18} />}
                                 >
-                                    {isScanning ? 'VALIDATING...' : 'SCAN & VERIFY'}
+                                    {view === 'entry' ? 'VALIDATE ENTRY' : 'LOG EXIT'}
                                 </PrimaryBtn>
 
                                 <div className="pt-6 border-t border-slate-100 space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase">Check-in Timestamp</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase">Timestamp</span>
                                         <span className="text-[11px] font-bold text-slate-700 uppercase">{scanResult === 'allow' ? new Date().toLocaleTimeString() : '--:--:--'}</span>
                                     </div>
                                     {scanResult === 'deny' && (
@@ -543,26 +824,60 @@ function GuardGateView() {
                                             <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
                                             <div>
                                                 <p className="text-[10px] font-bold text-rose-900 uppercase">Deny Reason</p>
-                                                <p className="text-[11px] font-bold text-rose-600 mt-0.5">Wrong Date, Slot Cancelled, or Unknown ID</p>
+                                                <p className="text-[11px] font-bold text-rose-600 mt-0.5">{view === 'entry' ? 'No scheduled appointment found for this ID.' : 'Vehicle not checked-in or already exited.'}</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             </>
                         )}
-
                     </div>
                 </div>
 
                 {scanResult && (
                     <div className="mt-8 text-center">
                         <div className={`text-4xl font-extrabold tracking-[0.3em] uppercase animate-pulse ${scanResult === 'allow' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {scanResult === 'allow' ? 'ALLOW' : 'DENY'}
+                            {scanResult === 'allow' ? (view === 'entry' ? 'ALLOW ENTRY' : 'ALLOW EXIT') : 'DENY'}
                         </div>
-                        {scanResult === 'allow' && <p className="mt-2 text-sm font-bold text-emerald-700 uppercase">Vehicle Verified. Open Gate.</p>}
+                        {scanResult === 'allow' && <p className="mt-2 text-sm font-bold text-emerald-700 uppercase">{view === 'entry' ? 'Gate pass issued. Open Gate.' : 'Dwell time logged. Close gate event.'}</p>}
                     </div>
                 )}
             </VCard>
+            </div>
+
+            {/* Active Vehicles Sidebar */}
+            <div className="lg:col-span-1">
+                <VCard className="p-6 h-full border-blue-100 bg-slate-50/50">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Currently Inside</h3>
+                        <div className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">{activeVehicles.length} Vehicles</div>
+                    </div>
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                        {activeVehicles.length === 0 ? (
+                            <div className="text-center p-6 text-[11px] font-bold text-slate-400 uppercase border-2 border-dashed border-slate-200 rounded-xl">
+                                No vehicles inside warehouse
+                            </div>
+                        ) : (
+                            activeVehicles.map(veh => (
+                                <div key={veh.id} className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-300 transition-all">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <p className="text-sm font-bold text-slate-800 uppercase">{veh.vehicleReg}</p>
+                                        <StatusBadge status={veh.status} size="xs" />
+                                    </div>
+                                    <div className="flex flex-col gap-1 text-[10px] font-bold text-slate-500 uppercase">
+                                        <div className="flex items-center justify-between">
+                                            <span>PO:</span> <span className="text-slate-700">{veh.poNumbers || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span>Slot:</span> <span className="text-slate-700">{veh.slot}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </VCard>
+            </div>
         </div>
     );
 }
@@ -572,12 +887,13 @@ function BlindReceiving() {
     const [step, setStep] = useState('init'); // 'init', 'scanning', 'summary'
     const [poNumber, setPoNumber] = useState('');
     const [dock, setDock] = useState('');
-    const [scannedItems, setScannedItems] = useState([
-        { id: 1, name: 'Premium Basmati Rice', uom: 'KG', expected: 100, scanned: 98, damaged: false, rejected: false },
-        { id: 2, name: 'Sona Masoori Rice', uom: 'KG', expected: 50, scanned: 50, damaged: false, rejected: false }
-    ]);
+    const [scannedItems, setScannedItems] = useState([]);
     const [remarks, setRemarks] = useState('');
     const [supervisorPin, setSupervisorPin] = useState('');
+    const [activeApptId, setActiveApptId] = useState('');
+
+    const appointments = useInboundStore(state => state.appointments);
+    const saveReceivingLog = useInboundStore(state => state.saveReceivingLog);
 
     useEffect(() => {
         const handler = (e) => {
@@ -675,7 +991,26 @@ function BlindReceiving() {
                                     </div>
                                 </div>
                                 <PrimaryBtn
-                                    onClick={() => setStep('scanning')}
+                                    onClick={() => {
+                                        const activeAppt = appointments.find(a => (a.poNumbers.includes(poNumber) || a.id === poNumber) && a.status === 'Arrived');
+                                        if (activeAppt) {
+                                            setActiveApptId(activeAppt.id);
+                                            setScannedItems([
+                                                { id: 1, name: 'Premium Basmati Rice', uom: 'KG', expected: 100, scanned: 0, damaged: false, rejected: false },
+                                                { id: 2, name: 'Sona Masoori Rice', uom: 'KG', expected: 50, scanned: 0, damaged: false, rejected: false }
+                                            ]);
+                                            setStep('scanning');
+                                        } else if (poNumber === 'DEMO') {
+                                            setActiveApptId('DEMO-123');
+                                            setScannedItems([
+                                                { id: 1, name: 'Premium Basmati Rice', uom: 'KG', expected: 100, scanned: 0, damaged: false, rejected: false },
+                                                { id: 2, name: 'Sona Masoori Rice', uom: 'KG', expected: 50, scanned: 0, damaged: false, rejected: false }
+                                            ]);
+                                            setStep('scanning');
+                                        } else {
+                                            toast.error('No Arrived vehicle found for this PO. Type "DEMO" to force start.');
+                                        }
+                                    }}
                                     disabled={!poNumber || !dock}
                                     className="w-full !py-4 shadow-lg shadow-blue-100 mt-4"
                                     icon={<Play size={18} />}
@@ -694,8 +1029,13 @@ function BlindReceiving() {
                             </div>
 
                             <div className="p-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-center space-y-4 shadow-sm">
-                                <div className="w-full h-32 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-                                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div 
+                                    onClick={() => {
+                                        toast.success('Barcode scanned successfully!');
+                                        setScannedItems(prev => prev.map(i => ({...i, scanned: Math.min(i.expected, i.scanned + 10)})));
+                                    }}
+                                    className="w-full h-32 bg-white rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden group cursor-pointer"
+                                >
                                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-rose-400 animate-[bounce_2s_infinite]"></div>
                                     <Camera size={32} className="text-slate-300 group-hover:text-blue-400 transition-colors" />
                                 </div>
@@ -845,7 +1185,14 @@ function BlindReceiving() {
                             </div>
 
                             <PrimaryBtn
-                                onClick={() => { toast.success('GRN Finalized and Dispatched!'); setStep('init'); }}
+                                onClick={() => {
+                                    saveReceivingLog(poNumber, activeApptId, scannedItems, hasDiscrepancy ? 'Discrepancy' : 'Matched');
+                                    toast.success('GRN Finalized and Dispatched!');
+                                    setStep('init');
+                                    setPoNumber('');
+                                    setScannedItems([]);
+                                    setActiveApptId('');
+                                }}
                                 disabled={hasDiscrepancy && !supervisorPin}
                                 className="w-full !py-4 shadow-lg shadow-blue-100 mt-6 !rounded-[1.5rem]"
                                 icon={<CheckCircle size={18} />}
@@ -886,6 +1233,10 @@ function IoTTempMonitor() {
     const [showOverride, setShowOverride] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
 
+    const appointments = useInboundStore(state => state.appointments);
+    const rejectAppointment = useInboundStore(state => state.rejectAppointment);
+    const activeAppt = appointments.find(a => a.status === 'Arrived') || { id: 'DEMO-123', vehicleReg: 'MH 12 AB 1234', slot: 'DOCK-04' };
+
     useEffect(() => {
         const handler = (e) => {
             if (e.detail === 'TEMP_BREACH') {
@@ -924,6 +1275,9 @@ function IoTTempMonitor() {
         if (!rejectionReason) {
             toast.error('Select a rejection reason');
             return;
+        }
+        if (activeAppt.id !== 'DEMO-123') {
+            rejectAppointment(activeAppt.id, rejectionReason);
         }
         toast.error(`GRN Rejected: ${rejectionReason}`, { icon: '🚫' });
     };
@@ -1002,7 +1356,7 @@ function IoTTempMonitor() {
                                         <div className="p-2 bg-white rounded-lg text-slate-400 shadow-sm"><Truck size={18} /></div>
                                         <div>
                                             <p className="text-[9px] font-bold text-slate-400 uppercase ">Truck / Dock ID</p>
-                                            <p className="text-[13px] font-bold text-slate-800 uppercase tracking-tight">MH 12 AB 1234 • DOCK-04</p>
+                                            <p className="text-[13px] font-bold text-slate-800 uppercase tracking-tight">{activeAppt.vehicleReg} • {activeAppt.slot}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -1121,5 +1475,125 @@ function SectionTitle({ children, action }) {
             <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{children}</h2>
             {action}
         </div>
+    );
+}
+
+function MyBookingsView() {
+    const appointments = useInboundStore(state => state.appointments);
+    const cancelAppointment = useInboundStore(state => state.cancelAppointment);
+    const confirmAppointment = useInboundStore(state => state.confirmAppointment);
+    
+    // Sort appointments: latest first
+    const sortedAppts = [...appointments].reverse();
+
+    const handleCancel = (id) => {
+        cancelAppointment(id);
+        toast.success(`Booking ${id} cancelled.`);
+    };
+
+    const handleConfirm = (id) => {
+        confirmAppointment(id);
+        toast.success(`Booking ${id} approved successfully!`);
+    };
+
+    const handleDownload = (id) => {
+        toast.success(`Downloading confirmation for ${id}...`);
+        // Basic simulation of download
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        iframe.contentDocument.write(`
+            <html>
+                <head>
+                    <title>Booking Confirmation - ${id}</title>
+                    <style>
+                        body { font-family: sans-serif; text-align: center; padding: 40px; }
+                        .ticket { border: 2px dashed #ccc; padding: 40px; border-radius: 20px; display: inline-block; }
+                        h1 { color: #333; margin-bottom: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="ticket">
+                        <h1>BOOKING CONFIRMATION</h1>
+                        <h2>APPOINTMENT #${id}</h2>
+                    </div>
+                </body>
+            </html>
+        `);
+        iframe.contentDocument.close();
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    };
+
+    return (
+        <VCard className="p-6">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight mb-4">My Bookings</h3>
+            {sortedAppts.length === 0 ? (
+                <div className="text-center p-10 text-slate-400 text-sm font-bold border-2 border-dashed rounded-xl border-slate-200">
+                    No bookings found. Submit a new booking form to see it here.
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-200">
+                                <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Booking ID</th>
+                                <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date & Slot</th>
+                                <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store</th>
+                                <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                                <th className="py-3 px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedAppts.map(appt => (
+                                <tr key={appt.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <td className="py-3 px-4">
+                                        <div className="text-xs font-bold text-slate-800">{appt.id}</div>
+                                        <div className="text-[10px] font-bold text-slate-400">{appt.poNumbers ? `PO: ${appt.poNumbers}` : 'No PO'}</div>
+                                    </td>
+                                    <td className="py-3 px-4 text-xs font-bold text-slate-700">
+                                        {appt.date} <br/> <span className="text-[10px] text-slate-500">{appt.slot}</span>
+                                    </td>
+                                    <td className="py-3 px-4 text-xs font-bold text-slate-700">{appt.store}</td>
+                                    <td className="py-3 px-4">
+                                        <StatusBadge status={appt.status.toLowerCase()} size="xs" />
+                                    </td>
+                                    <td className="py-3 px-4 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            {appt.status === 'Pending' && (
+                                                <button 
+                                                    onClick={() => handleConfirm(appt.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                                    title="Approve Booking"
+                                                >
+                                                    <CheckCircle size={16} />
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={() => handleDownload(appt.id)}
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                title="Download Confirmation"
+                                            >
+                                                <Save size={16} />
+                                            </button>
+                                            {(appt.status === 'Pending' || appt.status === 'Confirmed' || appt.status === 'Scheduled') && (
+                                                <button 
+                                                    onClick={() => handleCancel(appt.id)}
+                                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                                    title={appt.status === 'Pending' ? "Reject Booking" : "Cancel Booking"}
+                                                >
+                                                    <XCircle size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </VCard>
     );
 }
