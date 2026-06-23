@@ -1,682 +1,870 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Map as MapIcon,
-    Filter,
-    Zap,
-    BarChart3,
-    Search,
-    Navigation,
-    Box,
-    ArrowRight,
-    CheckCircle2,
-    Info,
-    LayoutGrid,
-    Cuboid as Cube
+    Map as MapIcon, Layers, Grid as GridIcon, Package, ArrowRightLeft,
+    AlertTriangle, Plus, Edit2, Trash2, CheckCircle2, XCircle, Search,
+    Filter, Box, Info, Navigation, Activity, TrendingDown, TrendingUp
 } from 'lucide-react';
-import {
-    PageHeader,
-    VCard,
-    SectionTitle,
-    PrimaryBtn,
-    SecondaryBtn,
-    VendorBreadcrumb,
-    StatusBadge
-} from '../Vendors/VendorComponents';
 import toast from 'react-hot-toast';
-import { fetchBinLocations, createBinLocation, slotProductToBin, fetchProducts, fetchVendors, fetchAllVendorProducts } from '../../api/vendorService';
+import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge } from '../Vendors/VendorComponents';
 
-const ZONES = ['Cold Storage', 'Ambient', 'Frozen', 'Receiving Bay', 'Dispatch Area'];
-const BIN_STATUS = {
-    STOCK_LOW: '#ef4444', // Red
-    STOCK_MED: '#f59e0b', // Amber
-    STOCK_HIGH: '#3b82f6', // Blue
-    EMPTY: 'white',
-    FULL: '#1e3a8a', // Deep Blue
-    VELOCITY_HIGH: '#ec4899', // Pink
-    VELOCITY_MED: '#8b5cf6', // Purple
-    VELOCITY_LOW: '#10b981'  // Emerald
+// --- MOCK DATA GENERATION ---
+
+const INITIAL_CATEGORIES = [
+    { id: 'c1', name: 'Milk Products', color: '#3b82f6' }, // Blue
+    { id: 'c2', name: 'Chocolates & Sweets', color: '#8b5cf6' }, // Purple
+    { id: 'c3', name: 'Grains & Dal', color: '#eab308' }, // Yellow
+    { id: 'c4', name: 'Cooking Oils', color: '#f59e0b' }, // Amber
+    { id: 'c5', name: 'Snacks', color: '#ef4444' }, // Red
+    { id: 'c6', name: 'Beverages', color: '#06b6d4' }, // Cyan
+    { id: 'c7', name: 'Biscuits', color: '#f97316' }, // Orange
+    { id: 'c8', name: 'Spices', color: '#b91c1c' }, // Dark Red
+    { id: 'c9', name: 'Personal Care', color: '#ec4899' }, // Pink
+    { id: 'c10', name: 'Household Cleaning', color: '#14b8a6' }, // Teal
+    { id: 'c11', name: 'Dry Fruits', color: '#84cc16' }, // Lime
+    { id: 'c12', name: 'Packaged Foods', color: '#6366f1' }, // Indigo
+];
+
+const generateRacks = () => {
+    const racks = [];
+    for (let r = 1; r <= 6; r++) {
+        for (let c = 1; c <= 8; c++) {
+            const randomCat = INITIAL_CATEGORIES[Math.floor(Math.random() * INITIAL_CATEGORIES.length)];
+            racks.push({
+                id: `R-${r}-${c}`,
+                row: r,
+                col: c,
+                category_id: randomCat.id
+            });
+        }
+    }
+    return racks;
+};
+
+const INITIAL_PRODUCTS = [
+    { id: 'p1', name: 'Full Cream Milk 1L', category_id: 'c1', unit: 'Pkt' },
+    { id: 'p2', name: 'Curd 500g', category_id: 'c1', unit: 'Cup' },
+    { id: 'p3', name: 'Dark Chocolate Bar', category_id: 'c2', unit: 'Pcs' },
+    { id: 'p4', name: 'Toor Dal 1kg', category_id: 'c3', unit: 'Bag' },
+    { id: 'p5', name: 'Basmati Rice 5kg', category_id: 'c3', unit: 'Bag' },
+    { id: 'p6', name: 'Sunflower Oil 1L', category_id: 'c4', unit: 'Bottle' },
+    { id: 'p7', name: 'Potato Chips', category_id: 'c5', unit: 'Pkt' },
+    { id: 'p8', name: 'Cola 2L', category_id: 'c6', unit: 'Bottle' },
+    { id: 'p9', name: 'Digestive Biscuits', category_id: 'c7', unit: 'Pkt' },
+    { id: 'p10', name: 'Turmeric Powder 200g', category_id: 'c8', unit: 'Pkt' },
+    { id: 'p11', name: 'Bathing Soap', category_id: 'c9', unit: 'Pcs' },
+    { id: 'p12', name: 'Floor Cleaner 1L', category_id: 'c10', unit: 'Bottle' },
+    { id: 'p13', name: 'Almonds 500g', category_id: 'c11', unit: 'Pkt' },
+    { id: 'p14', name: 'Cashews 500g', category_id: 'c11', unit: 'Pkt' },
+    { id: 'p15', name: 'Corn Flakes', category_id: 'c12', unit: 'Box' },
+    { id: 'p16', name: 'Instant Noodles', category_id: 'c12', unit: 'Pkt' },
+    { id: 'p17', name: 'Green Tea Bags', category_id: 'c6', unit: 'Box' },
+    { id: 'p18', name: 'Filter Coffee 200g', category_id: 'c6', unit: 'Pkt' },
+    { id: 'p19', name: 'Garam Masala', category_id: 'c8', unit: 'Pkt' },
+    { id: 'p20', name: 'Chili Powder', category_id: 'c8', unit: 'Pkt' },
+    { id: 'p21', name: 'Washing Powder 2kg', category_id: 'c10', unit: 'Bag' },
+    { id: 'p22', name: 'Dishwash Bar', category_id: 'c10', unit: 'Pcs' },
+    { id: 'p23', name: 'Shampoo 500ml', category_id: 'c9', unit: 'Bottle' },
+    { id: 'p24', name: 'Toothpaste 150g', category_id: 'c9', unit: 'Tube' },
+    { id: 'p25', name: 'Peanut Butter', category_id: 'c12', unit: 'Jar' },
+    { id: 'p26', name: 'Mixed Fruit Jam', category_id: 'c12', unit: 'Jar' },
+    { id: 'p27', name: 'Salt 1kg', category_id: 'c8', unit: 'Pkt' },
+    { id: 'p28', name: 'Sugar 1kg', category_id: 'c3', unit: 'Bag' },
+];
+
+const generateInitialStock = (racks) => {
+    const stock = [];
+    INITIAL_PRODUCTS.forEach(product => {
+        // Find racks assigned to this product's category
+        const eligibleRacks = racks.filter(r => r.category_id === product.category_id);
+        if (eligibleRacks.length > 0) {
+            // Assign to first eligible rack
+            const rack = eligibleRacks[0];
+            const qty = Math.floor(Math.random() * 100);
+            stock.push({
+                product_id: product.id,
+                rack_id: rack.id,
+                quantity: qty,
+                last_updated: new Date().toISOString()
+            });
+        }
+    });
+    return stock;
+};
+
+const getStockStatus = (qty) => {
+    if (qty <= 0) return 'OUT OF STOCK';
+    if (qty < 20) return 'LOW';
+    if (qty < 50) return 'MEDIUM';
+    return 'IN STOCK';
+};
+
+const getStockStatusColor = (status) => {
+    switch (status) {
+        case 'OUT OF STOCK': return 'bg-slate-100 text-slate-600 border-slate-300';
+        case 'LOW': return 'bg-rose-100 text-rose-700 border-rose-300';
+        case 'MEDIUM': return 'bg-amber-100 text-amber-700 border-amber-300';
+        case 'IN STOCK': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
+        default: return 'bg-gray-100 text-gray-700';
+    }
 };
 
 export default function WarehouseMap() {
-    const [mainView, setMainView] = useState('MAP'); // MAP, PRODUCTS, VENDORS
-    const [vendors, setVendors] = useState([]);
-    const [vendorProducts, setVendorProducts] = useState([]);
+    const [activeTab, setActiveTab] = useState('MAP');
+
+    // System State
+    const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+    const [racks, setRacks] = useState(() => generateRacks());
+    const [products, setProducts] = useState(INITIAL_PRODUCTS);
+    const [stock, setStock] = useState(() => generateInitialStock(racks));
+    const [movements, setMovements] = useState([]);
+
+    // UI States
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
+    const [is3D, setIs3D] = useState(false);
+    const [selectedRack, setSelectedRack] = useState(null);
+    const [activeDropdownRackId, setActiveDropdownRackId] = useState(null);
+    const [productPage, setProductPage] = useState(1);
     
-    const [viewMode, setViewMode] = useState('2D');
-    const [velocityOverlay, setVelocityOverlay] = useState(true);
-    const [utilisationOverlay, setUtilisationOverlay] = useState(false);
-    const [searchSKU, setSearchSKU] = useState('');
-    const [searchBin, setSearchBin] = useState('');
-    const [selectedZones, setSelectedZones] = useState([]);
-    const [bins, setBins] = useState([]);
+    const [isRackDropdownOpen, setIsRackDropdownOpen] = useState(false);
+    const [rackSearchQuery, setRackSearchQuery] = useState('');
 
-    // Real master products
-    const [products, setProducts] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState(null);
-    const [showProductDropdown, setShowProductDropdown] = useState(false);
+    // Update Forms State
+    const [stockUpdateForm, setStockUpdateForm] = useState({ rack_id: '', product_id: '', type: 'IN', quantity: '' });
 
-    const [incomingSKU, setIncomingSKU] = useState('');
-    const [quantityArriving, setQuantityArriving] = useState('');
-    const [overrideBin, setOverrideBin] = useState('');
+    // ─────────────────────────────────────────────────────────────────
+    // Derived Data & Helpers
+    // ─────────────────────────────────────────────────────────────────
+    
+    const getCategoryById = (id) => categories.find(c => c.id === id);
+    const getProductById = (id) => products.find(p => p.id === id);
+    const getRackById = (id) => racks.find(r => r.id === id);
 
-    const filteredProducts = Array.isArray(products) ? products.filter(p =>
-        (p.name?.toLowerCase().includes(incomingSKU.toLowerCase())) ||
-        (p.sku?.toLowerCase().includes(incomingSKU.toLowerCase()))
-    ) : [];
+    const getRackStock = (rackId) => stock.filter(s => s.rack_id === rackId);
 
-    const toggleZone = (zone) => {
-        setSelectedZones(prev =>
-            prev.includes(zone) ? prev.filter(z => z !== zone) : [...prev, zone]
+    // ─────────────────────────────────────────────────────────────────
+    // Actions
+    // ─────────────────────────────────────────────────────────────────
+
+    const handleStockUpdate = (e) => {
+        e.preventDefault();
+        const { rack_id, product_id, type, quantity } = stockUpdateForm;
+        const qty = parseInt(quantity, 10);
+        
+        if (!rack_id || !product_id || isNaN(qty) || qty <= 0) {
+            toast.error("Please fill all fields with valid data.");
+            return;
+        }
+
+        // Validate rack category matches product category
+        const rack = getRackById(rack_id);
+        const product = getProductById(product_id);
+        if (rack.category_id !== product.category_id) {
+            toast.error(`Rack is categorized as '${getCategoryById(rack.category_id)?.name}', but product belongs to '${getCategoryById(product.category_id)?.name}'.`);
+            return;
+        }
+
+        setStock(prev => {
+            const existing = prev.find(s => s.product_id === product_id && s.rack_id === rack_id);
+            let newStock = [...prev];
+            
+            if (existing) {
+                const newQty = type === 'IN' ? existing.quantity + qty : Math.max(0, existing.quantity - qty);
+                newStock = newStock.map(s => s.product_id === product_id && s.rack_id === rack_id ? { ...s, quantity: newQty, last_updated: new Date().toISOString() } : s);
+            } else {
+                if (type === 'OUT') {
+                    toast.error("Cannot stock out from an empty rack.");
+                    return prev;
+                }
+                newStock.push({
+                    product_id, rack_id, quantity: qty, last_updated: new Date().toISOString()
+                });
+            }
+            return newStock;
+        });
+
+        setMovements(prev => [{
+            id: `M-${Date.now()}`,
+            product_id, rack_id, type, quantity: qty, timestamp: new Date().toISOString()
+        }, ...prev]);
+
+        toast.success(`Stock ${type === 'IN' ? 'added to' : 'removed from'} rack successfully!`);
+        setStockUpdateForm({ ...stockUpdateForm, quantity: '' });
+    };
+
+    const handleRackCategoryChange = (rackId, newCategoryId) => {
+        setRacks(prev => prev.map(r => r.id === rackId ? { ...r, category_id: newCategoryId } : r));
+        toast.success("Rack category updated.");
+    };
+
+    // ─────────────────────────────────────────────────────────────────
+    // Renders
+    // ─────────────────────────────────────────────────────────────────
+
+    const renderTabs = () => {
+        const tabs = [
+            { id: 'MAP', label: 'Floor Map', icon: MapIcon },
+            { id: 'CATEGORIES', label: 'Categories', icon: Layers },
+            { id: 'RACKS', label: 'Rack Setup', icon: GridIcon },
+            { id: 'PRODUCTS', label: 'Product Catalog', icon: Package },
+            { id: 'STOCK_UPDATE', label: 'Stock Movements', icon: ArrowRightLeft },
+            { id: 'LOW_STOCK', label: 'Low Stock Report', icon: AlertTriangle },
+        ];
+
+        return (
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-5 py-3 rounded-2xl text-[13px] font-bold transition-all flex items-center whitespace-nowrap ${
+                            activeTab === tab.id 
+                            ? 'bg-[#0f172a] text-white shadow-xl shadow-slate-200' 
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <tab.icon size={16} className={`mr-2 ${activeTab === tab.id ? 'text-blue-400' : 'text-slate-400'}`} /> 
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
         );
     };
 
-    useEffect(() => {
-        loadBins();
-        loadProducts();
-        loadVendors();
-        loadVendorProducts();
-    }, []);
+    const renderMap = () => {
+        return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <VCard className="relative overflow-hidden border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-end mb-6">
+                        <div>
+                            <SectionTitle>Interactive Floor Map</SectionTitle>
+                            <p className="text-[13px] text-slate-500 mt-1">Visualize racks grouped by their assigned categories.</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setIs3D(!is3D)}
+                                className={`px-4 py-2 border rounded-xl text-[12px] font-bold flex items-center gap-2 transition-all shadow-sm ${
+                                    is3D 
+                                    ? 'bg-blue-50 border-blue-200 text-blue-600' 
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                }`}
+                            >
+                                <Box size={16} className={is3D ? 'text-blue-600' : 'text-slate-400'} />
+                                {is3D ? '3D View Active' : '2D View Active'}
+                            </button>
+                            {/* Legend preview */}
+                            <div className="flex bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 items-center gap-4">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase">Categories Legend</span>
+                                <div className="flex -space-x-2">
+                                    {categories.slice(0, 5).map(c => (
+                                        <div key={c.id} className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.color }} title={c.name} />
+                                    ))}
+                                    {categories.length > 5 && <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shadow-sm">+{categories.length - 5}</div>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    const loadVendorProducts = () => {
-        fetchAllVendorProducts()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                setVendorProducts(list);
-            })
-            .catch(err => console.error("Failed to load vendor products", err));
-    };
+                    <div 
+                        className="bg-[#f8fafc] p-8 rounded-2xl border-2 border-dashed border-slate-200 min-h-[500px] flex items-center justify-center"
+                        style={{ perspective: '1500px' }}
+                    >
+                        <div 
+                            className="grid grid-cols-8 gap-4 max-w-5xl mx-auto transition-transform duration-700 ease-out w-full"
+                            style={is3D ? {
+                                transform: 'rotateX(55deg) rotateZ(-45deg) scale(0.85)',
+                                transformStyle: 'preserve-3d'
+                            } : {
+                                transform: 'rotateX(0deg) rotateZ(0deg) scale(1)',
+                                transformStyle: 'flat'
+                            }}
+                        >
+                            {racks.map((rack, idx) => {
+                                const cat = getCategoryById(rack.category_id);
+                                const rackStock = getRackStock(rack.id);
+                                const isHighlighted = searchQuery && (rack.id.toLowerCase().includes(searchQuery.toLowerCase()) || cat?.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                                const isSelected = selectedRack === rack.id;
 
-    const loadVendors = () => {
-        fetchVendors()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                setVendors(list);
-            })
-            .catch(err => console.error("Failed to load vendors", err));
-    };
-
-    const loadProducts = () => {
-        fetchProducts()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                setProducts(list);
-            })
-            .catch(err => {
-                console.error("Failed to load products", err);
-            });
-    };
-
-    const loadBins = () => {
-        fetchBinLocations()
-            .then(res => {
-                const list = Array.isArray(res.data || res) ? (res.data || res) : [];
-                if (list.length > 0) {
-                    setBins(list.map(b => {
-                        const cap = parseFloat(b.capacityUnits || 100);
-                        const cur = parseFloat(b.currentUnits || 0);
-                        const pct = cap > 0 ? Math.min(100, Math.round((cur / cap) * 100)) : 0;
-                        return {
-                            id: b.binFullCode || 'Bin',
-                            fill: pct,
-                            velocity: b.velocityClass || 'LOW',
-                            zone: b.zone || 'Ambient',
-                            currentProductName: b.currentProductName,
-                            currentUnits: cur,
-                            capacityUnits: cap,
-                            dbId: b.id
-                        };
-                    }));
-                } else {
-                    setBins(generateSimulatedBins());
-                }
-            })
-            .catch(() => {
-                setBins(generateSimulatedBins());
-            });
-    };
-
-    const generateSimulatedBins = () => {
-        return Array.from({ length: 48 }, (_, i) => ({
-            id: `A-03-L${Math.floor(i / 12) + 1}-B${(i % 12) + 1}`,
-            fill: Math.floor(Math.random() * 100),
-            velocity: Math.random() > 0.7 ? 'HIGH' : Math.random() > 0.4 ? 'MED' : 'LOW',
-            zone: ZONES[Math.floor(Math.random() * ZONES.length)],
-            currentProductName: null,
-            currentUnits: 0,
-            capacityUnits: 100
-        }));
-    };
-
-    const handlePutAway = () => {
-        if (!selectedProduct) {
-            toast.error('Please select an Incoming Product from the suggestion dropdown.');
-            return;
-        }
-        if (!selectedProduct.id) {
-            toast.error('Selected product does not have a valid ID.');
-            return;
-        }
-
-        const qty = parseFloat(quantityArriving);
-        if (isNaN(qty) || qty <= 0) {
-            toast.error('Please enter a valid positive quantity greater than 0.');
-            return;
-        }
-
-        const binCode = (overrideBin || (bins.length > 0 ? bins[0].id : 'A-03-L1-B01')).trim();
-        if (!binCode) {
-            toast.error('Please select or specify a valid bin location.');
-            return;
-        }
-
-        // Search the bin in current local state
-        const targetBin = bins.find(b => b.id.toLowerCase() === binCode.toLowerCase());
-        if (targetBin) {
-            const isSameProduct = targetBin.currentProductName && selectedProduct.name &&
-                targetBin.currentProductName.toLowerCase() === selectedProduct.name.toLowerCase();
-            const projectedUnits = isSameProduct 
-                ? (parseFloat(targetBin.currentUnits || 0) + qty)
-                : qty;
-            
-            const maxCap = parseFloat(targetBin.capacityUnits || 100);
-            if (projectedUnits > maxCap) {
-                toast.error(`Cannot slot: Projected total of ${projectedUnits} units exceeds bin capacity of ${maxCap} units.`);
-                return;
-            }
-        }
-        
-        slotProductToBin(binCode, {
-            productId: selectedProduct.id,
-            quantity: qty
-        })
-        .then(() => {
-            toast.success(`Put-away logged dynamically for ${selectedProduct.name} at Bin ${binCode}! ✅`);
-            setIncomingSKU('');
-            setSelectedProduct(null);
-            setQuantityArriving('');
-            setOverrideBin('');
-            loadBins();
-        })
-        .catch(err => {
-            console.error("Failed to commit slotting transaction", err);
-            const errorMsg = err.response?.data?.message || err.message || "Failed to commit slotting transaction";
-            toast.error(errorMsg);
-        });
-    };
-
-    const breadcrumbs = [
-        { label: 'Inventory', path: '/inventory' },
-        { label: 'Stock Management', path: '#' },
-        { label: 'Warehouse Slotting Map' }
-    ];
-
-    return (
-        <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
-
-            <PageHeader
-                title="Warehouse Bin & Rack Map (Slotting)"
-                subtitle="Interactive digital warehouse floor map with bin-level stock visibility and AI-driven put-away suggestions."
-            />
-
-            {/* Top View Toggle */}
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={() => setMainView('MAP')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center ${mainView === 'MAP' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
-                >
-                    <MapIcon size={16} className="mr-2" /> Map View
-                </button>
-                <button
-                    onClick={() => setMainView('PRODUCTS')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center ${mainView === 'PRODUCTS' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
-                >
-                    <Box size={16} className="mr-2" /> Products
-                </button>
-                <button
-                    onClick={() => setMainView('VENDORS')}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center ${mainView === 'VENDORS' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}`}
-                >
-                    <LayoutGrid size={16} className="mr-2" /> Vendors
-                </button>
-            </div>
-
-            {mainView === 'MAP' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left: Map Controls & Map */}
-                <div className="lg:col-span-8 space-y-6">
-                    <VCard>
-                        <SectionTitle>Warehouse Map Controls</SectionTitle>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            {/* View Mode Toggle */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">View Mode</label>
-                                <div className="flex p-1 bg-slate-100 rounded-xl">
-                                    {['2D', '3D'].map(m => (
-                                        <button
-                                            key={m}
-                                            onClick={() => setViewMode(m)}
-                                            className={`flex-1 py-2 text-[11px] font-bold rounded-lg transition-all ${viewMode === m ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                                return (
+                                    <motion.div
+                                        key={rack.id}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ 
+                                            opacity: 1, 
+                                            scale: isSelected ? 1.15 : 1,
+                                            z: is3D ? (isSelected ? 30 : 0) : 0
+                                        }}
+                                        whileHover={{ 
+                                            scale: 1.05, 
+                                            z: is3D ? 15 : 0 
+                                        }}
+                                        transition={{ delay: idx * 0.005, type: "spring", stiffness: 300, damping: 20 }}
+                                        onClick={() => setSelectedRack(isSelected ? null : rack.id)}
+                                        className={`group relative aspect-square rounded-xl transition-colors duration-300 cursor-pointer flex flex-col items-center justify-center border-2
+                                            ${isSelected ? 'border-green-300 z-50 ring-4 ring-green-500 ring-offset-2 shadow-[0_0_20px_rgba(34,197,94,0.5)]' : 'border-white/20 hover:z-50 hover:shadow-2xl'}
+                                            ${isHighlighted && !isSelected ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse' : ''}
+                                            ${is3D && !isSelected ? 'shadow-[3px_3px_6px_rgba(0,0,0,0.2)]' : 'shadow-sm'}`}
+                                        style={{ 
+                                            backgroundColor: isSelected ? '#22c55e' : (cat ? cat.color : '#e2e8f0'),
+                                            transformStyle: 'preserve-3d'
+                                        }}
+                                    >
+                                        <div className="text-white font-extrabold text-[12px] drop-shadow-md z-10">{rack.id}</div>
+                                        {rackStock.length > 0 && (
+                                            <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white z-10 shadow-sm" title="Contains Stock"></div>
+                                        )}
+                                        
+                                        {/* Hover Tooltip */}
+                                        <div 
+                                            className="absolute left-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] w-48"
+                                            style={{
+                                                top: '-6rem',
+                                                transform: is3D ? 'translateX(-50%) rotateZ(45deg) rotateX(-55deg) translateY(-40px) translateZ(30px)' : 'translateX(-50%)'
+                                            }}
                                         >
-                                            {m === '2D' ? '2D Floor Plan' : '3D Isometric'}
+                                            <div className="bg-[#0f172a] text-white p-3 rounded-2xl shadow-2xl border border-white/10 flex flex-col gap-1 backdrop-blur-md">
+                                                <div className="flex justify-between items-center border-b border-white/10 pb-1.5 mb-1.5">
+                                                    <span className="font-extrabold text-[12px]">{rack.id}</span>
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/10 font-bold">{cat?.name || 'Unassigned'}</span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {rackStock.length > 0 ? rackStock.map(s => {
+                                                        const p = getProductById(s.product_id);
+                                                        return (
+                                                            <div key={s.product_id} className="flex justify-between text-[11px]">
+                                                                <span className="text-slate-300 truncate max-w-[100px]">{p?.name}</span>
+                                                                <span className="font-bold text-blue-400">{s.quantity} {p?.unit}</span>
+                                                            </div>
+                                                        );
+                                                    }) : (
+                                                        <div className="text-[11px] text-slate-500 italic text-center py-1">Empty Rack</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="w-3 h-3 bg-[#0f172a] rotate-45 mx-auto -mt-1.5 border-r border-b border-white/10"></div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </VCard>
+            </motion.div>
+        );
+    };
+
+    const renderCategories = () => (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <VCard>
+                <div className="flex justify-between items-center mb-6">
+                    <SectionTitle>Category Management</SectionTitle>
+                    <PrimaryBtn icon={<Plus size={16} />}>Add Category</PrimaryBtn>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {categories.map(cat => {
+                        const racksAssigned = racks.filter(r => r.category_id === cat.id).length;
+                        return (
+                            <div key={cat.id} className="p-4 rounded-2xl border border-slate-100 hover:shadow-lg transition-all bg-white group flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-xl shadow-inner flex-shrink-0 border-2 border-white" style={{ backgroundColor: cat.color }} />
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-[14px] text-slate-800 leading-tight mb-1">{cat.name}</h4>
+                                    <div className="text-[11px] font-bold text-slate-400 uppercase bg-slate-50 inline-block px-2 py-0.5 rounded-md">
+                                        {racksAssigned} Racks Assigned
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </VCard>
+        </motion.div>
+    );
+
+    const renderRacks = () => (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <VCard>
+                <div className="flex justify-between items-center mb-6">
+                    <SectionTitle>Rack Setup & Mapping</SectionTitle>
+                    <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                            type="text" 
+                            placeholder="Search Racks..." 
+                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-[13px] outline-none focus:border-blue-500 w-64"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="overflow-x-auto overflow-y-visible rounded-2xl border border-slate-200 shadow-sm bg-white min-h-[400px]">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-extrabold border-b border-slate-200">
+                                <th className="p-5 w-1/4">Rack ID</th>
+                                <th className="p-5 w-1/4">Location (Row x Col)</th>
+                                <th className="p-5 w-1/2">Assigned Category</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-[13px]">
+                            {racks.filter(r => r.id.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 20).map(rack => {
+                                const cat = getCategoryById(rack.category_id);
+                                return (
+                                    <tr key={rack.id} className="border-b border-slate-100 hover:bg-blue-50/40 transition-colors group">
+                                        <td className="p-5 font-extrabold text-slate-800">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200 group-hover:bg-blue-100 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors">
+                                                    <GridIcon size={16} />
+                                                </div>
+                                                {rack.id}
+                                            </div>
+                                        </td>
+                                        <td className="p-5 text-slate-500 font-medium">Row {rack.row}, Col {rack.col}</td>
+                                        <td className="p-5">
+                                            <div className="relative w-[220px]">
+                                                <button 
+                                                    onClick={() => setActiveDropdownRackId(activeDropdownRackId === rack.id ? null : rack.id)}
+                                                    className={`flex items-center w-full bg-white border ${activeDropdownRackId === rack.id ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-blue-400'} rounded-xl px-3 py-2 shadow-sm transition-all text-left outline-none`}
+                                                >
+                                                    <div className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm mr-2.5" style={{ backgroundColor: cat?.color }}></div>
+                                                    <span className="font-bold text-slate-700 text-[13px] flex-1 truncate">{cat?.name || 'Select Category'}</span>
+                                                    <div className={`text-slate-400 transition-transform duration-200 ${activeDropdownRackId === rack.id ? 'rotate-180 text-blue-500' : ''}`}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                                    </div>
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {activeDropdownRackId === rack.id && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, y: 5 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: 5 }}
+                                                            transition={{ duration: 0.15 }}
+                                                            className="absolute top-full left-0 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden py-1.5"
+                                                        >
+                                                            <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 px-1">
+                                                                {categories.map(c => (
+                                                                    <button
+                                                                        key={c.id}
+                                                                        onClick={() => {
+                                                                            handleRackCategoryChange(rack.id, c.id);
+                                                                            setActiveDropdownRackId(null);
+                                                                        }}
+                                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-left transition-colors ${cat?.id === c.id ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                                                                    >
+                                                                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm mr-3" style={{ backgroundColor: c.color }}></div>
+                                                                        <span className={`text-[13px] flex-1 truncate ${cat?.id === c.id ? 'font-bold text-blue-700' : 'font-medium text-slate-600'}`}>{c.name}</span>
+                                                                        {cat?.id === c.id && (
+                                                                            <CheckCircle2 size={14} className="ml-1 text-blue-500 flex-shrink-0" />
+                                                                        )}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="mt-4 text-center text-[12px] text-slate-400 italic">Showing top 20 racks. Use search to find specific racks.</div>
+            </VCard>
+        </motion.div>
+    );
+
+    const renderProducts = () => {
+        const filtered = products.filter(p => !selectedCategoryFilter || p.category_id === selectedCategoryFilter);
+        const ITEMS_PER_PAGE = 8;
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+        const paginatedProducts = filtered.slice((productPage - 1) * ITEMS_PER_PAGE, productPage * ITEMS_PER_PAGE);
+
+        return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <VCard className="relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-bl-full opacity-50 pointer-events-none -z-10"></div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                        <div>
+                            <SectionTitle>Product Catalog</SectionTitle>
+                            <p className="text-[13px] text-slate-500 mt-1">Browse and manage your warehouse inventory catalog.</p>
+                        </div>
+                        <div className="relative">
+                            <select 
+                                className="pl-4 pr-10 py-2.5 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 bg-white shadow-sm appearance-none min-w-[200px]"
+                                value={selectedCategoryFilter}
+                                onChange={(e) => { setSelectedCategoryFilter(e.target.value); setProductPage(1); }}
+                            >
+                                <option value="">All Categories</option>
+                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {paginatedProducts.map((product, idx) => {
+                            const cat = getCategoryById(product.category_id);
+                            const totalStock = stock.filter(s => s.product_id === product.id).reduce((sum, s) => sum + s.quantity, 0);
+                            return (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9 }} 
+                                    animate={{ opacity: 1, scale: 1 }} 
+                                    transition={{ delay: idx * 0.05 }}
+                                    key={product.id} 
+                                    className="p-5 rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all bg-white group hover:-translate-y-1 relative overflow-hidden flex flex-col"
+                                >
+                                    <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full pointer-events-none transition-colors opacity-10" style={{ backgroundColor: cat?.color }}></div>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-500 group-hover:border-blue-200 transition-colors shadow-sm relative z-10">
+                                            <Package size={22} className="group-hover:scale-110 transition-transform" />
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1 relative z-10">
+                                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-lg uppercase border border-slate-200 shadow-sm">{product.unit}</span>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${totalStock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                {totalStock > 0 ? `${totalStock} IN STOCK` : 'OUT OF STOCK'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <h4 className="font-extrabold text-[16px] text-slate-800 leading-tight mb-2 group-hover:text-blue-700 transition-colors relative z-10">{product.name}</h4>
+                                    <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-50 relative z-10">
+                                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: cat?.color }}></div>
+                                        <span className="text-[12px] font-bold text-slate-500">{cat?.name}</span>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+                            <span className="text-[13px] font-medium text-slate-500">
+                                Showing <span className="font-bold text-slate-800">{((productPage - 1) * ITEMS_PER_PAGE) + 1}</span> to <span className="font-bold text-slate-800">{Math.min(productPage * ITEMS_PER_PAGE, filtered.length)}</span> of <span className="font-bold text-slate-800">{filtered.length}</span> products
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setProductPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={productPage === 1}
+                                    className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                </button>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }).map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setProductPage(i + 1)}
+                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${productPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100'}`}
+                                        >
+                                            {i + 1}
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-
-                            {/* Zone Filter */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Zone Filter</label>
-                                <div className="relative group">
-                                    <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <select
-                                        className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all appearance-none"
-                                        onChange={(e) => toggleZone(e.target.value)}
-                                        value=""
-                                    >
-                                        <option value="" disabled>Multi-Select Zones...</option>
-                                        {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                    {selectedZones.map(z => (
-                                        <span key={z} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-bold rounded-md border border-blue-100 flex items-center gap-1">
-                                            {z} <button onClick={() => toggleZone(z)}>✕</button>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Overlays */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Visual Overlays</label>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setVelocityOverlay(!velocityOverlay)}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] font-bold rounded-xl border transition-all ${velocityOverlay ? 'bg-orange-500 text-white border-orange-600 shadow-md shadow-orange-100' : 'bg-white text-slate-500 border-slate-100'}`}
-                                    >
-                                        <Zap size={12} /> Velocity
-                                    </button>
-                                    <button
-                                        onClick={() => setUtilisationOverlay(!utilisationOverlay)}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] font-bold rounded-xl border transition-all ${utilisationOverlay ? 'bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-100' : 'bg-white text-slate-500 border-slate-100'}`}
-                                    >
-                                        <BarChart3 size={12} /> Utilisation
-                                    </button>
-                                </div>
+                                <button 
+                                    onClick={() => setProductPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={productPage === totalPages}
+                                    className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                </button>
                             </div>
                         </div>
+                    )}
+                </VCard>
+            </motion.div>
+        );
+    };
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            {/* SKU Search */}
-                            <div className="relative group">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">SKU Search (Pulse Animation)</label>
-                                <Search size={14} className="absolute left-3 top-[38px] text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Search SKU to locate bin..."
-                                    className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
-                                    value={searchSKU}
-                                    onChange={e => setSearchSKU(e.target.value)}
-                                />
-                            </div>
+    const renderStockUpdate = () => (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 space-y-6">
+                <VCard>
+                    <SectionTitle>Record Stock Movement</SectionTitle>
+                    <form onSubmit={handleStockUpdate} className="space-y-5 mt-6">
+                        <div className="relative">
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Select Rack <span className="text-rose-500">*</span></label>
+                            
+                            <button 
+                                type="button"
+                                onClick={() => setIsRackDropdownOpen(!isRackDropdownOpen)}
+                                className={`w-full px-4 py-3 border ${isRackDropdownOpen ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-blue-400'} rounded-xl text-[13px] font-bold bg-slate-50 flex items-center justify-between transition-all outline-none`}
+                            >
+                                <span className={stockUpdateForm.rack_id ? 'text-slate-800' : 'text-slate-400'}>
+                                    {stockUpdateForm.rack_id ? `${stockUpdateForm.rack_id} (${getCategoryById(getRackById(stockUpdateForm.rack_id)?.category_id)?.name})` : 'Search and choose a rack...'}
+                                </span>
+                                <div className={`text-slate-400 transition-transform duration-200 ${isRackDropdownOpen ? 'rotate-180 text-blue-500' : ''}`}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                </div>
+                            </button>
 
-                            {/* Bin Search */}
-                            <div className="relative group">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Bin Search (Direct Nav)</label>
-                                <Navigation size={14} className="absolute left-3 top-[38px] text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="e.g. A-03-L2-B04"
-                                    className="w-full pl-9 pr-4 py-2.5 text-[12px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
-                                    value={searchBin}
-                                    onChange={e => setSearchBin(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </VCard>
-
-                    {/* Interactive Map Visual */}
-                    <VCard className="overflow-hidden min-h-[600px] bg-[#f1f5f9] border-dashed border-2 border-slate-200 relative">
-                        <div className={`w-full h-full transition-all duration-1000 ease-in-out ${viewMode === '3D' ? 'perspective-[1200px] p-16 pt-20 pb-20' : 'p-10'}`}>
-                            <div className={`grid grid-cols-12 gap-x-4 gap-y-8 transition-all duration-1000 ${viewMode === '3D' ? 'rotate-x-[45deg] rotate-z-[-15deg] translate-y-[-20px]' : ''}`}
-                                style={{ transformStyle: 'preserve-3d' }}>
-                                {bins.map((bin, i) => {
-                                    let bgColor = 'white';
-                                    let stockLevel = 'EMPTY';
-
-                                    if (bin.fill > 0 && bin.fill < 30) stockLevel = 'LOW';
-                                    else if (bin.fill >= 30 && bin.fill < 75) stockLevel = 'MED';
-                                    else if (bin.fill >= 75 && bin.fill < 100) stockLevel = 'HIGH';
-                                    else if (bin.fill === 100) stockLevel = 'FULL';
-
-                                    if (utilisationOverlay) {
-                                        bgColor = bin.fill === 0 ? BIN_STATUS.EMPTY : BIN_STATUS[`STOCK_${stockLevel}`] || BIN_STATUS.FULL;
-                                    } else if (velocityOverlay) {
-                                        bgColor = BIN_STATUS[`VELOCITY_${bin.velocity}`];
-                                    }
-
-                                    const isHighlighted = (searchSKU && i % 8 === 0) || (searchBin && bin.id === searchBin);
-
-                                    // Depth calculation for 3D effect
-                                    const sideColor = `brightness(0.85)`;
-                                    const bottomColor = `brightness(0.7)`;
-
-                                    return (
-                                        <div
-                                            key={bin.id}
-                                            className={`group relative aspect-square transition-all duration-500 cursor-pointer hover:z-[100]
-                                                ${isHighlighted ? 'ring-4 ring-blue-400 ring-offset-4 animate-pulse z-20' : ''}`}
-                                            style={{
-                                                transformStyle: 'preserve-3d',
-                                                zIndex: isHighlighted ? 50 : 1
-                                            }}
-                                        >
-                                            {/* 3D BUILDING EFFECT (Top Face) */}
-                                            <div
-                                                className={`absolute inset-0 rounded-sm border border-slate-200/50 flex flex-col items-center justify-center transition-all duration-500 group-hover:translate-z-[40px] group-hover:shadow-2xl group-hover:scale-105
-                                                    ${viewMode === '3D' ? 'shadow-lg' : ''}`}
-                                                style={{
-                                                    backgroundColor: bgColor,
-                                                    transform: viewMode === '3D' ? 'translateZ(10px)' : 'none',
-                                                    boxShadow: viewMode === '3D' ? `0 10px 20px -5px rgba(0,0,0,0.1)` : 'none'
-                                                }}
-                                            >
-                                                <span className={`text-[9px] font-bold tracking-tighter ${bin.fill > 30 || (velocityOverlay) ? 'text-white' : 'text-slate-400'} group-hover:scale-110 transition-transform`}>
-                                                    {bin.id.split('-').pop()}
-                                                </span>
-
-                                                {utilisationOverlay && (
-                                                    <div className="absolute bottom-1 left-1 right-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-current opacity-60" style={{ width: `${bin.fill}%`, color: bin.fill > 60 ? '#fff' : '#fff' }} />
-                                                    </div>
-                                                )}
-
-                                                {/* Hover Info Tag (The "Content") */}
-                                                <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none scale-0 group-hover:scale-100 translate-y-2 group-hover:translate-y-0 z-[150] whitespace-nowrap">
-                                                    <div className="bg-[#0f172a] text-white px-4 py-3 rounded-2xl text-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 flex flex-col gap-1 items-center backdrop-blur-xl">
-                                                        <div className="font-bold text-blue-400 border-b border-white/10 pb-1.5 w-full text-center mb-1.5 uppercase ">{bin.id}</div>
-                                                        <div className="flex gap-4">
-                                                            <div className="flex flex-col items-center">
-                                                                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Stock Lvl</span>
-                                                                <span className={`font-bold ${stockLevel === 'LOW' ? 'text-rose-400' : stockLevel === 'MED' ? 'text-amber-400' : 'text-emerald-400'}`}>{stockLevel} ({bin.fill}%)</span>
-                                                            </div>
-                                                            <div className="flex flex-col items-center border-l border-white/10 pl-4">
-                                                                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Flow</span>
-                                                                <span className="font-bold text-indigo-400">{bin.velocity}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-[9px] text-slate-400 font-extrabold italic mt-1.5 px-3 py-1 bg-white/5 rounded-lg border border-white/5 w-full text-center">Zone: {bin.zone}</div>
-                                                    </div>
-                                                    <div className="w-3 h-3 bg-[#0f172a] rotate-45 mx-auto -mt-1.5 border-r border-b border-white/20 shadow-xl"></div>
-                                                </div>
+                            <AnimatePresence>
+                                {isRackDropdownOpen && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 5 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden"
+                                    >
+                                        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                                            <div className="relative">
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Search by Rack ID or Category..."
+                                                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                                    value={rackSearchQuery}
+                                                    onChange={(e) => setRackSearchQuery(e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    autoFocus
+                                                />
                                             </div>
-
-                                            {/* 3D SIDES (Building Walls) - Visible only in 3D Mode */}
-                                            {viewMode === '3D' && (
-                                                <>
-                                                    {/* Right Side */}
-                                                    <div className="absolute top-0 right-0 h-full w-[10px] origin-right rotate-y-90 transition-all duration-500 group-hover:w-[40px]"
-                                                        style={{
-                                                            backgroundColor: bgColor,
-                                                            filter: sideColor,
-                                                        }}
-                                                    />
-                                                    {/* Bottom Side */}
-                                                    <div className="absolute bottom-0 left-0 w-full h-[10px] origin-bottom rotate-x-[-90deg] transition-all duration-500 group-hover:h-[40px]"
-                                                        style={{
-                                                            backgroundColor: bgColor,
-                                                            filter: bottomColor,
-                                                        }}
-                                                    />
-                                                </>
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 p-2">
+                                            {racks.filter(r => 
+                                                r.id.toLowerCase().includes(rackSearchQuery.toLowerCase()) || 
+                                                getCategoryById(r.category_id)?.name.toLowerCase().includes(rackSearchQuery.toLowerCase())
+                                            ).length > 0 ? (
+                                                racks.filter(r => 
+                                                    r.id.toLowerCase().includes(rackSearchQuery.toLowerCase()) || 
+                                                    getCategoryById(r.category_id)?.name.toLowerCase().includes(rackSearchQuery.toLowerCase())
+                                                ).map(r => {
+                                                    const cat = getCategoryById(r.category_id);
+                                                    return (
+                                                        <button
+                                                            key={r.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setStockUpdateForm({ ...stockUpdateForm, rack_id: r.id, product_id: '' });
+                                                                setIsRackDropdownOpen(false);
+                                                                setRackSearchQuery('');
+                                                            }}
+                                                            className={`w-full flex items-center p-3 rounded-lg text-left transition-colors mb-1 last:mb-0 ${stockUpdateForm.rack_id === r.id ? 'bg-blue-50 border border-blue-100' : 'hover:bg-slate-50 border border-transparent'}`}
+                                                        >
+                                                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                                                <GridIcon size={14} className="text-slate-400" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="font-extrabold text-[13px] text-slate-800">{r.id}</div>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color }}></div>
+                                                                    <span className="text-[11px] font-bold text-slate-500">{cat?.name}</span>
+                                                                </div>
+                                                            </div>
+                                                            {stockUpdateForm.rack_id === r.id && <CheckCircle2 size={16} className="text-blue-500" />}
+                                                        </button>
+                                                    );
+                                                })
+                                            ) : (
+                                                <div className="p-4 text-center text-slate-500 text-[13px] italic">No racks found matching your search.</div>
                                             )}
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-
-                        {/* Map Legend - Horizontal "Left to Right" Combo UI */}
-                        <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white shadow-2xl z-[110] transition-all duration-500 transform hover:translate-y-[-2px]">
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-2 pr-4 border-r border-slate-100">
-                                    <MapIcon size={14} className="text-blue-600" />
-                                    <div className="text-[10px] font-bold text-slate-800 uppercase  whitespace-nowrap">Heatmap</div>
-                                </div>
-                                <div className="flex items-center gap-5">
-                                    <div className="flex items-center gap-2 group cursor-default">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-white border border-slate-200 group-hover:scale-125 transition-transform"></div>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Empty</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 group cursor-default">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-sm group-hover:scale-125 transition-transform"></div>
-                                        <span className="text-[9px] font-bold text-rose-500 uppercase">Low</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 group cursor-default">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-sm group-hover:scale-125 transition-transform"></div>
-                                        <span className="text-[9px] font-bold text-amber-500 uppercase">Med</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 group cursor-default">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shadow-sm group-hover:scale-125 transition-transform"></div>
-                                        <span className="text-[9px] font-bold text-blue-500 uppercase">High</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 group cursor-default">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a] shadow-sm group-hover:scale-125 transition-transform"></div>
-                                        <span className="text-[9px] font-bold text-blue-900 uppercase">Full</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </VCard>
-                </div>
-
-                {/* Right: Put-Away Suggestion Panel */}
-                <div className="lg:col-span-4 space-y-6">
-                    <VCard className="sticky top-8">
-                        <SectionTitle>Put-Away Suggestion Panel</SectionTitle>
-                        <div className="space-y-5 mt-6">
-                            {/* Input Fields */}
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Incoming SKU <span className="text-rose-500">*</span></label>
-                                    <div className="relative">
-                                        <Box size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search incoming item..."
-                                            className="w-full pl-9 pr-8 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                            value={incomingSKU}
-                                            onChange={e => {
-                                                setIncomingSKU(e.target.value);
-                                                if (selectedProduct) setSelectedProduct(null);
-                                            }}
-                                        />
-                                        {selectedProduct && (
-                                            <button 
-                                                onClick={() => {
-                                                    setSelectedProduct(null);
-                                                    setIncomingSKU('');
-                                                }}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
-                                        {incomingSKU && !selectedProduct && (
-                                            <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
-                                                {filteredProducts.length > 0 ? (
-                                                    filteredProducts.map(p => (
-                                                        <div
-                                                            key={p.id}
-                                                            onClick={() => {
-                                                                setSelectedProduct(p);
-                                                                setIncomingSKU(p.name);
-                                                            }}
-                                                            className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer text-[12px] font-bold text-slate-700 flex justify-between items-center transition-colors"
-                                                        >
-                                                            <span>{p.name}</span>
-                                                            <span className="text-[10px] text-slate-400 font-mono">{p.sku || p.skuCode || 'N/A'}</span>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="px-4 py-2.5 text-[11px] text-slate-400 italic">No products found</div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">From active GRN or manual entry</p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Quantity Arriving <span className="text-rose-500">*</span></label>
-                                    <input
-                                        type="number"
-                                        placeholder="Units being put away..."
-                                        className="w-full px-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all"
-                                        value={quantityArriving}
-                                        onChange={e => setQuantityArriving(e.target.value)}
-                                    />
-                                    <p className="text-[10px] text-slate-400 mt-1 font-medium italic">Must be &gt; 0; checks bin capacity</p>
-                                </div>
-                            </div>
-
-                            {/* Suggestions */}
-                            <div className="space-y-3">
-                                <label className="block text-[11px] font-bold text-slate-400 uppercase ">AI Suggestions</label>
-
-                                {[
-                                    { id: 'A-03-L2-B04', label: 'Suggested Bin 1', sub: 'Best match', dist: '12m', util: '45%', vel: '98%', rank: 'Primary' },
-                                    { id: 'A-03-L4-B11', label: 'Suggested Bin 2', sub: 'Second best', dist: '18m', util: '20%', vel: '85%', rank: 'Secondary' },
-                                    { id: 'B-01-L1-B02', label: 'Suggested Bin 3', sub: 'Third option', dist: '45m', util: '0%', vel: '70%', rank: 'Alternate' }
-                                ].map((s, i) => (
-                                    <div
-                                        key={i}
-                                        onClick={() => setOverrideBin(s.id)}
-                                        className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${overrideBin === s.id ? 'border-blue-600 bg-blue-50/50 shadow-md' : 'border-slate-50 bg-white hover:border-slate-200'}`}
+                        
+                        {stockUpdateForm.rack_id && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative">
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Select Product <span className="text-rose-500">*</span></label>
+                                <div className="relative">
+                                    <select 
+                                        className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none transition-all shadow-sm cursor-pointer"
+                                        value={stockUpdateForm.product_id}
+                                        onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, product_id: e.target.value })}
+                                        required
                                     >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <div className="text-[10px] font-bold text-slate-400 uppercase  leading-none mb-1">{s.label}</div>
-                                                <div className="text-[15px] font-extrabold text-[#1e293b]">{s.id}</div>
-                                            </div>
-                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase ${i === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                                                {s.rank}
-                                            </span>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 mt-3">
-                                            <div className="text-center p-2 rounded-lg bg-white/50 border border-slate-100">
-                                                <div className="text-[8px] font-bold text-slate-400 uppercase">Distance</div>
-                                                <div className="text-[11px] font-bold text-slate-700">{s.dist}</div>
-                                            </div>
-                                            <div className="text-center p-2 rounded-lg bg-white/50 border border-slate-100">
-                                                <div className="text-[8px] font-bold text-slate-400 uppercase">Util.</div>
-                                                <div className="text-[11px] font-bold text-slate-700">{s.util}</div>
-                                            </div>
-                                            <div className="text-center p-2 rounded-lg bg-white/50 border border-slate-100">
-                                                <div className="text-[8px] font-bold text-slate-400 uppercase">Match</div>
-                                                <div className="text-[11px] font-bold text-blue-600">{s.vel}</div>
-                                            </div>
-                                        </div>
+                                        <option value="" disabled>Choose a product...</option>
+                                        {products.filter(p => p.category_id === getRackById(stockUpdateForm.rack_id)?.category_id).map(p => 
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        )}
+                                    </select>
+                                    <Package size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-2 px-1">
+                                    <Info size={12} className="text-blue-500" />
+                                    <p className="text-[10px] text-slate-500 font-medium">Filtered by category: <span className="font-bold text-slate-700">{getCategoryById(getRackById(stockUpdateForm.rack_id)?.category_id)?.name}</span></p>
+                                </div>
+                            </motion.div>
+                        )}
 
-                            <div className="pt-4 border-t border-slate-50">
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Override Bin Selection</label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter preferred bin ID..."
-                                    className="w-full px-4 py-3 text-[13px] font-bold border border-slate-100 rounded-xl bg-slate-50/50 outline-none focus:border-blue-500 transition-all mb-4"
-                                    value={overrideBin}
-                                    onChange={e => setOverrideBin(e.target.value)}
-                                />
-                                <PrimaryBtn
-                                    className="w-full py-4 rounded-2xl"
-                                    icon={<CheckCircle2 size={16} />}
-                                    onClick={handlePutAway}
-                                >
-                                    Confirm Put-Away
-                                </PrimaryBtn>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Movement Type</label>
+                                <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setStockUpdateForm({ ...stockUpdateForm, type: 'IN' })}
+                                        className={`flex-1 py-2.5 text-[12px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${stockUpdateForm.type === 'IN' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                                    ><TrendingUp size={14} /> Stock IN</button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setStockUpdateForm({ ...stockUpdateForm, type: 'OUT' })}
+                                        className={`flex-1 py-2.5 text-[12px] font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${stockUpdateForm.type === 'OUT' ? 'bg-white text-rose-600 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                                    ><TrendingDown size={14} /> Stock OUT</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Quantity <span className="text-rose-500">*</span></label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        min="1"
+                                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-white outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                        value={stockUpdateForm.quantity}
+                                        onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, quantity: e.target.value })}
+                                        required
+                                        placeholder="e.g. 50"
+                                    />
+                                    <Box size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
                             </div>
                         </div>
-                    </VCard>
-                </div>
-            </div>
-            )}
 
-            {mainView === 'PRODUCTS' && (
+                        <button 
+                            type="submit" 
+                            className="w-full py-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-[13px] transition-colors shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+                        >
+                            <ArrowRightLeft size={16} />
+                            Commit Stock Movement
+                        </button>
+                    </form>
+                </VCard>
+            </div>
+
+            <div className="lg:col-span-7">
+                <VCard className="h-full">
+                    <SectionTitle>Recent Movements Log</SectionTitle>
+                    <div className="mt-4 space-y-3">
+                        {movements.length > 0 ? movements.slice(0, 10).map((m, i) => {
+                            const p = getProductById(m.product_id);
+                            const isIN = m.type === 'IN';
+                            return (
+                                <div key={m.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isIN ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                            {isIN ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-[13px] text-slate-800">{p?.name}</div>
+                                            <div className="text-[11px] text-slate-500 font-medium mt-0.5">Rack: {m.rack_id} • {new Date(m.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                    </div>
+                                    <div className={`font-extrabold text-[15px] ${isIN ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {isIN ? '+' : '-'}{m.quantity} {p?.unit}
+                                    </div>
+                                </div>
+                            );
+                        }) : (
+                            <div className="text-center py-12 text-slate-400">
+                                <Activity size={32} className="mx-auto mb-3 opacity-50" />
+                                <p className="text-[13px] font-medium">No movements recorded yet in this session.</p>
+                            </div>
+                        )}
+                    </div>
+                </VCard>
+            </div>
+        </motion.div>
+    );
+
+    const renderLowStock = () => {
+        const aggregatedStock = stock.reduce((acc, curr) => {
+            if (!acc[curr.product_id]) acc[curr.product_id] = 0;
+            acc[curr.product_id] += curr.quantity;
+            return acc;
+        }, {});
+
+        const reportData = products.map(p => {
+            const qty = aggregatedStock[p.id] || 0;
+            const status = getStockStatus(qty);
+            return { ...p, qty, status };
+        }).filter(p => p.status === 'LOW' || p.status === 'OUT OF STOCK');
+
+        return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <VCard>
-                    <SectionTitle>Warehouse Products</SectionTitle>
-                    <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider bg-slate-50">
-                                    <th className="p-4 font-bold">Product Name</th>
-                                    <th className="p-4 font-bold">SKU / Barcode</th>
-                                    <th className="p-4 font-bold">Current Stock</th>
-                                    <th className="p-4 font-bold">Vendor / Supplier</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-[13px] font-medium text-slate-700">
-                                {products.length > 0 ? (
-                                    products.map(p => {
-                                        const vp = vendorProducts.find(vpItem => vpItem.mappedProductId === p.id);
-                                        const displayVendor = vp ? (vp.vendorLegalName || vp.vendorCode) : (p.primarySupplier?.name || p.primarySupplier?.legalName || p.vendorName || p.supplierName || 'Not Assigned');
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <SectionTitle>Action Required: Low Stock</SectionTitle>
+                            <p className="text-[12px] text-slate-500 mt-1">Aggregated inventory across all racks.</p>
+                        </div>
+                        <SecondaryBtn icon={<Info size={16} />}>Export Report</SecondaryBtn>
+                    </div>
+                    
+                    {reportData.length > 0 ? (
+                        <div className="overflow-x-auto rounded-xl border border-slate-100 mt-4">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                                        <th className="p-4">Product Name</th>
+                                        <th className="p-4">Category</th>
+                                        <th className="p-4 text-center">Total Quantity</th>
+                                        <th className="p-4 text-right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-[13px]">
+                                    {reportData.map(item => {
+                                        const cat = getCategoryById(item.category_id);
                                         return (
-                                            <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                                <td className="p-4 font-bold text-slate-800">{p.name}</td>
-                                                <td className="p-4">{p.sku || p.barcode || p.skuCode || 'N/A'}</td>
-                                                <td className="p-4 font-bold text-blue-600">{p.currentStock || 0}</td>
-                                                <td className="p-4">{displayVendor}</td>
+                                            <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                                <td className="p-4 font-extrabold text-slate-800">{item.name}</td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color }}></div>
+                                                        <span className="font-bold text-slate-600">{cat?.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <span className="font-extrabold text-[14px] text-slate-800">{item.qty}</span> <span className="text-[11px] text-slate-400 font-bold">{item.unit}</span>
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${getStockStatusColor(item.status)}`}>
+                                                        {item.status}
+                                                    </span>
+                                                </td>
                                             </tr>
                                         );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="p-6 text-center text-slate-400">No products available.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-16 bg-emerald-50 rounded-xl border border-emerald-100 mt-4">
+                            <CheckCircle2 size={48} className="mx-auto text-emerald-500 mb-4" />
+                            <h3 className="text-emerald-800 font-bold text-[16px]">All Stock Levels Healthy</h3>
+                            <p className="text-emerald-600 text-[13px] mt-1">No products are currently running low.</p>
+                        </div>
+                    )}
                 </VCard>
-            )}
+            </motion.div>
+        );
+    };
 
-            {mainView === 'VENDORS' && (
-                <VCard>
-                    <SectionTitle>Warehouse Vendors</SectionTitle>
-                    <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider bg-slate-50">
-                                    <th className="p-4 font-bold">Vendor Name</th>
-                                    <th className="p-4 font-bold">Code</th>
-                                    <th className="p-4 font-bold">Contact Number</th>
-                                    <th className="p-4 font-bold">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-[13px] font-medium text-slate-700">
-                                {vendors.length > 0 ? (
-                                    vendors.map(v => (
-                                        <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50">
-                                            <td className="p-4 font-bold text-slate-800">{v.tradeName || v.legalName || v.name || v.vendorName || 'Unnamed Vendor'}</td>
-                                            <td className="p-4">{v.vendorCode || v.code || 'N/A'}</td>
-                                            <td className="p-4">{v.primaryMobile || v.phone || v.contactNumber || 'N/A'}</td>
-                                            <td className="p-4">
-                                                <StatusBadge status={v.kycStatus || v.complianceStatus || v.status || 'ACTIVE'} />
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="p-6 text-center text-slate-400">No vendors available.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </VCard>
-            )}
+    return (
+        <div className="w-full bg-[#F8FAFC] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
+            <PageHeader
+                title="Warehouse Category & Stock Management"
+                subtitle="Complete visualization and tracking of inventory by category assignments."
+            />
+            {renderTabs()}
+            
+            <AnimatePresence mode="wait">
+                {activeTab === 'MAP' && renderMap()}
+                {activeTab === 'CATEGORIES' && renderCategories()}
+                {activeTab === 'RACKS' && renderRacks()}
+                {activeTab === 'PRODUCTS' && renderProducts()}
+                {activeTab === 'STOCK_UPDATE' && renderStockUpdate()}
+                {activeTab === 'LOW_STOCK' && renderLowStock()}
+            </AnimatePresence>
         </div>
     );
 }
