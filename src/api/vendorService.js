@@ -312,10 +312,10 @@ export const fetchApprovals = async () => {
       : [];
     const poApprovals = pos.map(p => ({
       id: p.id, type: 'Purchase Order',
-      vendor: p.vendorName || p.vendor || 'Unknown Vendor',
+      vendor: p.partyName || p.vendorName || p.vendor || 'Unknown Vendor',
       requester: 'Procurement',
       amount: p.grandTotal || p.amount || 0,
-      since: p.createdAt || p.date || 'Recent',
+      since: p.invoiceDate || p.createdAt || p.date || 'Recent',
       priority: 'medium',
     }));
     const invoiceApprovals = invoices.map(i => ({
@@ -407,6 +407,43 @@ export const updateAuctionStatus = (id, status) =>
 // ─── Products Integration ─────────────────────────────────────────────────────
 export const fetchProducts = () =>
   api.get('/products').catch(() => []);
+
+export const fetchWarehouseProducts = () =>
+  api.get('/vendor-products/in-stock').catch(() => []);
+
+export const fetchWarehouseCategories = async () => {
+  return [
+      { id: 'CAT1', name: 'Dairy', color: '#3b82f6' },
+      { id: 'CAT2', name: 'Biscuits', color: '#10b981' },
+      { id: 'CAT3', name: 'Beverages', color: '#f59e0b' },
+      { id: 'CAT4', name: 'Snacks', color: '#ef4444' }
+  ];
+};
+
+export const fetchWarehouseRacks = async () => {
+  return [
+      { id: 'R-01', categoryId: 'CAT1', row: 1, col: 1 },
+      { id: 'R-02', categoryId: 'CAT2', row: 1, col: 2 },
+      { id: 'R-03', categoryId: 'CAT3', row: 2, col: 1 },
+      { id: 'R-04', categoryId: 'CAT4', row: 2, col: 2 }
+  ];
+};
+
+export const fetchWarehouseStock = async () => {
+  return [];
+};
+
+export const fetchWarehouseMovements = async () => {
+  return [];
+};
+
+export const adjustWarehouseStock = async () => {
+  return true;
+};
+
+export const updateWarehouseRackCategory = async () => {
+  return true;
+};
 
 // ─── Warehouse Slotting & Stock Transfer (STO) APIs ──────────────────────────
 export const fetchBinLocations = () =>

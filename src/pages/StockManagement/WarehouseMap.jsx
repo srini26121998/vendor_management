@@ -28,7 +28,7 @@ export default function WarehouseMap() {
                 const [cats, rks, prods, stk, movs] = await Promise.all([
                     import('../../api/vendorService').then(m => m.fetchWarehouseCategories()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseRacks()),
-                    import('../../api/vendorService').then(m => m.fetchProducts()),
+                    import('../../api/vendorService').then(m => m.fetchWarehouseProducts()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseStock()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseMovements())
                 ]);
