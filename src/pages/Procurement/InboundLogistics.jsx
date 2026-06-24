@@ -17,6 +17,7 @@ import {
     StatusBadge
 } from '../Vendors/VendorComponents';
 import TruckLoader from '../../components/Common/TruckLoader';
+import SearchableSelect from '../../components/Common/SearchableSelect';
 import useInboundStore from '../../store/useInboundStore';
 
 
@@ -27,6 +28,13 @@ const REJECTION_REASONS = ['Temperature Breach', 'Sensor Malfunction', 'Equipmen
 export default function InboundLogistics() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('scheduler'); // 'scheduler', 'receiving', 'iot'
+
+    const fetchAppointments = useInboundStore(state => state.fetchAppointments);
+    useEffect(() => {
+        if (fetchAppointments) {
+            fetchAppointments();
+        }
+    }, [fetchAppointments]);
 
     const tabs = [
         { key: 'scheduler', label: 'Dock Scheduler', icon: <Calendar size={16} /> },
@@ -185,6 +193,7 @@ function ScenarioCard({ title, desc, onClick, icon }) {
 function DockScheduler() {
     const [view, setView] = useState('booking'); // 'booking', 'gate'
     const [formData, setFormData] = useState({
+        vendorName: '',
         store: '',
         date: '',
         slot: '',
@@ -200,6 +209,7 @@ function DockScheduler() {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [appointmentId, setAppointmentId] = useState('');
     const [availablePOs, setAvailablePOs] = useState([]);
+    const [availableVendors, setAvailableVendors] = useState([]);
 
     const bookSlot = useInboundStore(state => state.bookSlot);
     const appointments = useInboundStore(state => state.appointments);
@@ -216,34 +226,49 @@ function DockScheduler() {
     }, []);
 
     useEffect(() => {
-        // Dynamically load available Purchase Orders
-        const loadPOs = async () => {
+        // Dynamically load available Purchase Orders and Vendors
+        const loadData = async () => {
             try {
-                const { fetchPurchaseOrders } = await import('../../api/vendorService');
+                const { fetchPurchaseOrders, fetchVendors } = await import('../../api/vendorService');
                 const poRes = await fetchPurchaseOrders();
                 const pos = Array.isArray(poRes) ? poRes : poRes?.data || [];
                 
-                // Set to fetched POs, but fallback to mock data if the API is unreachable or empty (for UI testing)
                 if (pos.length > 0) {
-                    setAvailablePOs(pos);
+                    setAvailablePOs(pos.map(p => ({ id: p.id, name: p.invoiceNumber ? `${p.invoiceNumber} (${p.partyName})` : (p.label || p.id) })));
                 } else {
                     setAvailablePOs([
-                        { id: 'PO-202606-001', label: 'PO-202606-001 (Global Supplies Ltd.)' },
-                        { id: 'PO-202606-002', label: 'PO-202606-002 (Fresh Farms Inc.)' },
-                        { id: 'PO-99281-00', label: 'PO-99281-00 (Local Distributor)' },
-                        { id: 'PO-44582-12', label: 'PO-44582-12 (Warehouse Beta)' }
+                        { id: 'PO-202606-001', name: 'PO-202606-001 (Global Supplies Ltd.)' },
+                        { id: 'PO-202606-002', name: 'PO-202606-002 (Fresh Farms Inc.)' },
+                        { id: 'PO-99281-00', name: 'PO-99281-00 (Local Distributor)' },
+                        { id: 'PO-44582-12', name: 'PO-44582-12 (Warehouse Beta)' }
                     ]);
                 }
+
+                const vendRes = await fetchVendors();
+                const vends = Array.isArray(vendRes) ? vendRes : vendRes?.data || [];
+                if (vends.length > 0) {
+                    setAvailableVendors(vends.map(v => ({ id: v.id || v.vendorName || v.vendorCode, name: v.legalName || v.vendorName || v.companyName || v.name })));
+                } else {
+                    setAvailableVendors([
+                        { id: 'Global Supplies Ltd. (V-8820)', name: 'Global Supplies Ltd. (V-8820)' },
+                        { id: 'Fresh Farms Inc. (V-9011)', name: 'Fresh Farms Inc. (V-9011)' }
+                    ]);
+                }
+
             } catch (err) {
                 setAvailablePOs([
-                    { id: 'PO-202606-001', label: 'PO-202606-001 (Global Supplies Ltd.)' },
-                    { id: 'PO-202606-002', label: 'PO-202606-002 (Fresh Farms Inc.)' },
-                    { id: 'PO-99281-00', label: 'PO-99281-00 (Local Distributor)' },
-                    { id: 'PO-44582-12', label: 'PO-44582-12 (Warehouse Beta)' }
+                    { id: 'PO-202606-001', name: 'PO-202606-001 (Global Supplies Ltd.)' },
+                    { id: 'PO-202606-002', name: 'PO-202606-002 (Fresh Farms Inc.)' },
+                    { id: 'PO-99281-00', name: 'PO-99281-00 (Local Distributor)' },
+                    { id: 'PO-44582-12', name: 'PO-44582-12 (Warehouse Beta)' }
+                ]);
+                setAvailableVendors([
+                    { id: 'Global Supplies Ltd. (V-8820)', name: 'Global Supplies Ltd. (V-8820)' },
+                    { id: 'Fresh Farms Inc. (V-9011)', name: 'Fresh Farms Inc. (V-9011)' }
                 ]);
             }
         };
-        loadPOs();
+        loadData();
     }, []);
 
     const handleBooking = () => {
@@ -363,11 +388,11 @@ function DockScheduler() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Vendor Name / ID</label>
-                                    <input
-                                        type="text"
-                                        disabled
-                                        value="Global Supplies Ltd. (V-8820)"
-                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                                    <SearchableSelect 
+                                        options={availableVendors}
+                                        value={formData.vendorName}
+                                        onChange={(val) => setFormData({ ...formData, vendorName: val })}
+                                        placeholder="Search vendor..."
                                     />
                                 </div>
                                 <div>
@@ -494,16 +519,12 @@ function DockScheduler() {
 
                                 <div className="md:col-span-2">
                                     <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">PO Numbers <span className="text-rose-500">*</span></label>
-                                    <select
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold focus:bg-white focus:border-blue-500 outline-none transition-all"
+                                    <SearchableSelect 
+                                        options={availablePOs}
                                         value={formData.poNumbers}
-                                        onChange={(e) => setFormData({ ...formData, poNumbers: e.target.value })}
-                                    >
-                                        <option value="" disabled>-- Select Purchase Order --</option>
-                                        {availablePOs.map(po => (
-                                            <option key={po.id} value={po.id}>{po.id} {po.label ? `- ${po.label.split('(')[1].replace(')','')}` : ''}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => setFormData({ ...formData, poNumbers: val })}
+                                        placeholder="Search Purchase Order..."
+                                    />
                                 </div>
 
                                 <div className="md:col-span-2">
@@ -716,11 +737,17 @@ function GuardGateView() {
         return () => window.removeEventListener('triggerScenario', handler);
     }, []);
 
-    const handleEntryScan = () => {
+    const handleEntryScan = async () => {
         setIsScanning(true);
-        setTimeout(() => {
+        try {
+            // Force a fresh fetch from backend so we actually hit the API and get the latest status
+            const { fetchDockAppointments } = await import('../../api/vendorService');
+            const freshAppointments = await fetchDockAppointments();
+            const freshAppts = Array.isArray(freshAppointments) ? freshAppointments : freshAppointments?.data || [];
+            
+            const appt = freshAppts.find(a => a.id === scannedId);
             setIsScanning(false);
-            const appt = appointments.find(a => a.id === scannedId);
+            
             if (appt && appt.status === 'Confirmed') {
                 setScanResult('allow');
                 logGateEntry(appt.id);
@@ -732,16 +759,31 @@ function GuardGateView() {
                 setScanResult('deny');
                 toast.error('Access Denied: Invalid or Expired Appointment ID');
             }
-        }, 1000);
+        } catch (error) {
+            setIsScanning(false);
+            setScanResult('deny');
+            toast.error('Access Denied: Server Error');
+        }
     };
 
-    const handleExitScan = () => {
+    const handleExitScan = async () => {
         setIsScanning(true);
-        setTimeout(() => {
+        try {
+            // Force a fresh fetch from backend
+            const { fetchDockAppointments } = await import('../../api/vendorService');
+            const freshAppointments = await fetchDockAppointments();
+            const freshAppts = Array.isArray(freshAppointments) ? freshAppointments : freshAppointments?.data || [];
+            
             setIsScanning(false);
-            const appt = appointments.find(a => a.vehicleReg.toLowerCase() === vehicleReg.toLowerCase() && ['Arrived', 'Received', 'Rejected'].includes(a.status));
+            
+            // Allow searching by either vehicle registration OR appointment ID
+            const appt = freshAppts.find(a => 
+                (a.vehicleReg.toLowerCase() === vehicleReg.toLowerCase() || a.id === vehicleReg) && 
+                ['CHECKED_IN', 'Received', 'Rejected', 'Arrived', 'GATE_DENY'].includes(a.status)
+            );
+            
             if (appt) {
-                if(appt.status === 'Arrived') {
+                if(appt.status === 'Arrived' || appt.status === 'CHECKED_IN') {
                     setScanResult('deny');
                     toast.error('Warning: Vehicle has not completed receiving process! Cannot exit.');
                 } else {
@@ -753,7 +795,11 @@ function GuardGateView() {
                 setScanResult('deny');
                 toast.error('No valid active entry found for this vehicle ready for exit.');
             }
-        }, 1000);
+        } catch (err) {
+            setIsScanning(false);
+            setScanResult('deny');
+            toast.error('Access Denied: Server Error');
+        }
     };
 
     const activeVehicles = appointments.filter(a => a.status === 'Arrived');
@@ -991,14 +1037,42 @@ function BlindReceiving() {
                                     </div>
                                 </div>
                                 <PrimaryBtn
-                                    onClick={() => {
-                                        const activeAppt = appointments.find(a => (a.poNumbers.includes(poNumber) || a.id === poNumber) && a.status === 'Arrived');
+                                    onClick={async () => {
+                                    try {
+                                        const { fetchDockAppointments, fetchPOById } = await import('../../api/vendorService');
+                                        const freshAppointments = await fetchDockAppointments();
+                                        const freshAppts = Array.isArray(freshAppointments) ? freshAppointments : freshAppointments?.data || [];
+                                        
+                                        const activeAppt = freshAppts.find(a => 
+                                            (a.poNumbers?.includes(poNumber) || a.id === poNumber) && 
+                                            ['Arrived', 'CHECKED_IN'].includes(a.status)
+                                        );
+                                        
                                         if (activeAppt) {
                                             setActiveApptId(activeAppt.id);
-                                            setScannedItems([
-                                                { id: 1, name: 'Premium Basmati Rice', uom: 'KG', expected: 100, scanned: 0, damaged: false, rejected: false },
-                                                { id: 2, name: 'Sona Masoori Rice', uom: 'KG', expected: 50, scanned: 0, damaged: false, rejected: false }
-                                            ]);
+                                            
+                                            // Fetch real PO items
+                                            const poDetails = await fetchPOById(poNumber);
+                                            const items = poDetails?.data?.items || poDetails?.items || [];
+                                            
+                                            if (items.length > 0) {
+                                                setScannedItems(items.map((item, idx) => ({
+                                                    id: item.id || idx,
+                                                    name: item.productName || item.product?.name || 'Unknown Product',
+                                                    uom: 'Units',
+                                                    expected: Number(item.quantity || 0),
+                                                    scanned: 0,
+                                                    damaged: false,
+                                                    rejected: false
+                                                })));
+                                            } else {
+                                                // Fallback if PO has no items
+                                                setScannedItems([
+                                                    { id: 1, name: 'Premium Basmati Rice', uom: 'KG', expected: 100, scanned: 0, damaged: false, rejected: false },
+                                                    { id: 2, name: 'Sona Masoori Rice', uom: 'KG', expected: 50, scanned: 0, damaged: false, rejected: false }
+                                                ]);
+                                            }
+                                            
                                             setStep('scanning');
                                         } else if (poNumber === 'DEMO') {
                                             setActiveApptId('DEMO-123');
@@ -1008,9 +1082,12 @@ function BlindReceiving() {
                                             ]);
                                             setStep('scanning');
                                         } else {
-                                            toast.error('No Arrived vehicle found for this PO. Type "DEMO" to force start.');
+                                            toast.error('No checked-in vehicle found for this PO/ID. Type "DEMO" to force start.');
                                         }
-                                    }}
+                                    } catch (err) {
+                                        toast.error('Server error fetching appointments.');
+                                    }
+                                }}
                                     disabled={!poNumber || !dock}
                                     className="w-full !py-4 shadow-lg shadow-blue-100 mt-4"
                                     icon={<Play size={18} />}

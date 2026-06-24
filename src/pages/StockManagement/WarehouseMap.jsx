@@ -346,9 +346,8 @@ export default function WarehouseMap() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-extrabold border-b border-slate-200">
-                                <th className="p-5 w-1/4">Rack ID</th>
-                                <th className="p-5 w-1/4">Location (Row x Col)</th>
-                                <th className="p-5 w-1/2">Assigned Category</th>
+                                <th className="p-5 w-1/3">Rack ID</th>
+                                <th className="p-5 w-2/3">Assigned Category</th>
                             </tr>
                         </thead>
                         <tbody className="text-[13px]">
@@ -364,7 +363,6 @@ export default function WarehouseMap() {
                                                 {rack.id}
                                             </div>
                                         </td>
-                                        <td className="p-5 text-slate-500 font-medium">Row {rack.row}, Col {rack.col}</td>
                                         <td className="p-5">
                                             <div className="relative w-[220px]">
                                                 <button 

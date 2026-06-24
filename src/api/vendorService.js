@@ -4,12 +4,12 @@
  */
 import api from './axios';
 
-// ─── Vendor CRUD ─────────────────────────────────────────────────────────────
-// GET  /api/vendors                          → List all (params: search, complianceStatus, kycStatus)
-// POST /api/vendors                          → Create vendor (VendorRequestDTO)
-// GET  /api/vendors/{id}                     → Full vendor detail with sub-resources
-// PUT  /api/vendors/{id}                     → Update vendor (VendorRequestDTO)
-// DELETE /api/vendors/{id}                   → Soft delete
+// â”€â”€â”€ Vendor CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/vendors                          â†’ List all (params: search, complianceStatus, kycStatus)
+// POST /api/vendors                          â†’ Create vendor (VendorRequestDTO)
+// GET  /api/vendors/{id}                     â†’ Full vendor detail with sub-resources
+// PUT  /api/vendors/{id}                     â†’ Update vendor (VendorRequestDTO)
+// DELETE /api/vendors/{id}                   â†’ Soft delete
 
 export const fetchVendors = (params) =>
   api.get('/vendors', { params });
@@ -28,9 +28,9 @@ export const updateVendor = (id, payload) =>
 export const deleteVendor = (id) =>
   api.delete(`/vendors/${id}`);
 
-// ─── Vendor Status ────────────────────────────────────────────────────────────
-// PATCH /api/vendors/{id}/block              → Block vendor  (body: { reason })
-// PATCH /api/vendors/{id}/unblock            → Unblock vendor
+// â”€â”€â”€ Vendor Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PATCH /api/vendors/{id}/block              â†’ Block vendor  (body: { reason })
+// PATCH /api/vendors/{id}/unblock            â†’ Unblock vendor
 
 export const blockVendor = (id, reason) =>
   api.patch(`/vendors/${id}/block`, { reason });
@@ -38,9 +38,9 @@ export const blockVendor = (id, reason) =>
 export const unblockVendor = (id) =>
   api.patch(`/vendors/${id}/unblock`);
 
-// ─── Onboarding Workflow ─────────────────────────────────────────────────────
-// POST /api/vendors/{id}/onboarding/approve  → Advance to next stage (body: { comments })
-// POST /api/vendors/{id}/onboarding/reject   → Reject at current stage (body: { reason })
+// â”€â”€â”€ Onboarding Workflow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/vendors/{id}/onboarding/approve  â†’ Advance to next stage (body: { comments })
+// POST /api/vendors/{id}/onboarding/reject   â†’ Reject at current stage (body: { reason })
 
 export const approveOnboarding = (id, comments = null) =>
   api.post(`/vendors/${id}/onboarding/approve`, comments ? { comments } : {});
@@ -48,9 +48,9 @@ export const approveOnboarding = (id, comments = null) =>
 export const rejectOnboarding = (id, reason) =>
   api.post(`/vendors/${id}/onboarding/reject`, { reason });
 
-// ─── Vendor Stats & Purchase History ─────────────────────────────────────────
-// GET /api/vendors/{id}/stats                → VendorStatsDTO
-// GET /api/vendors/{id}/purchase-orders      → List<VendorPurchaseHistoryDTO>
+// â”€â”€â”€ Vendor Stats & Purchase History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /api/vendors/{id}/stats                â†’ VendorStatsDTO
+// GET /api/vendors/{id}/purchase-orders      â†’ List<VendorPurchaseHistoryDTO>
 
 export const fetchVendorStats = (id) =>
   api.get(`/vendors/${id}/stats`);
@@ -58,9 +58,9 @@ export const fetchVendorStats = (id) =>
 export const fetchVendorPurchaseHistory = (id) =>
   api.get(`/vendors/${id}/purchase-orders`);
 
-// ─── Vendor Locations ─────────────────────────────────────────────────────────
-// POST   /api/vendors/{id}/locations         → Add location (VendorLocationDTO)
-// DELETE /api/vendors/locations/{locationId} → Remove location
+// â”€â”€â”€ Vendor Locations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST   /api/vendors/{id}/locations         â†’ Add location (VendorLocationDTO)
+// DELETE /api/vendors/locations/{locationId} â†’ Remove location
 
 export const addLocation = (vendorId, dto) =>
   api.post(`/vendors/${vendorId}/locations`, dto);
@@ -68,9 +68,9 @@ export const addLocation = (vendorId, dto) =>
 export const deleteLocation = (locationId) =>
   api.delete(`/vendors/locations/${locationId}`);
 
-// ─── Vendor Bank Accounts ─────────────────────────────────────────────────────
-// POST   /api/vendors/{id}/bank-accounts     → Add bank account (VendorBankAccountDTO)
-// DELETE /api/vendors/bank-accounts/{id}     → Remove bank account
+// â”€â”€â”€ Vendor Bank Accounts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST   /api/vendors/{id}/bank-accounts     â†’ Add bank account (VendorBankAccountDTO)
+// DELETE /api/vendors/bank-accounts/{id}     â†’ Remove bank account
 
 export const addBankAccount = (vendorId, dto) =>
   api.post(`/vendors/${vendorId}/bank-accounts`, dto);
@@ -78,11 +78,11 @@ export const addBankAccount = (vendorId, dto) =>
 export const deleteBankAccount = (accountId) =>
   api.delete(`/vendors/bank-accounts/${accountId}`);
 
-// ─── Vendor Documents ─────────────────────────────────────────────────────────
-// POST /api/vendors/{id}/documents           → Add document (VendorDocumentDTO)
-// POST /api/vendors/documents/{docId}/approve → Approve document
-// POST /api/vendors/documents/{docId}/reject  → Reject document (body: { reason })
-// DELETE /api/vendors/documents/{docId}      → Delete document
+// â”€â”€â”€ Vendor Documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/vendors/{id}/documents           â†’ Add document (VendorDocumentDTO)
+// POST /api/vendors/documents/{docId}/approve â†’ Approve document
+// POST /api/vendors/documents/{docId}/reject  â†’ Reject document (body: { reason })
+// DELETE /api/vendors/documents/{docId}      â†’ Delete document
 
 export const addDocument = (vendorId, dto) =>
   api.post(`/vendors/${vendorId}/documents`, dto);
@@ -98,9 +98,9 @@ export const rejectDocument = (docId, reason) =>
 export const deleteDocument = (docId) =>
   api.delete(`/vendors/documents/${docId}`);
 
-// ─── Vendor Bulk Upload ───────────────────────────────────────────────────────
-// GET  /api/vendors/bulk-upload/template → Download Excel template
-// POST /api/vendors/bulk-upload          → Upload Excel file (multipart/form-data)
+// â”€â”€â”€ Vendor Bulk Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/vendors/bulk-upload/template â†’ Download Excel template
+// POST /api/vendors/bulk-upload          â†’ Upload Excel file (multipart/form-data)
 
 export const downloadVendorTemplate = () =>
   api.get('/vendors/bulk-upload/template', { responseType: 'blob' });
@@ -117,15 +117,15 @@ export const uploadVendorBulk = (file, updateExisting = true, userId = null) => 
   });
 };
 
-// ─── Compliance ───────────────────────────────────────────────────────────────
-// POST /api/vendors/compliance/scan          → Trigger manual compliance scan
+// â”€â”€â”€ Compliance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/vendors/compliance/scan          â†’ Trigger manual compliance scan
 
 export const triggerComplianceScan = () =>
   api.post('/vendors/compliance/scan');
 
-// ─── Bulk Upload ──────────────────────────────────────────────────────────────
-// GET  /api/vendors/bulk-upload/template     → Download Excel template
-// POST /api/vendors/bulk-upload              → Upload Excel (multipart)
+// â”€â”€â”€ Bulk Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/vendors/bulk-upload/template     â†’ Download Excel template
+// POST /api/vendors/bulk-upload              â†’ Upload Excel (multipart)
 
 export const downloadBulkTemplate = () =>
   api.get('/vendors/bulk-upload/template', { responseType: 'blob' });
@@ -142,11 +142,11 @@ export const bulkUploadVendors = (file, updateExisting = true, userId = null) =>
   });
 };
 
-// ─── Vendor Products ──────────────────────────────────────────────────────────
-// GET  /api/vendors/{vendorId}/products      → List vendor catalog (?search=)
-// GET  /api/vendor-products/{id}             → Single product
-// POST /api/vendor-products/{id}/map-product → Map to store product
-// PUT  /api/vendor-products/{id}/deactivate  → Deactivate
+// â”€â”€â”€ Vendor Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/vendors/{vendorId}/products      â†’ List vendor catalog (?search=)
+// GET  /api/vendor-products/{id}             â†’ Single product
+// POST /api/vendor-products/{id}/map-product â†’ Map to store product
+// PUT  /api/vendor-products/{id}/deactivate  â†’ Deactivate
 
 export const fetchVendorProducts = (vendorId, search = null) =>
   api.get(`/vendors/${vendorId}/products`, search ? { params: { search } } : {});
@@ -175,10 +175,10 @@ export const bulkUploadProducts = (file, updateExisting = true) => {
   });
 };
 
-// ─── Purchase Orders ──────────────────────────────────────────────────────────
-// GET  /api/purchase-orders                  → List all POs
-// GET  /api/purchase-orders/{id}             → Single PO
-// POST /api/purchase-orders                  → Create PO
+// â”€â”€â”€ Purchase Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/purchase-orders                  â†’ List all POs
+// GET  /api/purchase-orders/{id}             â†’ Single PO
+// POST /api/purchase-orders                  â†’ Create PO
 
 export const fetchPurchaseOrders = (params) =>
   api.get('/purchase-orders', { params }).catch(() => []);
@@ -189,12 +189,12 @@ export const fetchPOById = (id) =>
 export const createPO = (payload) =>
   api.post('/purchase-orders', payload);
 
-// ─── GRN ─────────────────────────────────────────────────────────────────────
-// POST  /api/grn                             → Create GRN (requires X-User-Id header)
-// POST  /api/grn/{id}/approve               → Approve/Finalize GRN
-// PATCH /api/grn/{id}/finalize              → Alias for approve
-// GET   /api/grn/{id}                       → Single GRN
-// GET   /api/grn/purchase-order/{poId}      → GRNs for a PO
+// â”€â”€â”€ GRN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST  /api/grn                             â†’ Create GRN (requires X-User-Id header)
+// POST  /api/grn/{id}/approve               â†’ Approve/Finalize GRN
+// PATCH /api/grn/{id}/finalize              â†’ Alias for approve
+// GET   /api/grn/{id}                       â†’ Single GRN
+// GET   /api/grn/purchase-order/{poId}      â†’ GRNs for a PO
 
 export const createGRN = (payload, userId) =>
   api.post('/grn', payload, { headers: { 'X-User-Id': userId } });
@@ -214,20 +214,20 @@ export const fetchGRNsByPO = (poId) =>
 export const fetchGRNs = () =>
   api.get('/grn').catch(() => []);
 
-// ─── Finance / Invoices ────────────────────────────────────────────────────────
+// â”€â”€â”€ Finance / Invoices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const submitInvoice = (payload) =>
   api.post('/finance/invoices', payload);
 
 export const approveInvoice = (id) =>
   api.put(`/finance/invoices/${id}/approve`);
 
-// ─── Payments ─────────────────────────────────────────────────────────────────
-// POST /api/payments                         → Record payment
-// GET  /api/payments                         → List all
-// GET  /api/payments/{id}                    → Single payment
-// GET  /api/payments/invoice/{invoiceId}     → Payments for invoice
-// GET  /api/payments/by-date?from=&to=       → Date range
-// GET  /api/payments/today-total             → KPI: today's total
+// â”€â”€â”€ Payments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /api/payments                         â†’ Record payment
+// GET  /api/payments                         â†’ List all
+// GET  /api/payments/{id}                    â†’ Single payment
+// GET  /api/payments/invoice/{invoiceId}     â†’ Payments for invoice
+// GET  /api/payments/by-date?from=&to=       â†’ Date range
+// GET  /api/payments/today-total             â†’ KPI: today's total
 
 export const recordPayment = (payload) =>
   api.post('/finance/payments', payload);
@@ -251,7 +251,7 @@ export const fetchPaymentsByDate = (from, to) =>
 export const fetchTodayTotal = () =>
   api.get('/payments/today-total').catch(() => ({ date: '', total: 0 }));
 
-// ─── Endpoints without backend (graceful fallbacks) ───────────────────────────
+// â”€â”€â”€ Endpoints without backend (graceful fallbacks) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchVendorLedger = (vendorId, params) =>
   api.get(`/vendors/${vendorId}/ledger`, { params }).catch(() => []);
 
@@ -290,7 +290,7 @@ export const searchGlobalInventory = async (query) => {
 };
 
 // Aggregates pending POs + under-review invoices into an approval queue.
-// Uses real backend endpoints — no dedicated /api/approvals controller needed.
+// Uses real backend endpoints â€” no dedicated /api/approvals controller needed.
 export const fetchApprovals = async () => {
   try {
     const [posRes, invoicesRes, stoRes] = await Promise.allSettled([
@@ -352,7 +352,7 @@ export const fetchVendorAnalytics = (params) =>
 export const fetchPayablesAnalytics = () =>
   api.get('/payables/analytics').catch(() => ({}));
 
-// ─── GST Reconciliation Actions ────────────────────────────────────────────────
+// â”€â”€â”€ GST Reconciliation Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const notifyGSTVendor = (gstin, period) =>
   api.post('/gst/reconciliation/notify', null, { params: { gstin, period } });
 
@@ -365,7 +365,7 @@ export const writeOffGSTHold = (gstin, period) =>
 export const updateGSTDisputeNote = (gstin, period, note) =>
   api.post('/gst/reconciliation/dispute-note', null, { params: { gstin, period, note } });
 
-// ─── GST Tax Tracker: Input & Output Tax Ledger ─────────────────────────────
+// â”€â”€â”€ GST Tax Tracker: Input & Output Tax Ledger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchInputTaxData = (params) =>
   api.get('/gst/reconciliation/input-tax', { params }).catch(() => []);
 
@@ -373,7 +373,7 @@ export const fetchOutputTaxData = (params) =>
   api.get('/gst/reconciliation/output-tax', { params }).catch(() => []);
 
 
-// ─── Return-To-Vendor (RTV) / Reverse Logistics ───────────────────────────────
+// â”€â”€â”€ Return-To-Vendor (RTV) / Reverse Logistics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchRTVRequests = () =>
   api.get('/rtv').catch(() => []);
 
@@ -388,7 +388,7 @@ export const createRTVRequest = (payload, userId = null) => {
 export const updateRTVStatus = (id, status, disputeNote = null) =>
   api.patch(`/rtv/${id}/status`, null, { params: { status, disputeNote } });
 
-// ─── Reverse Auction (REST Integration) ───────────────────────────────────────
+// â”€â”€â”€ Reverse Auction (REST Integration) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchAuctions = () =>
   api.get('/auctions').catch(() => []);
 
@@ -401,51 +401,9 @@ export const fetchAuctionBids = (id) =>
 export const createAuction = (payload, userId) =>
   api.post('/auctions', payload, { headers: { 'X-User-Id': userId } });
 
-export const updateAuctionStatus = (id, status) =>
-  api.put(`/auctions/${id}/status`, null, { params: { status } });
 
-// ─── Products Integration ─────────────────────────────────────────────────────
-export const fetchProducts = () =>
-  api.get('/products').catch(() => []);
 
-export const fetchWarehouseProducts = () =>
-  api.get('/vendor-products/in-stock').catch(() => []);
-
-export const fetchWarehouseCategories = async () => {
-  return [
-      { id: 'CAT1', name: 'Dairy', color: '#3b82f6' },
-      { id: 'CAT2', name: 'Biscuits', color: '#10b981' },
-      { id: 'CAT3', name: 'Beverages', color: '#f59e0b' },
-      { id: 'CAT4', name: 'Snacks', color: '#ef4444' }
-  ];
-};
-
-export const fetchWarehouseRacks = async () => {
-  return [
-      { id: 'R-01', categoryId: 'CAT1', row: 1, col: 1 },
-      { id: 'R-02', categoryId: 'CAT2', row: 1, col: 2 },
-      { id: 'R-03', categoryId: 'CAT3', row: 2, col: 1 },
-      { id: 'R-04', categoryId: 'CAT4', row: 2, col: 2 }
-  ];
-};
-
-export const fetchWarehouseStock = async () => {
-  return [];
-};
-
-export const fetchWarehouseMovements = async () => {
-  return [];
-};
-
-export const adjustWarehouseStock = async () => {
-  return true;
-};
-
-export const updateWarehouseRackCategory = async () => {
-  return true;
-};
-
-// ─── Warehouse Slotting & Stock Transfer (STO) APIs ──────────────────────────
+// â”€â”€â”€ Warehouse Slotting & Stock Transfer (STO) APIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchBinLocations = () =>
   api.get('/inventory/bins').catch(() => []);
 
@@ -468,10 +426,10 @@ export const updateSTOStatus = (id, status, approverId = null) => {
   return api.patch(`/inventory/sto/${id}/status`, null, { params: { status }, headers });
 };
 
-// ─── Purchase Order Updates ────────────────────────────────────────────────────
+// â”€â”€â”€ Purchase Order Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Maps to the existing PurchaseController endpoints (Bug 3 fix):
-// PUT /api/purchase-orders/{id}/status    → status-only update
-// PUT /api/purchase-orders/{id}/vendor-response → Vendor Accept/Decline
+// PUT /api/purchase-orders/{id}/status    â†’ status-only update
+// PUT /api/purchase-orders/{id}/vendor-response â†’ Vendor Accept/Decline
 export const updatePO = (id, payload) =>
   api.put(`/purchase-orders/${id}`, payload);
 
@@ -484,7 +442,7 @@ export const vendorRespondToPO = (id, status, deliveryDate = null) => {
   return api.put(`/purchase-orders/${id}/vendor-response`, null, { params });
 };
 
-// ─── Vendor Product CRUD Endpoints ─────────────────────────────────────────────
+// â”€â”€â”€ Vendor Product CRUD Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchAllVendorProducts = () =>
   api.get('/vendor-products').catch(() => []);
 
@@ -497,11 +455,11 @@ export const updateVendorProduct = (id, payload) =>
 export const deleteVendorProduct = (id) =>
   api.delete(`/vendor-products/${id}`);
 
-// ─── Reports Hub API ──────────────────────────────────────────────────────────
-// GET  /api/reports/catalog                → List available report types
-// GET  /api/reports/kpis?type=&timePeriod= → KPI summary for a report
-// POST /api/reports/data?page=&size=       → Paginated report data
-// POST /api/reports/export                 → Download Excel report
+// â”€â”€â”€ Reports Hub API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET  /api/reports/catalog                â†’ List available report types
+// GET  /api/reports/kpis?type=&timePeriod= â†’ KPI summary for a report
+// POST /api/reports/data?page=&size=       â†’ Paginated report data
+// POST /api/reports/export                 â†’ Download Excel report
 
 export const fetchReportCatalog = () =>
   api.get('/reports/catalog').catch(() => []);
@@ -515,8 +473,36 @@ export const fetchReportData = (payload, page = 0, size = 5) =>
 export const exportReport = (payload) =>
   api.post('/reports/export', payload, { responseType: 'blob' });
 
-// ─── Vendor Disputes ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Vendor Disputes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const raiseDispute = (vendorId, payload) =>
   api.post(`/vendors/${vendorId}/disputes`, payload);
 
+
+
+// %%% Inbound Logistics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+export const createDockAppointment = (payload) =>
+  api.post('/vendor/logistics/appointments', payload);
+
+export const fetchDockAppointments = () =>
+  api.get('/vendor/logistics/appointments').catch(() => []);
+
+export const gateCheckinAppointment = (id, action) =>
+  api.patch('/vendor/logistics/gate-checkin', null, { params: { id, action } });
+
+export const submitGRNReceiving = (payload) =>
+  api.post('/vendor/logistics/receiving/submit', payload);
+
+export const recordIotTelemetry = (payload) =>
+  api.post('/vendor/logistics/iot/telemetry', payload);
+
+
+
+export const fetchProducts = () => api.get('/products').catch(() => []);
+export const fetchWarehouseProducts = () => api.get('/vendor-products/in-stock').catch(() => []);
+export const fetchWarehouseCategories = async () => { try { const res = await api.get('/vendor-categories'); return res || []; } catch(e) { return [{ id: 'CAT1', name: 'Dairy', color: '#3b82f6' }]; } };
+export const fetchWarehouseRacks = async () => { return [{ id: 'R-01', categoryId: 'CAT1' }, { id: 'R-02', categoryId: 'CAT2' }]; };
+export const fetchWarehouseStock = async () => { return []; };
+export const fetchWarehouseMovements = async () => { return []; };
+export const adjustWarehouseStock = async () => { return true; };
+export const updateWarehouseRackCategory = async () => { return true; };

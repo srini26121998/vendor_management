@@ -19,7 +19,7 @@ const SearchableSelect = ({ options = [], value, onChange, placeholder = 'Select
     const selectedOption = options.find(opt => opt.id === value);
 
     const filteredOptions = options.filter(opt =>
-        opt.name.toLowerCase().includes(searchTerm.toLowerCase())
+        String(opt.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     useEffect(() => {
