@@ -50,7 +50,7 @@ export default function VendorScorecard() {
         return (
             <div className="w-full min-h-screen bg-[#F3F5F9] flex items-center justify-center" style={{ fontFamily: '"Inter", sans-serif' }}>
                 <div className="bg-white rounded-3xl p-10 shadow-2xl flex flex-col items-center gap-4 max-w-sm border border-slate-100/50">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-12 h-12 border-4 border-green-800 border-t-transparent rounded-full animate-spin" />
                     <h3 className="text-base font-bold text-slate-800 tracking-tight">Syncing performance metrics...</h3>
                     <p className="text-xs text-slate-400 font-medium text-center leading-relaxed">Aggregating PO timelines, GRN receipts, quality audits, and compliance indices to update the performance dashboard in real-time.</p>
                 </div>
@@ -99,12 +99,12 @@ export default function VendorScorecard() {
                     <div>
                         <h1 className="text-[24px] font-bold text-[#1e293b]">Vendor Scorecard</h1>
                         <nav className="text-[12px] text-[#64748b] mt-1 font-medium">
-                            vendors / <span className="text-[#3b82f6]">performance analytics</span>
+                            vendors / <span className="text-green-800">performance analytics</span>
                         </nav>
                     </div>
                     <div className="flex items-center gap-3">
                         <select value={selected} onChange={e => setSelected(e.target.value)}
-                            className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-[13px] text-gray-700 shadow-sm outline-none focus:border-blue-400 transition-all cursor-pointer">
+                            className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-[13px] text-gray-700 shadow-sm outline-none focus:border-green-800 transition-all cursor-pointer">
                             {vendorsList.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
                         <TierBadge tier={vendorTier} />
@@ -119,7 +119,7 @@ export default function VendorScorecard() {
                         title="Performance Radar"
                         data={radarData}
                         series={[
-                            { key: 'self', label: 'Vendor', color: '#3b82f6' },
+                            { key: 'self', label: 'Vendor', color: '#166534' },
                             { key: 'benchmark', label: 'Benchmark', color: '#cbd5e1' }
                         ]}
                         xAxisKey="metric"
@@ -149,7 +149,7 @@ export default function VendorScorecard() {
                                     </div>
                                 </div>
                                 <div className="relative h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className={`absolute h-full rounded-full transition-all duration-1000 ${m.value >= 90 ? 'bg-emerald-500' : m.value >= 75 ? 'bg-blue-500' : 'bg-rose-500'}`}
+                                    <div className={`absolute h-full rounded-full transition-all duration-1000 ${m.value >= 90 ? 'bg-emerald-500' : m.value >= 75 ? 'bg-green-800' : 'bg-rose-500'}`}
                                         style={{ width: `${m.value}%` }} />
                                     {/* Benchmark marker */}
                                     <div className="absolute top-0 w-px h-full bg-white z-10" style={{ left: `${m.benchmark}%` }} />
@@ -170,7 +170,7 @@ export default function VendorScorecard() {
                     title="Global Peer Comparison"
                     data={peerVendors}
                     series={[
-                        { key: 'score', label: 'Overall Score', color: '#3b82f6' }
+                        { key: 'score', label: 'Overall Score', color: '#166534' }
                     ]}
                     xAxisKey="name"
                     height={250}

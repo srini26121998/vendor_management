@@ -1,14 +1,14 @@
 // ─── Vendor Module Design Tokens ───────────────────────────────────────────
 export const VENDOR_COLORS = {
-    primary: '#1e40af', // Indigo/Blue
-    accent: '#3b82f6',  // Light Blue
+    primary: '#166534', // Forest Green
+    accent: '#15803d',  // Forest Green Light
     success: '#059669',
     successDark: '#064e3b',
     warning: '#d97706',
     warningDark: '#78350f',
     danger: '#dc2626',
     dangerDark: '#7f1d1d',
-    surface: '#F0F7FF', // Ice Blue Surface
+    surface: '#f0fdf4', // Forest Green Light Surface
     muted: '#64748b',
     border: '#e2e8f0',
 };
@@ -20,7 +20,7 @@ export const STATUS_COLORS = {
     pending_kyc:   { bg: '#f8fafc', text: '#475569', dot: '#94a3b8', label: 'Pending KYC' },
     expiring_soon: { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Expiring Soon' },
     inactive:      { bg: '#f8fafc', text: '#475569', dot: '#94a3b8', label: 'Inactive' },
-    in_review:     { bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6', label: 'In Review' },
+    in_review:     { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'In Review' },
     under_review:  { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Under Review' },
     rejected:      { bg: '#fdf2f8', text: '#9d174d', dot: '#ec4899', label: 'Rejected' },
     paid:          { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Paid' },
@@ -28,14 +28,14 @@ export const STATUS_COLORS = {
     // ── Purchase Order Lifecycle Statuses ──
     pending:            { bg: '#fff7ed', text: '#c2410c', dot: '#ea580c', label: 'Pending' },
     approved:           { bg: '#ecfdf5', text: '#047857', dot: '#10b981', label: 'Approved' },
-    received:           { bg: '#eff6ff', text: '#1e40af', dot: '#3b82f6', label: 'Received' },
+    received:           { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'Received' },
     partially_received: { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b', label: 'Partially Received' },
 
     // ── Backend (uppercase) — kycStatus values from VendorResponseDTO ──
     ACTIVE:        { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Active' },
     BLOCKED:       { bg: '#fef2f2', text: '#991b1b', dot: '#dc2626', label: 'Blocked' },
     PENDING:       { bg: '#f8fafc', text: '#475569', dot: '#94a3b8', label: 'Pending KYC' },
-    IN_REVIEW:     { bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6', label: 'In Review' },
+    IN_REVIEW:     { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'In Review' },
     REJECTED:      { bg: '#fdf2f8', text: '#9d174d', dot: '#ec4899', label: 'Rejected' },
     INACTIVE:      { bg: '#f8fafc', text: '#475569', dot: '#94a3b8', label: 'Inactive' },
     PAID:          { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Paid' },
@@ -44,7 +44,7 @@ export const STATUS_COLORS = {
 
     // ── RTV Reverse Logistics Statuses ──
     FLAGGED:            { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Initiated' },
-    DEBIT_NOTE_RAISED:  { bg: '#eff6ff', text: '#1e40af', dot: '#3b82f6', label: 'Debit Note Generated' },
+    DEBIT_NOTE_RAISED:  { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'Debit Note Generated' },
     VENDOR_NOTIFIED:    { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b', label: 'Awaiting Action' },
     SHIPPED_BACK:       { bg: '#f3e8ff', text: '#6b21a8', dot: '#a855f7', label: 'Shipped Back' },
     DISPUTED:           { bg: '#fef2f2', text: '#991b1b', dot: '#dc2626', label: 'Disputed' },
@@ -91,11 +91,9 @@ export const ONBOARDING_STAGES = [
 
 
 
-
-
 // ─── Aging Data ────────────────────────────────────────────────────────────
 export const AGING_DATA = [
-    { range: '0-30 DAYS', amount: 680000, count: 12, color: '#2563eb', fill: '#eff6ff' },
+    { range: '0-30 DAYS', amount: 680000, count: 12, color: '#166534', fill: '#f0fdf4' },
     { range: '31-60 DAYS', amount: 283000, count: 6, color: '#f59e0b', fill: '#fffbeb' },
     { range: '61-90 DAYS', amount: 145000, count: 3, color: '#ea580c', fill: '#fff7ed' },
     { range: '90+ DAYS', amount: 107400, count: 2, color: '#dc2626', fill: '#fef2f2' },

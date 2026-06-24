@@ -14,13 +14,13 @@ export const ColumnConfig = ({ cols, onChange, advMode, setAdvMode }) => {
     return (
         <div className="space-y-4">
             {advMode && (
-                <div className="p-5 bg-blue-50/50 border border-blue-100 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                <div className="p-5 bg-green-50/50 border border-green-100 rounded-xl animate-in slide-in-from-top-2 duration-300">
                     <div className="flex flex-wrap gap-2">
                         {cols.map(c => (
                             <button
                                 key={c.id}
                                 onClick={() => onChange(c.id)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all ${c.visible ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-100' : 'bg-white text-gray-400 border-gray-200 hover:border-blue-300'}`}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all ${c.visible ? 'bg-green-800 text-white border-green-800 shadow-sm shadow-green-100' : 'bg-white text-gray-400 border-gray-200 hover:border-green-300'}`}
                             >
                                 {c.visible ? '✓ ' : '+ '}{c.label}
                             </button>
@@ -163,8 +163,8 @@ export const PageHeader = ({ title, subtitle, actions, badge }) => (
             <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold tracking-tight text-[#1e293b] drop-shadow-sm">{title}</h1>
                 {badge && (
-                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-lg uppercase tracking-wide flex items-center shadow-lg border border-blue-200"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff' }}>
+                    <span className="px-2 py-0.5 text-[9px] font-bold rounded-lg uppercase tracking-wide flex items-center shadow-lg border border-green-200"
+                        style={{ background: 'linear-gradient(135deg, #15803d, #166534)', color: '#fff' }}>
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse mr-1.5"></span>
                         {badge}
                     </span>
@@ -186,7 +186,7 @@ export const VendorBreadcrumb = ({ items }) => {
                     {i > 0 && <span>/</span>}
                     {item.path ? (
                         <button onClick={() => navigate(item.path)}
-                            className="hover:text-blue-600 transition-colors font-medium">{item.label}</button>
+                            className="hover:text-green-700 transition-colors font-medium">{item.label}</button>
                     ) : (
                         <span className="text-slate-600 font-semibold">{item.label}</span>
                     )}
@@ -200,9 +200,9 @@ export const VendorBreadcrumb = ({ items }) => {
 export const SearchBar = ({ value, onChange, placeholder = 'Search...', extra }) => (
     <div className="flex items-center gap-2">
         <div className="flex-1 relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-slate-900 transition-colors">🔍</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors">🔍</span>
             <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-xs font-bold text-slate-800 placeholder:text-slate-300 focus:border-slate-900 focus:ring-0 transition-all outline-none shadow-sm" />
+                className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-green-800 focus:ring-0 transition-all outline-none" />
         </div>
         {extra}
     </div>
@@ -211,7 +211,7 @@ export const SearchBar = ({ value, onChange, placeholder = 'Search...', extra })
 // ─── Primary Button ────────────────────────────────────────────────────────
 export const PrimaryBtn = ({ children, onClick, icon, small, className = '', disabled }) => (
     <button onClick={onClick} disabled={disabled}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-3 py-1.5 text-[9px]' : 'px-4 py-2 text-[10px]'} font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 ${className} uppercase `}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-3.5 py-2 text-[11px]' : 'px-5 py-2.5 text-xs'} font-bold rounded-lg bg-green-800 text-white hover:bg-green-700 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 ${className} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
         <span>{children}</span>
     </button>
@@ -219,7 +219,7 @@ export const PrimaryBtn = ({ children, onClick, icon, small, className = '', dis
 
 export const SecondaryBtn = ({ children, onClick, icon, small, className = '' }) => (
     <button onClick={onClick}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-3 py-1.5 text-[9px]' : 'px-4 py-2 text-[10px]'} font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm active:scale-95 transition-all duration-300 ${className} uppercase `}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-3.5 py-2 text-[11px]' : 'px-5 py-2.5 text-xs'} font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-300 ${className} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
         <span>{children}</span>
     </button>
@@ -227,7 +227,7 @@ export const SecondaryBtn = ({ children, onClick, icon, small, className = '' })
 
 export const DangerBtn = ({ children, onClick, small }) => (
     <button onClick={onClick}
-        className={`flex items-center gap-1.5 ${small ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'} font-bold rounded-xl text-white active:scale-95 transition-all`}
+        className={`flex items-center gap-1.5 ${small ? 'px-3.5 py-2 text-xs' : 'px-5 py-2.5 text-xs'} font-bold rounded-lg text-white active:scale-95 transition-all`}
         style={{ background: '#dc2626' }}>
         {children}
     </button>
@@ -235,13 +235,13 @@ export const DangerBtn = ({ children, onClick, small }) => (
 
 // ─── AI Nudge Banner ───────────────────────────────────────────────────────
 export const AINudgeBanner = ({ message, onAction, onDismiss, actionLabel = 'Generate' }) => (
-    <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white border border-gray-100 text-slate-700 mb-4 shadow-sm animate-fadeIn relative overflow-hidden">
-        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-xl flex-shrink-0 border border-blue-100">🤖</div>
+    <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 mb-4 animate-fadeIn relative overflow-hidden">
+        <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-xl flex-shrink-0 border border-green-100">🤖</div>
         <p className="text-[13px] font-medium flex-1 text-slate-600">{message}</p>
         <div className="flex gap-2 flex-shrink-0">
             {onAction && (
                 <button onClick={onAction}
-                    className="px-4 py-2 text-[12px] font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm uppercase tracking-wider">{actionLabel}</button>
+                    className="px-4 py-2 text-xs font-bold rounded-lg text-white bg-green-800 hover:bg-green-700 transition-all uppercase tracking-wider">{actionLabel}</button>
             )}
             <button onClick={onDismiss}
                 className="w-8 h-8 flex items-center justify-center text-[10px] text-slate-400 hover:text-slate-600 transition-all">
@@ -254,7 +254,7 @@ export const AINudgeBanner = ({ message, onAction, onDismiss, actionLabel = 'Gen
 // ─── Card ──────────────────────────────────────────────────────────────────
 export const VCard = ({ children, className = '', onClick, noPad }) => (
     <div onClick={onClick}
-        className={`bg-white rounded-lg border border-gray-100 shadow-sm transition-all duration-300 ${noPad ? '' : 'p-4'} ${onClick ? 'cursor-pointer hover:border-blue-200 hover:shadow-md' : ''} ${className}`}>
+        className={`bg-white rounded-xl border border-slate-200 transition-all duration-300 ${noPad ? '' : 'p-5'} ${onClick ? 'cursor-pointer hover:border-green-600 hover:bg-slate-50/50' : ''} ${className}`}>
         {children}
     </div>
 );
@@ -277,7 +277,7 @@ export const VTable = ({ cols, rows, onRowClick, emptyMsg = 'No records found' }
                     <tr><td colSpan={cols.length} className="px-3 py-4 text-center text-slate-400 text-xs">{emptyMsg}</td></tr>
                 ) : rows.map((row, ri) => (
                     <tr key={ri} onClick={() => onRowClick?.(row)}
-                        className={`border-b border-slate-50 transition-colors duration-300 hover:-translate-y-0.5 ${onRowClick ? 'cursor-pointer hover:bg-blue-50/50 hover:shadow-sm' : ''} ${ri % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                        className={`border-b border-slate-50 transition-colors duration-300 hover:-translate-y-0.5 ${onRowClick ? 'cursor-pointer hover:bg-green-50/50 hover:shadow-sm' : ''} ${ri % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                         {cols.map((c, ci) => (
                             <td key={ci} className="px-2.5 py-1.5 text-slate-700 whitespace-nowrap">{c.render ? c.render(row) : row[c.key]}</td>
                         ))}
@@ -362,7 +362,7 @@ export const EmptyState = ({ icon = '📦', title, desc, action }) => (
 export const StatRow = ({ label, value, highlight }) => (
     <div className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
         <span className="text-sm text-slate-500">{label}</span>
-        <span className={`text-sm font-bold ${highlight ? 'text-blue-600' : 'text-slate-800'}`}>{value}</span>
+        <span className={`text-sm font-bold ${highlight ? 'text-green-700' : 'text-slate-800'}`}>{value}</span>
     </div>
 );
 
@@ -389,12 +389,12 @@ export const Stepper = ({ steps, current }) => (
                             ${done
                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                 : active
-                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                    ? 'bg-green-800 border-green-800 text-white shadow-lg shadow-green-100'
                                     : 'bg-white border-slate-200 text-slate-300'}`}>
                             {done ? '✓' : icon}
                         </div>
                         <span className={`text-[9px] mt-2 font-bold text-center uppercase tracking-tight max-w-[70px] leading-tight transition-colors
-                            ${active ? 'text-blue-600' : done ? 'text-emerald-500' : 'text-slate-400'}`}>
+                            ${active ? 'text-green-700' : done ? 'text-emerald-500' : 'text-slate-400'}`}>
                             {label}
                         </span>
                     </div>
@@ -420,7 +420,7 @@ export const VModal = ({ open, onClose, title, children, width = 'max-w-xl' }) =
                 <div className="flex items-center justify-between px-10 py-8 border-b border-slate-50">
                     <div>
                         <h3 className="text-2xl font-extrabold text-[#1e293b] tracking-tight">{title}</h3>
-                        <div className="w-12 h-1.5 bg-blue-600 rounded-full mt-2" />
+                        <div className="w-12 h-1.5 bg-green-800 rounded-full mt-2" />
                     </div>
                     <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all group">
                         <span className="text-xl group-hover:rotate-90 transition-transform duration-300">✕</span>
@@ -439,7 +439,7 @@ export const VTabs = ({ tabs, active, onChange }) => (
     <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit mb-4">
         {tabs.map(t => (
             <button key={t.key} onClick={() => onChange(t.key)}
-                className={`px-3 py-1.5 rounded-lg text-base font-bold transition-all ${active === t.key ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                className={`px-3 py-1.5 rounded-lg text-base font-bold transition-all ${active === t.key ? 'bg-white text-green-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                 {t.icon && <span className="mr-1">{t.icon}</span>}{t.label}
             </button>
         ))}
@@ -452,7 +452,7 @@ export const FilterBar = ({ filters, active, onChange }) => (
         {filters.map(f => (
             <button key={f.value} onClick={() => onChange(f.value)}
                 className={`px-5 py-1.5 text-[12px] font-bold rounded-full border transition-all duration-300 uppercase tracking-wider ${active === f.value
-                    ? 'border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-100'
+                    ? 'border-green-800 bg-green-800 text-white shadow-md shadow-green-100'
                     : 'border-gray-100 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'}`}>
                 {f.label} {f.count !== undefined && <span className="ml-1 opacity-50">[{f.count}]</span>}
             </button>
@@ -487,7 +487,7 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                         key={p}
                         onClick={() => onPageChange(p)}
                         className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-lg transition-all ${currentPage === p
-                            ? 'bg-blue-600 text-white shadow-sm'
+                            ? 'bg-green-800 text-white shadow-sm'
                             : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                     >
@@ -515,7 +515,7 @@ const CHART_TYPES_NAV = [
     { key: 'radar', label: 'Radar', icon: '🕸️' },
 ];
 
-const PIE_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
+const PIE_COLORS = ['#166534', '#16a34a', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
 
 export const MultiChart = ({ data, series, xAxisKey = 'name', height = 300, yAxisFormatter, title, defaultType = 'bar' }) => {
     const [chartType, setChartType] = useState(defaultType);
@@ -611,7 +611,7 @@ export const MultiChart = ({ data, series, xAxisKey = 'name', height = 300, yAxi
                             onClick={() => setChartType(type.key)}
                             title={type.label}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold transition-all duration-300 ${chartType === type.key
-                                ? 'bg-white text-blue-600 shadow-sm border border-blue-50'
+                                ? 'bg-white text-green-700 shadow-sm border border-green-50'
                                 : 'text-slate-400 hover:text-slate-600'
                                 }`}
                         >

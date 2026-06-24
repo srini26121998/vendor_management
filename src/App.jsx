@@ -14,6 +14,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 const VendorDashboard = lazy(() => import('./pages/Vendors/VendorDashboard'));
 const VendorList = lazy(() => import('./pages/Vendors/VendorList'));
 const VendorProducts = lazy(() => import('./pages/Vendors/VendorProducts'));
+const VendorProductDetail = lazy(() => import('./pages/Vendors/VendorProductDetail'));
 const VendorDetail = lazy(() => import('./pages/Vendors/VendorDetail'));
 const VendorOnboarding = lazy(() => import('./pages/Vendors/VendorOnboarding'));
 const VendorOnboardingWorkflow = lazy(() => import('./pages/Vendors/VendorOnboardingWorkflow'));
@@ -85,6 +86,7 @@ function App() {
           <Route path="vendors/dashboard" element={<Suspense fallback={VFallback}><VendorDashboard /></Suspense>} />
           <Route path="vendors/list" element={<Suspense fallback={VFallback}><VendorList /></Suspense>} />
           <Route path="vendors/products" element={<Suspense fallback={VFallback}><VendorProducts /></Suspense>} />
+          <Route path="vendors/products/:id" element={<Suspense fallback={VFallback}><VendorProductDetail /></Suspense>} />
           <Route path="vendors/detail/:id?" element={<Suspense fallback={VFallback}><VendorDetail /></Suspense>} />
           <Route path="vendors/onboarding" element={<Suspense fallback={VFallback}><VendorOnboarding /></Suspense>} />
           <Route path="vendors/onboarding-workflow" element={<Suspense fallback={VFallback}><VendorOnboardingWorkflow /></Suspense>} />

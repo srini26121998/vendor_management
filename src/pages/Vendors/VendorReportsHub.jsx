@@ -11,7 +11,7 @@ const REPORT_CATEGORIES = [
     {
         key: 'master', name: 'Vendor Master Report',
         desc: 'Complete vendor directory with contact, compliance, and onboarding status.',
-        icon: <FileText size={18} />, color: '#3b82f6'
+        icon: <FileText size={18} />, color: '#166534'
     },
     {
         key: 'po', name: 'PO Status Report',
@@ -69,8 +69,8 @@ const PER_PAGE = 5;
 function SortIcon({ col, sortCol, sortDir }) {
     if (sortCol !== col) return <ArrowUpDown size={11} className="ml-1 text-slate-300 inline-block" />;
     return sortDir === 'asc'
-        ? <ArrowUp size={11} className="ml-1 text-blue-600 inline-block" />
-        : <ArrowDown size={11} className="ml-1 text-blue-600 inline-block" />;
+        ? <ArrowUp size={11} className="ml-1 text-green-800 inline-block" />
+        : <ArrowDown size={11} className="ml-1 text-green-800 inline-block" />;
 }
 
 export default function VendorReportsHub() {
@@ -200,9 +200,9 @@ export default function VendorReportsHub() {
                     <div className="flex items-center gap-3">
                         <div className="relative group">
                             <SecondaryBtn icon={<Share2 size={14} />}>Share Report</SecondaryBtn>
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-green-800">
                                 <button onClick={() => toast.success('Link copied to clipboard!')} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
-                                    <Share2 size={14} className="text-blue-500" /> Copy Link
+                                    <Share2 size={14} className="text-green-800" /> Copy Link
                                 </button>
                                 <button onClick={() => navigate(VENDOR_ROUTES.whatsapp)} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-emerald-50 rounded-xl font-bold text-emerald-600 flex items-center gap-2 transition-all">
                                     <MessageSquare size={14} className="text-emerald-500" /> Share on WhatsApp
@@ -228,11 +228,11 @@ export default function VendorReportsHub() {
                             <div className="p-2 space-y-1">
                                 {REPORT_CATEGORIES.map(r => (
                                     <button key={r.key} onClick={() => changeReport(r.key)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${selectedKey === r.key ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${selectedKey === r.key ? 'bg-green-800 text-white shadow-md shadow-green-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                                         <span className={`${selectedKey === r.key ? 'text-white' : 'text-slate-400'}`}>{r.icon}</span>
                                         <div className="text-left overflow-hidden">
                                             <div className="text-[13px] font-bold truncate">{r.name}</div>
-                                            <div className={`text-[9px] font-bold uppercase ${selectedKey === r.key ? 'text-blue-100' : 'text-slate-400'}`}>Insights Available</div>
+                                            <div className={`text-[9px] font-bold uppercase ${selectedKey === r.key ? 'text-green-100' : 'text-slate-400'}`}>Insights Available</div>
                                         </div>
                                     </button>
                                 ))}
@@ -264,7 +264,7 @@ export default function VendorReportsHub() {
                                                 <div className="text-[24px] font-bold text-slate-800 tracking-tight">{stat.value}</div>
                                                 <div className="w-full h-1 mt-3 rounded-full bg-slate-100 overflow-hidden">
                                                     <motion.div initial={{ width: 0 }} animate={{ width: '70%' }}
-                                                        className={`h-full rounded-full bg-${stat.accent || 'blue'}-500`} />
+                                                        className={`h-full rounded-full bg-${stat.accent || 'green'}-800`} />
                                                 </div>
                                             </VCard>
                                         ))
@@ -281,7 +281,7 @@ export default function VendorReportsHub() {
                                                 <input type="text" placeholder="Search by name, ID or category..."
                                                     value={search}
                                                     onChange={e => { setSearch(e.target.value); setPage(1); }}
-                                                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg bg-white text-[13px] font-bold focus:border-blue-500 outline-none transition-all shadow-sm" />
+                                                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg bg-white text-[13px] font-bold focus:border-green-800 outline-none transition-all shadow-sm" />
                                             </div>
                                         </div>
                                         <div className="w-full md:w-48">
@@ -318,7 +318,7 @@ export default function VendorReportsHub() {
                                     {isLoading && (
                                         <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                                             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-slate-100">
-                                                <Loader2 size={16} className="text-blue-600 animate-spin" />
+                                                <Loader2 size={16} className="text-green-800 animate-spin" />
                                                 <span className="text-[12px] font-bold text-slate-600">Loading data...</span>
                                             </div>
                                         </div>
@@ -336,7 +336,7 @@ export default function VendorReportsHub() {
                                                     {columns.map(({ col, label }) => (
                                                         <th key={col}
                                                             onClick={() => handleSort(col)}
-                                                            className={`px-5 py-3.5 text-left cursor-pointer select-none whitespace-nowrap transition-colors hover:bg-slate-100/80 ${sortCol === col ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                            className={`px-5 py-3.5 text-left cursor-pointer select-none whitespace-nowrap transition-colors hover:bg-slate-100/80 ${sortCol === col ? 'text-green-800' : 'text-slate-400'}`}>
                                                             {label}
                                                             <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
                                                         </th>
@@ -354,7 +354,7 @@ export default function VendorReportsHub() {
                                                         </td>
                                                     </tr>
                                                 ) : tableData.map((row, idx) => (
-                                                    <tr key={row.id || idx} className="hover:bg-blue-50/30 transition-colors">
+                                                    <tr key={row.id || idx} className="hover:bg-green-50/30 transition-colors">
                                                         {columns.map(({ col }) => (
                                                             <td key={col} className="px-5 py-3.5">
                                                                 {col === 'status' || col === 'complianceStatus' ? (
@@ -362,7 +362,7 @@ export default function VendorReportsHub() {
                                                                 ) : col.toLowerCase().includes('amount') || col.includes('outstanding') || col.includes('current') || col.includes('Days') ? (
                                                                     <span className="font-bold text-slate-700">₹{row[col] || 0}</span>
                                                                 ) : (
-                                                                    <span className={col.toLowerCase().includes('code') ? "font-mono font-bold text-blue-600 text-[12px]" : "font-bold text-slate-800"}>
+                                                                    <span className={col.toLowerCase().includes('code') ? "font-mono font-bold text-green-800 text-[12px]" : "font-bold text-slate-800"}>
                                                                         {row[col] || '—'}
                                                                     </span>
                                                                 )}
@@ -372,7 +372,7 @@ export default function VendorReportsHub() {
                                                             <td className="px-5 py-3.5 text-right">
                                                                 <button
                                                                     onClick={() => navigate(`${VENDOR_ROUTES.detail}/${row.id}`)}
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all shadow-sm">
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-800 hover:bg-green-950 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all shadow-sm">
                                                                     Profile <ArrowRight size={11} />
                                                                 </button>
                                                             </td>
@@ -405,7 +405,7 @@ export default function VendorReportsHub() {
                                                 if (p > pagination.totalPages) return null;
                                                 return (
                                                     <button key={p} onClick={() => setPage(p)}
-                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-bold transition-all ${page === p ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-bold transition-all ${page === p ? 'bg-green-800 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
                                                         {p}
                                                     </button>
                                                 )

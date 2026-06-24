@@ -37,7 +37,7 @@ export default function VendorList() {
     const [gstinFilter, setGstinFilter] = useState('');
     const [dateRange, setDateRange] = useState({ from: '', to: '' });
     const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(20);
+    const [rowsPerPage, setRowsPerPage] = useState(15);
     const [sortConfig, setSortConfig] = useState({ key: 'vendorCode', dir: 'asc' });
 
     // Modal states
@@ -60,7 +60,6 @@ export default function VendorList() {
         { id: 'kycStatus', label: 'KYC Status', visible: true },
         { id: 'gstin', label: 'GSTIN', visible: true },
         { id: 'pan', label: 'PAN', visible: true },
-        { id: 'actions', label: 'Actions', visible: true },
     ]);
 
     // Debounce Search
@@ -277,7 +276,7 @@ export default function VendorList() {
             {isLoading && (
                 <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 border border-slate-100">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-10 h-10 border-4 border-green-800 border-t-transparent rounded-full animate-spin" />
                         <p className="text-[13px] font-bold text-slate-600">Loading vendor registry...</p>
                     </div>
                 </div>
@@ -289,12 +288,12 @@ export default function VendorList() {
                 {/* ── Header ── */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-[22px] font-bold text-[#1e293b] tracking-tight">Vendor Master Registry</h1>
+                        <h1 className="text-[22px] font-medium text-[#1e293b] tracking-tight">Vendor Master Registry</h1>
                         <p className="text-[11px] text-slate-500 mt-0.5 font-medium">Central listing with filtering, sorting, and compliance management.</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={() => setAdvMode(!advMode)}
-                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-green-800 text-white border-green-800 shadow-green-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
                             <Settings className={`w-4 h-4 ${advMode ? 'animate-spin' : ''}`} />
                             {advMode ? 'Config Active' : 'View Config'}
                         </button>
@@ -302,12 +301,12 @@ export default function VendorList() {
 
 
                         <div className="relative group">
-                            <button className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm hover:bg-gray-50 transition-colors font-bold group-hover:border-blue-400 group-hover:text-blue-600">
+                            <button className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm hover:bg-gray-50 transition-colors font-bold group-hover:border-green-400 group-hover:text-green-700">
                                 <Share2 className="w-4 h-4" />
                                 Share & Export
                                 <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
                             </button>
-                            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
+                            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-green-800">
                                 <button onClick={() => exportToExcel(vendors, 'Vendor_List', [])} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
                                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                                     Export Excel
@@ -320,12 +319,12 @@ export default function VendorList() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <SecondaryBtn onClick={() => setShowBulkImportModal(true)} className="!rounded-full !font-bold !px-6 !py-2.5 !text-[11px] !border-blue-200 !text-blue-700 bg-blue-50 shadow-sm hover:bg-blue-100 hover:border-blue-300">
+                            <SecondaryBtn onClick={() => setShowBulkImportModal(true)} className="!rounded-full !font-bold !px-6 !py-2.5 !text-[11px] !border-green-200 !text-green-700 bg-green-50 shadow-sm hover:bg-green-100 hover:border-green-300">
                                 <UploadCloud className="w-4 h-4 mr-1 inline-block" />
                                 BULK IMPORT
                             </SecondaryBtn>
 
-                            <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.onboarding)} className="!rounded-full !font-bold !px-6 !py-2.5 !text-[11px] !bg-blue-600 shadow-lg shadow-blue-200">
+                            <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.onboarding)} className="!rounded-full !font-bold !px-6 !py-2.5 !text-[11px] !bg-green-800 shadow-lg shadow-green-100">
                                 + ONBOARD NEW VENDOR
                             </PrimaryBtn>
                         </div>
@@ -333,275 +332,274 @@ export default function VendorList() {
                 </div>
 
                 {/* ── Search & Filter Bar ── */}
-                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm space-y-3">
-                            <div className="relative group">
-                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                </span>
-                                <input
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search by Vendor Name, ID, or GSTIN..."
-                                    className="w-full pl-14 pr-6 h-14 bg-white border border-slate-200 rounded-2xl text-[15px] font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 transition-all shadow-sm placeholder:text-slate-400"
-                                />
-                            </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm space-y-3">
+                    <div className="relative group">
+                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-green-700 transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </span>
+                        <input
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search by Vendor Name, ID, or GSTIN..."
+                            className="w-full pl-14 pr-6 h-14 bg-white border border-slate-200 rounded-2xl text-[15px] font-medium text-slate-700 outline-none focus:border-green-800 focus:ring-4 focus:ring-green-50/50 transition-all shadow-sm placeholder:text-slate-400"
+                        />
+                    </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                                <div className="flex items-center gap-2">
-                                    {[
-                                        { label: 'All', value: 'All Statuses' },
-                                        { label: 'Active', value: 'Active' },
-                                        { label: 'Blocked', value: 'Blocked' },
-                                        { label: 'Expiring Soon', value: 'Expiring Soon' }
-                                    ].map((f) => (
-                                        <button
-                                            key={f.value}
-                                            onClick={() => setStatusFilter(f.value)}
-                                            className={`px-5 py-1.5 text-[11px] font-bold rounded-full transition-all duration-300 uppercase  border ${statusFilter === f.value
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100'
-                                                : 'bg-blue-50/30 text-blue-500 border-blue-100/50 hover:bg-blue-50'}`}
-                                        >
-                                            {f.label}
-                                        </button>
-                                    ))}
-                                </div>
-
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                        <div className="flex items-center gap-2">
+                            {[
+                                { label: 'All', value: 'All Statuses' },
+                                { label: 'Active', value: 'Active' },
+                                { label: 'Blocked', value: 'Blocked' },
+                                { label: 'Expiring Soon', value: 'Expiring Soon' }
+                            ].map((f) => (
                                 <button
-                                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                                    className="flex items-center gap-2 text-[11px] font-bold uppercase  text-blue-600 hover:text-blue-700 transition-all px-4 py-2 rounded-full bg-blue-50/50 border border-blue-100"
+                                    key={f.value}
+                                    onClick={() => setStatusFilter(f.value)}
+                                    className={`px-5 py-2 text-[11px] font-bold rounded-full transition-all duration-300 uppercase border ${statusFilter === f.value
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                                 >
-                                    <svg className={`w-3.5 h-3.5 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
-                                    {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
+                                    {f.label}
                                 </button>
-                            </div>
-
-                            {showAdvancedFilters && (
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pt-8 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
-                                    {/* Category Filter */}
-                                    <div className="md:col-span-1 space-y-3">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Filter by Categories</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {VENDOR_CATEGORIES.map(c => {
-                                                const isSelected = catFilters.includes(c);
-                                                return (
-                                                    <button
-                                                        key={c}
-                                                        onClick={() => {
-                                                            setCatFilters(prev =>
-                                                                isSelected ? prev.filter(x => x !== c) : [...prev, c]
-                                                            );
-                                                        }}
-                                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${isSelected
-                                                            ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm'
-                                                            : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'}`}
-                                                    >
-                                                        {c}
-                                                        {isSelected && <span className="ml-1.5 text-[10px]">✕</span>}
-                                                    </button>
-                                                );
-                                            })}
-                                            {catFilters.length > 0 && (
-                                                <button
-                                                    onClick={() => setCatFilters([])}
-                                                    className="px-3 py-1.5 text-[10px] font-bold text-rose-500 uppercase hover:underline"
-                                                >
-                                                    Clear
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* GSTIN Filter */}
-                                    <div className="space-y-3">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">GSTIN Registry</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                            </span>
-                                            <input
-                                                value={gstinFilter}
-                                                onChange={(e) => setGstinFilter(e.target.value.toUpperCase())}
-                                                maxLength={15}
-                                                placeholder="15-digit GSTIN..."
-                                                className="w-full pl-10 pr-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-medium text-slate-700 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all placeholder:text-slate-300 shadow-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Date Range */}
-                                    <div className="space-y-3">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Last Activity Period</label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative flex-1">
-                                                <input type="date"
-                                                    max={new Date().toISOString().split('T')[0]}
-                                                    value={dateRange.from}
-                                                    onChange={(e) => setDateRange(r => ({ ...r, from: e.target.value }))}
-                                                    className="w-full px-3 h-11 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all cursor-pointer shadow-sm" />
-                                            </div>
-                                            <span className="text-slate-300 text-xs font-bold">to</span>
-                                            <div className="relative flex-1">
-                                                <input type="date"
-                                                    max={new Date().toISOString().split('T')[0]}
-                                                    value={dateRange.to}
-                                                    onChange={(e) => setDateRange(r => ({ ...r, to: e.target.value }))}
-                                                    className="w-full px-3 h-11 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all cursor-pointer shadow-sm" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Rows Per Page */}
-                                    <div className="space-y-3">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Display Density</label>
-                                        <div className="relative">
-                                            <select
-                                                value={rowsPerPage}
-                                                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                                                className="w-full appearance-none px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all cursor-pointer shadow-sm">
-                                                <option value={20}>20 Entries per page</option>
-                                                <option value={50}>50 Entries per page</option>
-                                                <option value={100}>100 Entries per page</option>
-                                            </select>
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            ))}
                         </div>
 
-                        {/* ── Bulk Actions Bar ── */}
-                        {selected.length > 0 && (
-                            <div className="bg-[#1e293b] text-white p-4 px-8 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4 shadow-xl border-l-4 border-blue-500">
-                                <div className="flex items-center gap-8">
-                                    <p className="text-[12px] font-bold uppercase "><span className="text-blue-400">{selected.length}</span> Vendors Selected</p>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => handleBulkAction('Export CSV')} className="text-[11px] font-bold text-blue-400 hover:text-blue-300 uppercase  flex items-center gap-2">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" /></svg>
-                                            Bulk Export
+                        <button
+                            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                            className="flex items-center gap-2 text-[11px] font-bold uppercase text-green-800 hover:text-green-950 transition-all px-5 py-2 rounded-full bg-white border border-slate-200 hover:bg-slate-50"
+                        >
+                            <svg className={`w-3.5 h-3.5 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                            {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
+                        </button>
+                    </div>
+
+                    {showAdvancedFilters && (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pt-8 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+                            {/* Category Filter */}
+                            <div className="md:col-span-1 space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Filter by Categories</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {VENDOR_CATEGORIES.map(c => {
+                                        const isSelected = catFilters.includes(c);
+                                        return (
+                                            <button
+                                                key={c}
+                                                onClick={() => {
+                                                    setCatFilters(prev =>
+                                                        isSelected ? prev.filter(x => x !== c) : [...prev, c]
+                                                    );
+                                                }}
+                                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${isSelected
+                                                    ? 'bg-green-800 border-green-800 text-white'
+                                                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                            >
+                                                {c}
+                                                {isSelected && <span className="ml-1.5 text-[10px]">✕</span>}
+                                            </button>
+                                        );
+                                    })}
+                                    {catFilters.length > 0 && (
+                                        <button
+                                            onClick={() => setCatFilters([])}
+                                            className="px-3 py-1.5 text-[10px] font-bold text-rose-500 uppercase hover:underline"
+                                        >
+                                            Clear
                                         </button>
-                                        <button onClick={() => handleBulkAction('Approve All')} className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 uppercase ">Approve All</button>
-                                        <button onClick={() => handleBulkAction('Bulk Block')} className="text-[11px] font-bold text-rose-400 hover:text-rose-300 uppercase ">Bulk Block</button>
-                                        <button onClick={() => handleBulkAction('Assign Manager')} className="text-[11px] font-bold text-white/70 hover:text-white uppercase ">Assign Category Manager</button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* GSTIN Filter */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">GSTIN Registry</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    </span>
+                                    <input
+                                        value={gstinFilter}
+                                        onChange={(e) => setGstinFilter(e.target.value.toUpperCase())}
+                                        maxLength={15}
+                                        placeholder="15-digit GSTIN..."
+                                        className="w-full pl-10 pr-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-medium text-slate-700 outline-none focus:border-green-800 focus:ring-4 focus:ring-green-50 transition-all placeholder:text-slate-300 shadow-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Date Range */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Last Activity Period</label>
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <input type="date"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            value={dateRange.from}
+                                            onChange={(e) => setDateRange(r => ({ ...r, from: e.target.value }))}
+                                            className="w-full px-3 h-11 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 focus:border-green-500 focus:ring-4 focus:ring-green-50 outline-none transition-all cursor-pointer shadow-sm" />
+                                    </div>
+                                    <span className="text-slate-300 text-xs font-bold">to</span>
+                                    <div className="relative flex-1">
+                                        <input type="date"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            value={dateRange.to}
+                                            onChange={(e) => setDateRange(r => ({ ...r, to: e.target.value }))}
+                                            className="w-full px-3 h-11 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-600 focus:border-green-500 focus:ring-4 focus:ring-green-50 outline-none transition-all cursor-pointer shadow-sm" />
                                     </div>
                                 </div>
-                                <button onClick={() => setSelected([])} className="text-[10px] font-bold bg-white/10 px-4 py-1.5 rounded-lg hover:bg-white/20 transition-all">Clear Selection</button>
                             </div>
-                        )}
 
-                        <ColumnConfig cols={cols} onChange={(id) => setCols(cols.map(c => c.id === id ? { ...c, visible: !c.visible } : c))} advMode={advMode} setAdvMode={setAdvMode} />
+                            {/* Rows Per Page */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Display Density</label>
+                                <div className="relative">
+                                    <select
+                                        value={rowsPerPage}
+                                        onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                                        className="w-full appearance-none px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-50 transition-all cursor-pointer shadow-sm">
+                                        <option value={15}>15 Entries per page</option>
+                                        <option value={20}>20 Entries per page</option>
+                                        <option value={50}>50 Entries per page</option>
+                                        <option value={100}>100 Entries per page</option>
+                                    </select>
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                        {/* ── Table Container ── */}
-                        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="text-[12px] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 bg-[#F8FAFC]">
+                {/* ── Bulk Actions Bar ── */}
+                {selected.length > 0 && (
+                    <div className="bg-[#1e293b] text-white p-4 px-8 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4 shadow-xl border-l-4 border-green-700">
+                        <div className="flex items-center gap-8">
+                            <p className="text-[12px] font-bold uppercase "><span className="text-green-400">{selected.length}</span> Vendors Selected</p>
+                            <div className="flex gap-4">
+                                <button onClick={() => handleBulkAction('Export CSV')} className="text-[11px] font-bold text-green-400 hover:text-green-300 uppercase  flex items-center gap-2">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" /></svg>
+                                    Bulk Export
+                                </button>
+                                <button onClick={() => handleBulkAction('Approve All')} className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 uppercase ">Approve All</button>
+                                <button onClick={() => handleBulkAction('Bulk Block')} className="text-[11px] font-bold text-rose-400 hover:text-rose-300 uppercase ">Bulk Block</button>
+                                <button onClick={() => handleBulkAction('Assign Manager')} className="text-[11px] font-bold text-white/70 hover:text-white uppercase ">Assign Category Manager</button>
+                            </div>
+                        </div>
+                        <button onClick={() => setSelected([])} className="text-[10px] font-bold bg-white/10 px-4 py-1.5 rounded-lg hover:bg-white/20 transition-all">Clear Selection</button>
+                    </div>
+                )}
+
+                <ColumnConfig cols={cols} onChange={(id) => setCols(cols.map(c => c.id === id ? { ...c, visible: !c.visible } : c))} advMode={advMode} setAdvMode={setAdvMode} />
+
+                {/* ── Table Container ── */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
+                                    {visibleCols.map(col => (
+                                        <th key={col.id} className={`${['vendorCode', 'id', 'name'].includes(col.id) ? 'px-8' : 'px-4'} py-4 cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap ${col.id === 'actions' ? 'sticky right-0 bg-slate-50 z-10 shadow-[-4px_0_12px_rgba(0,0,0,0.03)] border-l border-slate-100' : ''}`} onClick={() => handleSort(col.id)}>
+                                            <div className="flex items-center gap-1.5">
+                                                {col.label.toUpperCase()}
+                                                {sortConfig.key === col.id && (
+                                                    <span className="text-green-800 text-[10px]">{sortConfig.dir === 'asc' ? '▲' : '▼'}</span>
+                                                )}
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="">
+                                {paginatedVendors.length > 0 ? (
+                                    paginatedVendors.map((v) => (
+                                        <tr key={v.id} onClick={() => navigate(`${VENDOR_ROUTES.detail}/${v.id}`)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
                                             {visibleCols.map(col => (
-                                                <th key={col.id} className={`${['vendorCode', 'id', 'name'].includes(col.id) ? 'px-8' : 'px-4'} py-5 cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap ${col.id === 'actions' ? 'sticky right-0 bg-[#F8FAFC] z-10 shadow-[-4px_0_12px_rgba(0,0,0,0.03)]' : ''}`} onClick={() => handleSort(col.id)}>
-                                                    <div className="flex items-center gap-2">
-                                                        {col.label.toUpperCase()}
-                                                        {sortConfig.key === col.id && (
-                                                            <span className="text-blue-500 font-bold">{sortConfig.dir === 'asc' ? '↑' : '↓'}</span>
-                                                        )}
-                                                    </div>
-                                                </th>
+                                                <td key={col.id} className={`${['vendorCode', 'id', 'name'].includes(col.id) ? 'px-8' : 'px-4'} py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 ${col.id === 'actions' ? 'sticky right-0 z-10 shadow-[-4px_0_12px_rgba(0,0,0,0.03)] border-l border-slate-100' : ''}`}>
+                                                    {col.id === 'vendorCode' && (
+                                                        <button onClick={(e) => { e.stopPropagation(); copyToClipboard(v.vendorCode || v.id); }} className="text-green-800 hover:text-green-950 font-bold text-[13px] tracking-tight">{v.vendorCode || v.id}</button>
+                                                    )}
+                                                    {col.id === 'name' && (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-slate-800 text-[14px] group-hover:text-green-800 transition-colors">{v.name}</span>
+                                                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">{v.city}</span>
+                                                        </div>
+                                                    )}
+                                                    {col.id === 'category' && (
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-bold uppercase border border-green-100 shadow-sm">
+                                                            {v.category}
+                                                        </span>
+                                                    )}
+                                                    {col.id === 'status' && <StatusBadge status={v.status} size="sm" />}
+                                                    {col.id === 'gstin' && (
+                                                        <div className="group/mask relative cursor-help">
+                                                            <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{maskText(v.gstin)}</span>
+                                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover/mask:block bg-slate-800 text-white text-[11px] p-2 rounded shadow-xl z-20 whitespace-nowrap">
+                                                                Full GSTIN: <span className="font-mono">{v.gstin}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {col.id === 'pan' && (
+                                                        <div className="group/pan relative cursor-help">
+                                                            <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{maskText(v.pan)}</span>
+                                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover/pan:block bg-slate-800 text-white text-[11px] p-2 rounded shadow-xl z-20 whitespace-nowrap">
+                                                                Full PAN: <span className="font-mono">{v.pan}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {col.id === 'lastUpdated' && (
+                                                        <span className="text-[13px] font-medium text-slate-600">{v.lastUpdated}</span>
+                                                    )}
+                                                    {col.id === 'primaryMobile' && (
+                                                        <span className="text-[13px] font-medium text-slate-600">{v.primaryMobile || '—'}</span>
+                                                    )}
+                                                    {col.id === 'primaryEmail' && (
+                                                        <span className="text-[13px] font-medium text-slate-600">{v.primaryEmail || '—'}</span>
+                                                    )}
+                                                    {col.id === 'kycStatus' && (
+                                                        <StatusBadge status={v.kycStatus || 'pending'} size="sm" />
+                                                    )}
+                                                    {col.id === 'actions' && (
+                                                        <div className="flex items-center gap-1">
+                                                            <button onClick={(e) => { e.stopPropagation(); navigate(`${VENDOR_ROUTES.detail}/${v.id}`); }} title="View Detail" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                                                                <Eye className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(v.id); }} title="Edit" className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm">
+                                                                <Edit3 className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(v.id); }} title="Delete" className="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handlePrint(v); }} title="Print" className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
+                                                                <PrintIcon className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={(e) => { e.stopPropagation(); handleDownload(v); }} title="Download Dossier" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-600 hover:text-white transition-all shadow-sm">
+                                                                <Download className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </td>
                                             ))}
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {paginatedVendors.length > 0 ? (
-                                            paginatedVendors.map((v) => (
-                                                <tr key={v.id} className="hover:bg-slate-50 transition-all group">
-                                                    {visibleCols.map(col => (
-                                                        <td key={col.id} className={`${['vendorCode', 'id', 'name'].includes(col.id) ? 'px-8' : 'px-4'} py-4 whitespace-nowrap ${col.id === 'actions' ? 'sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-4px_0_12px_rgba(0,0,0,0.03)]' : ''}`}>
-                                                            {col.id === 'vendorCode' && (
-                                                                <button onClick={() => copyToClipboard(v.vendorCode || v.id)} className="text-blue-600 hover:text-blue-800 font-bold text-[13px]">{v.vendorCode || v.id}</button>
-                                                            )}
-                                                            {col.id === 'name' && (
-                                                                <>
-                                                                    <button onClick={() => navigate(`${VENDOR_ROUTES.detail}/${v.id}`)} className="font-medium text-[#1e293b] text-[14px] hover:text-blue-600 transition-colors">{v.name}</button>
-                                                                    <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">{v.city}</div>
-                                                                </>
-                                                            )}
-                                                            {col.id === 'category' && (
-                                                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase border border-blue-100 shadow-sm transition-all hover:bg-blue-100">
-                                                                    {v.category}
-                                                                </div>
-                                                            )}
-                                                            {col.id === 'status' && <StatusBadge status={v.status} size="sm" />}
-                                                            {col.id === 'gstin' && (
-                                                                <div className="group/mask relative cursor-help">
-                                                                    <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{maskText(v.gstin)}</span>
-                                                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover/mask:block bg-slate-800 text-white text-[11px] p-2 rounded shadow-xl z-20 whitespace-nowrap">
-                                                                        Full GSTIN: <span className="font-mono">{v.gstin}</span>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {col.id === 'pan' && (
-                                                                <div className="group/pan relative cursor-help">
-                                                                    <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{maskText(v.pan)}</span>
-                                                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover/pan:block bg-slate-800 text-white text-[11px] p-2 rounded shadow-xl z-20 whitespace-nowrap">
-                                                                        Full PAN: <span className="font-mono">{v.pan}</span>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            {col.id === 'lastUpdated' && (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[13px] font-bold text-slate-700">{v.lastUpdated}</span>
-                                                                </div>
-                                                            )}
-                                                            {col.id === 'primaryMobile' && (
-                                                                <span className="text-[13px] font-medium text-slate-600">{v.primaryMobile || '—'}</span>
-                                                            )}
-                                                            {col.id === 'primaryEmail' && (
-                                                                <span className="text-[13px] font-medium text-slate-600">{v.primaryEmail || '—'}</span>
-                                                            )}
-                                                            {col.id === 'kycStatus' && (
-                                                                <StatusBadge status={v.kycStatus || 'pending'} size="sm" />
-                                                            )}
-                                                            {col.id === 'actions' && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <button onClick={() => navigate(`${VENDOR_ROUTES.detail}/${v.id}`)} title="View Detail" className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                                                                        <Eye className="w-4 h-4" />
-                                                                    </button>
-                                                                    <button onClick={() => handleEdit(v.id)} title="Edit" className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm">
-                                                                        <Edit3 className="w-4 h-4" />
-                                                                    </button>
-                                                                    <button onClick={() => handleDelete(v.id)} title="Delete" className="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </button>
-                                                                    <button onClick={() => handlePrint(v)} title="Print" className="w-8 h-8 flex items-center justify-center rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
-                                                                        <PrintIcon className="w-4 h-4" />
-                                                                    </button>
-                                                                    <button onClick={() => handleDownload(v)} title="Download Dossier" className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-600 hover:text-white transition-all shadow-sm">
-                                                                        <Download className="w-4 h-4" />
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={cols.length} className="py-24 text-center">
-                                                    <div className="flex flex-col items-center justify-center space-y-4">
-                                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
-                                                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        </div>
-                                                        <h3 className="text-[18px] font-bold text-slate-700">No matching vendors found</h3>
-                                                        <button onClick={() => { setSearchTerm(''); setCatFilters([]); setStatusFilter('All Statuses'); setGstinFilter(''); setDateRange({ from: '', to: '' }); }} className="text-blue-600 text-[13px] font-bold hover:underline">Clear all filters</button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={visibleCols.length} className="py-24 text-center">
+                                            <div className="flex flex-col items-center justify-center space-y-4">
+                                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
+                                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                </div>
+                                                <h3 className="text-[18px] font-medium text-slate-700">No matching vendors found</h3>
+                                                <button onClick={() => { setSearchTerm(''); setCatFilters([]); setStatusFilter('All Statuses'); setGstinFilter(''); setDateRange({ from: '', to: '' }); }} className="text-green-800 text-[13px] font-bold hover:underline">Clear all filters</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
 
                 {/* ── Pagination ── */}
@@ -611,9 +609,9 @@ export default function VendorList() {
                             Showing <span className="text-slate-700">{sortedVendors.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * rowsPerPage, sortedVendors.length)}</span> of <span className="text-slate-700">{sortedVendors.length}</span> entries
                         </div>
                         <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-                            <button 
-                                disabled={currentPage === 1} 
-                                onClick={() => setCurrentPage(s => s - 1)} 
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(s => s - 1)}
                                 className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
                                 Prev
@@ -636,19 +634,19 @@ export default function VendorList() {
                                         p === '...' ? (
                                             <span key={`dots-${i}`} className="w-8 text-center text-slate-400 font-bold tracking-widest">...</span>
                                         ) : (
-                                            <button 
-                                                key={`page-${p}`} 
+                                            <button
+                                                key={`page-${p}`}
                                                 onClick={() => setCurrentPage(p)}
-                                                className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-all duration-300 ${currentPage === p ? 'bg-blue-600 text-white shadow-md shadow-blue-200/50 scale-105' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                                                className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-all duration-300 ${currentPage === p ? 'bg-green-800 text-white shadow-md shadow-green-200/50 scale-105' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                                                 {p}
                                             </button>
                                         )
                                     ));
                                 })()}
                             </div>
-                            <button 
-                                disabled={currentPage === totalPages} 
-                                onClick={() => setCurrentPage(s => s + 1)} 
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(s => s + 1)}
                                 className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
                                 Next
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
@@ -690,7 +688,7 @@ export default function VendorList() {
                                 <select
                                     value={selectedManager}
                                     onChange={(e) => setSelectedManager(e.target.value)}
-                                    className="w-full appearance-none p-4 bg-[#F8FAFC] border border-slate-200 rounded-2xl text-[14px] font-bold text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all">
+                                    className="w-full appearance-none p-4 bg-[#F8FAFC] border border-slate-200 rounded-2xl text-[14px] font-bold text-slate-700 outline-none focus:border-green-800 focus:bg-white transition-all">
                                     <option value="">-- Choose Manager --</option>
                                     {MANAGERS_LIST.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                 </select>
@@ -713,7 +711,7 @@ export default function VendorList() {
                             <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4 text-rose-600">
                                 <AlertCircle size={32} />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-800 mb-2">Are you sure?</h3>
+                            <h3 className="text-lg font-medium text-slate-800 mb-2">Are you sure?</h3>
                             <p className="text-slate-600">
                                 You are about to permanently delete <span className="font-bold text-slate-800">"{vendorToDelete?.name}"</span>.
                                 This action cannot be undone and will remove all associated data.

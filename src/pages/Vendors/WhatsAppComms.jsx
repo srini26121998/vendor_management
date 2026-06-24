@@ -152,7 +152,7 @@ export default function WhatsAppComms() {
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); shareTemplate(t); }}
-                                            className="absolute right-3 bottom-3 p-1.5 rounded-lg bg-white/80 border border-slate-100 text-slate-400 hover:text-blue-600 hover:border-blue-200 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                                            className="absolute right-3 bottom-3 p-1.5 rounded-lg bg-white/80 border border-slate-100 text-slate-400 hover:text-green-800 hover:border-green-200 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
                                             title="Share Template"
                                         >
                                             <Share2 size={12} />
@@ -267,10 +267,10 @@ export default function WhatsAppComms() {
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {history.map((h, i) => (
-                                    <tr key={i} className="hover:bg-blue-50/20 transition-colors group">
+                                    <tr key={i} className="hover:bg-green-50/20 transition-colors group">
                                         <td className="px-8 py-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-50 to-white text-slate-600 flex items-center justify-center text-[12px] font-bold border border-slate-200 transition-all group-hover:scale-110 group-hover:border-blue-200 group-hover:shadow-sm">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-50 to-white text-slate-600 flex items-center justify-center text-[12px] font-bold border border-slate-200 transition-all group-hover:scale-110 group-hover:border-green-200 group-hover:shadow-sm">
                                                     {h.vendor.charAt(0)}
                                                 </div>
                                                 <span className="text-[14px] font-bold text-slate-700">{h.vendor}</span>
@@ -283,7 +283,7 @@ export default function WhatsAppComms() {
                                         </td>
                                         <td className="px-8 py-5 text-right">
                                             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">{h.time}</div>
-                                            <div className={`text-[10px] font-bold uppercase mt-1 flex items-center justify-end gap-1.5 ${h.status === 'read' ? 'text-blue-500' : 'text-emerald-500'}`}>
+                                            <div className={`text-[10px] font-bold uppercase mt-1 flex items-center justify-end gap-1.5 ${h.status === 'read' ? 'text-green-800' : 'text-emerald-500'}`}>
                                                 <CheckCheck size={12} />
                                                 {h.status === 'read' ? 'Verified Seen' : 'Securely Delivered'}
                                             </div>
@@ -304,8 +304,8 @@ export default function WhatsAppComms() {
             {/* ── Configuration Modal ── */}
             <VModal open={showConfig} onClose={() => setShowConfig(false)} title="Integration Configuration" width="max-w-md">
                 <div className="space-y-4 p-1">
-                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 mb-2">
-                        <p className="text-[11px] text-blue-600 font-medium leading-relaxed">
+                    <div className="bg-green-50/50 p-4 rounded-xl border border-green-100/50 mb-2">
+                        <p className="text-[11px] text-green-800 font-medium leading-relaxed">
                             Define your WhatsApp Business API parameters here. These credentials link your billing system to your Meta Business account.
                         </p>
                     </div>
@@ -319,7 +319,7 @@ export default function WhatsAppComms() {
                                     type="password" 
                                     value={config.apiKey} 
                                     onChange={(e) => setConfig({...config, apiKey: e.target.value})}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-400 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-green-800 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -333,7 +333,7 @@ export default function WhatsAppComms() {
                                         type="text" 
                                         value={config.phoneId} 
                                         onChange={(e) => setConfig({...config, phoneId: e.target.value})}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-400 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-green-800 outline-none transition-all"
                                     />
                                 </div>
                             </div>
@@ -345,7 +345,7 @@ export default function WhatsAppComms() {
                                         type="text" 
                                         value={config.apiVersion} 
                                         onChange={(e) => setConfig({...config, apiVersion: e.target.value})}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-400 outline-none transition-all"
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-green-800 outline-none transition-all"
                                     />
                                 </div>
                             </div>
@@ -359,7 +359,7 @@ export default function WhatsAppComms() {
                                     type="text" 
                                     value={config.webhookUrl} 
                                     onChange={(e) => setConfig({...config, webhookUrl: e.target.value})}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-blue-400 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:border-green-800 outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -378,7 +378,7 @@ export default function WhatsAppComms() {
                     <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center transition-all duration-500 border-4 ${
                         authStatus === 'success' ? 'bg-emerald-50 border-emerald-500 text-emerald-600 scale-110 shadow-lg shadow-emerald-100' : 
                         authStatus === 'error' ? 'bg-rose-50 border-rose-500 text-rose-600' :
-                        'bg-blue-50 border-blue-200 text-blue-600'
+                        'bg-green-50 border-green-200 text-green-800'
                     }`}>
                         {isAuthenticating ? (
                             <RefreshCw className="w-10 h-10 animate-spin" />
@@ -419,7 +419,7 @@ export default function WhatsAppComms() {
                             className={`w-full py-4 rounded-2xl font-bold text-[13px] transition-all flex items-center justify-center gap-3 ${
                                 isAuthenticating ? 'bg-slate-100 text-slate-400' :
                                 authStatus === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100' :
-                                'bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95'
+                                'bg-green-800 text-white shadow-lg shadow-green-100 hover:bg-green-950 active:scale-95'
                             }`}
                         >
                             {isAuthenticating ? 'Please Wait...' : 

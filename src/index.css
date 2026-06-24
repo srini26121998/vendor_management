@@ -39,7 +39,7 @@
   select,
   textarea {
     @apply bg-white text-slate-900 antialiased;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Outfit', sans-serif !important;
   }
 }
 
@@ -297,4 +297,106 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FLAT UI & SHADOWLESS ENTERPRISE SYSTEM
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Forcefully remove all box shadows and apply Outfit font family globally */
+*, ::before, ::after {
+  box-shadow: none !important;
+  --tw-shadow: none !important;
+  --tw-shadow-colored: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  font-family: 'Outfit', sans-serif !important;
+}
+
+/* Ensure cards and dashboard panels have clean, professional borders */
+.card, 
+.v-card, 
+[class*="VCard"], 
+[class*="card"],
+.bg-white.rounded-2xl.border,
+.bg-white.rounded-3xl.border {
+  border: 1.5px solid #e2e8f0 !important;
+  background-color: #ffffff !important;
+}
+
+/* Enhanced tactile hover feedback on cards without shadows */
+.card:hover, 
+.v-card:hover, 
+[class*="VCard"]:hover {
+  border-color: #cbd5e1 !important;
+  background-color: #fafbfc !important;
+}
+
+/* Clean, crisp flat borders for all forms and input controls */
+.v-input, 
+.v-input-sm, 
+.v-search-input, 
+select, 
+input[type="text"], 
+input[type="number"], 
+input[type="email"], 
+input[type="date"], 
+textarea {
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background-color: #ffffff !important;
+  transition: border-color 0.15s ease-in-out, outline-color 0.15s ease-in-out !important;
+}
+
+/* High accessibility solid focus ring instead of shadows */
+.v-input:focus, 
+.v-input-sm:focus, 
+.v-search-input:focus, 
+select:focus, 
+input:focus, 
+textarea:focus {
+  border-color: #166534 !important; /* Dark Green */
+  outline: 2px solid #bbf7d0 !important; /* Soft green outline */
+  background-color: #ffffff !important;
+}
+
+/* Clean border separator for headers instead of shadow */
+header, 
+.sticky-header, 
+[class*="StickyTopBar"],
+.sticky {
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+/* Make tables clean, flat and readable */
+table {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+th {
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+td {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Active sidebar elements flat highlight */
+.bg-indigo-50 {
+  background-color: #e0e7ff !important;
+  color: #3730a3 !important;
+  border: 1.5px solid #818cf8 !important;
+}
+
+.text-indigo-700 {
+  color: #3730a3 !important;
 }

@@ -81,12 +81,12 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
             {/* Logo */}
             <div className={`p-5 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} border-b border-slate-100 bg-slate-50/20`}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[oklch(0.6_0.15_150)] to-[oklch(0.4_0.12_150)] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-100 shrink-0">
                         <Truck size={22} strokeWidth={2.5} />
                     </div>
                     {!isCollapsed && (
                         <div className="overflow-hidden">
-                            <h1 className="font-extrabold tracking-tight text-[15px] truncate text-slate-900">Vendor Portal</h1>
+                            <h1 className="font-bold tracking-tight text-[15px] truncate text-slate-900">Vendor Portal</h1>
                             <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-[0.1em]">
                                 {/* <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse shrink-0" /> */}
                                 {/* <span className="truncate">Management Suite</span> */}
@@ -114,16 +114,16 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
                         <NavLink key={item.path} to={item.path} onClick={onClose}
                             title={isCollapsed ? item.label : undefined}
                             className={() =>
-                                `group relative flex items-center ${isCollapsed ? 'justify-center mx-auto w-10 h-10' : 'justify-between gap-3 px-3 py-2.5'} rounded-xl text-[14px] font-semibold transition-all duration-300 overflow-hidden mb-0.5 ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-200'
-                                    : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600 border border-transparent'
+                                `group relative flex items-center ${isCollapsed ? 'justify-center mx-auto w-10 h-10' : 'justify-between gap-3 px-3 py-2.5'} rounded-xl text-[14px] font-medium transition-all duration-300 overflow-hidden mb-0.5 ${isActive
+                                    ? 'bg-[oklch(0.96_0.04_150)] text-[oklch(0.4_0.12_150)] shadow-sm border border-[oklch(0.9_0.06_150)]'
+                                    : 'text-slate-500 hover:bg-slate-50 hover:text-[oklch(0.45_0.12_150)] border border-transparent'
                                 }`
                             }
                         >
                             <div className="relative z-10 flex items-center gap-3">
                                 <div className={`transition-all duration-500 ease-out flex items-center justify-center ${isActive
-                                    ? 'scale-110 text-indigo-600'
-                                    : 'text-slate-500 group-hover:scale-110 group-hover:text-indigo-500'
+                                    ? 'scale-110 text-[oklch(0.4_0.12_150)]'
+                                    : 'text-slate-500 group-hover:scale-110 group-hover:text-[oklch(0.5_0.12_150)]'
                                     }`}>
                                     {React.cloneElement(item.icon, {
                                         size: 18,
@@ -131,7 +131,7 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
                                     })}
                                 </div>
                                 <div className={`flex items-center transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 invisible' : 'w-auto opacity-100'}`}>
-                                    <span className={`whitespace-nowrap ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
+                                    <span className={`whitespace-nowrap ${isActive ? 'font-medium' : ''}`}>{item.label}</span>
                                 </div>
                             </div>
 
@@ -156,7 +156,7 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
                     title={isCollapsed ? 'Settings' : undefined}
                     className={({ isActive }) =>
                         `flex items-center ${isCollapsed ? 'justify-center mx-auto w-10 h-10' : 'gap-3 px-3 py-2.5'} rounded-xl font-medium transition-all text-sm mb-0.5 ${isActive
-                            ? 'bg-blue-50 text-blue-700 font-bold'
+                            ? 'bg-[oklch(0.96_0.04_150)] text-[oklch(0.4_0.12_150)] font-medium'
                             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                         }`
                     }>

@@ -4,7 +4,7 @@ import { VENDOR_ROUTES, STATUS_COLORS } from './vendorConstants';
 import {
     StatusBadge, TierBadge, VCard, SectionTitle, StatRow, PrimaryBtn, SecondaryBtn, VModal
 } from './VendorComponents';
-import { ArrowLeft, MessageSquare, ShieldCheck, Mail, Printer, Download, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, ShieldCheck, Mail, Printer, Download, CheckCircle, XCircle, AlertTriangle, Loader2, Edit3, Trash2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { printData } from '../../utils/exportUtils';
 import useVendorStore from '../../store/useVendorStore';
@@ -27,7 +27,7 @@ export default function VendorDetail() {
     const navigate = useNavigate();
     const [tab, setTab] = useState('basic');
     const [previewDoc, setPreviewDoc] = useState(null);
-    const { vendors, blockVendorApi, unblockVendorApi } = useVendorStore();
+    const { vendors, blockVendorApi, unblockVendorApi, removeVendor } = useVendorStore();
     const [vendorData, setVendorData] = useState(null);
     const [vendorLoading, setVendorLoading] = useState(true);
     const [vendorProducts, setVendorProducts] = useState([]);
@@ -49,6 +49,7 @@ export default function VendorDetail() {
     const [emailSubject, setEmailSubject] = useState('');
     const [emailBody, setEmailBody] = useState('');
     const [showComplianceModal, setShowComplianceModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // ── Fetch the correct vendor by ID from backend ──
     useEffect(() => {
@@ -137,7 +138,7 @@ export default function VendorDetail() {
     if (vendorLoading) {
         return (
             <div className="flex min-h-[400px] items-center justify-center">
-                <Loader2 size={40} className="animate-spin text-blue-500" />
+                <Loader2 size={40} className="animate-spin text-green-800" />
             </div>
         );
     }
@@ -281,6 +282,47 @@ export default function VendorDetail() {
         toast.success('Scorecard print dialog opened!');
     };
 
+    // ── Deletion and Dossier Handlers ──
+    const confirmDelete = () => {
+        setShowDeleteModal(false);
+        toast.promise(
+            removeVendor(vendor.id),
+            {
+                loading: `Removing ${vendor.name || vendor.vendorCode}...`,
+                success: () => {
+                    navigate(VENDOR_ROUTES.list);
+                    return `Vendor "${vendor.name || vendor.vendorCode}" removed from the registry.`;
+                },
+                error: (err) => err?.response?.data?.message || 'Failed to delete vendor.',
+            }
+        );
+    };
+
+    const handleDownloadDossier = (v) => {
+        const generateDossier = async () => {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const content = `VENDOR DOSSIER: ${v.vendorCode || v.id}\n-----------------------------------\nName: ${v.name}\nCategory: ${v.category}\nGSTIN: ${v.gstin}\nPAN: ${v.pan}\nFSSAI: ${v.fssai || 'N/A'}\nLocation: ${v.city}\nStatus: ${v.status.toUpperCase()}\nLast Updated: ${v.lastUpdated || ''}\n-----------------------------------\nGenerated on: ${new Date().toLocaleString()}`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${v.vendorCode || v.id}_Dossier.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        };
+
+        toast.promise(
+            generateDossier(),
+            {
+                loading: `Generating document package for ${v.name}...`,
+                success: `Dossier for ${v.vendorCode || v.id} downloaded successfully.`,
+                error: 'Failed to generate documents.',
+            }
+        );
+    };
+
     // ── Cheque Preview ──
     const handleChequePreview = (bank) => {
         toast.success(`Loading cancelled cheque for ${bank.bank}... 🏦`);
@@ -305,7 +347,7 @@ export default function VendorDetail() {
         return (
             <div className="w-full min-h-screen bg-[#F3F5F9] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                    <Loader2 className="w-10 h-10 text-green-800 animate-spin" />
                     <p className="text-[13px] font-bold text-slate-500">Loading vendor profile...</p>
                 </div>
             </div>
@@ -320,7 +362,7 @@ export default function VendorDetail() {
                     <h2 className="text-xl font-bold text-slate-700">Vendor Not Found</h2>
                     <p className="text-slate-500 text-sm">No vendor with ID <span className="font-mono font-bold">{id}</span> exists.</p>
                     <button onClick={() => navigate(VENDOR_ROUTES.list)}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all">
+                        className="px-6 py-2 bg-green-800 text-white rounded-xl font-bold text-sm hover:bg-green-950 transition-all">
                         ← Back to Vendor List
                     </button>
                 </div>
@@ -329,7 +371,7 @@ export default function VendorDetail() {
     }
 
     return (
-        <div className="w-full bg-[#F3F5F9] min-h-screen" style={{ fontFamily: '"Inter", sans-serif' }}>
+        <div className="w-full bg-[#F3F5F9] min-h-screen" style={{ fontFamily: '"Outfit", sans-serif' }}>
             {/* ── Sticky Top Bar ── */}
             <div className="bg-white border-b border-slate-100 px-4 py-2.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -339,7 +381,7 @@ export default function VendorDetail() {
                     </button>
                     <div className="h-4 w-px bg-slate-200" />
                     <nav className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-                        <button onClick={() => navigate(VENDOR_ROUTES.list)} className="hover:text-blue-600 transition-colors">Vendor Master</button>
+                        <button onClick={() => navigate(VENDOR_ROUTES.list)} className="hover:text-green-800 transition-colors">Vendor Master</button>
                         <span className="mx-1">/</span>
                         <span className="text-slate-700">{vendor.name}</span>
                     </nav>
@@ -348,18 +390,27 @@ export default function VendorDetail() {
                     <button onClick={() => setShowEmailModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition-all">
                         <Mail size={12} /> Email
                     </button>
+                    <button onClick={() => handleDownloadDossier(vendor)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition-all">
+                        <Download size={12} /> Download Dossier
+                    </button>
                     <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-[11px] font-bold text-purple-700 hover:bg-purple-100 transition-all">
                         <Printer size={12} /> Print
                     </button>
-                    <button onClick={() => setShowComplianceModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 rounded-lg text-[11px] font-bold text-white hover:bg-blue-700 transition-all shadow-sm">
+                    <button onClick={() => navigate(VENDOR_ROUTES.onboarding, { state: { vendor, mode: 'edit' } })} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition-all">
+                        <Edit3 size={12} /> Edit
+                    </button>
+                    <button onClick={() => setShowDeleteModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition-all">
+                        <Trash2 size={12} /> Delete
+                    </button>
+                    <button onClick={() => setShowComplianceModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-[11px] font-bold text-green-700 hover:bg-green-100 transition-all">
                         <ShieldCheck size={12} /> Compliance Audit
                     </button>
                     {vendor.status === 'blocked' || vendor.kycStatus === 'BLOCKED' ? (
-                        <button onClick={handleUnblock} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 rounded-lg text-[11px] font-bold text-white hover:bg-emerald-700 transition-all shadow-sm">
+                        <button onClick={handleUnblock} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition-all">
                             <CheckCircle size={12} /> Unblock
                         </button>
                     ) : (
-                        <button onClick={handleBlock} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 rounded-lg text-[11px] font-bold text-white hover:bg-rose-700 transition-all shadow-sm">
+                        <button onClick={handleBlock} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition-all">
                             <XCircle size={12} /> Block
                         </button>
                     )}
@@ -394,7 +445,7 @@ export default function VendorDetail() {
                             {vendor.logo ? (
                                 <img src={vendor.logo} alt="Logo" className="w-full h-full object-contain" />
                             ) : (
-                                <span className="text-blue-600 font-bold text-2xl">{(vendor.name || 'V').charAt(0)}</span>
+                                <span className="text-green-800 font-bold text-2xl">{(vendor.name || 'V').charAt(0)}</span>
                             )}
                         </div>
 
@@ -408,7 +459,7 @@ export default function VendorDetail() {
                                 {vendor.category} <span className="w-1 h-1 bg-slate-200 rounded-full"></span> {vendor.city}, {vendor.state}
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                <div className="px-3 py-1 bg-blue-50/50 border border-blue-100 rounded-lg text-[11px] font-bold text-blue-700 flex items-center gap-1.5">
+                                <div className="px-3 py-1 bg-green-50/50 border border-green-100 rounded-lg text-[11px] font-bold text-green-800 flex items-center gap-1.5">
                                     <span className="opacity-60 font-medium">GST:</span> {vendor.gstin}
                                 </div>
                                 <div className="px-3 py-1 bg-emerald-50/50 border border-emerald-100 rounded-lg text-[11px] font-bold text-emerald-700 flex items-center gap-1.5">
@@ -420,12 +471,7 @@ export default function VendorDetail() {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={() => navigate(VENDOR_ROUTES.onboarding, { state: { vendor, mode: 'edit' } })}
-                                className="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-[12px] shadow-md shadow-blue-100 hover:bg-blue-700 transition-all">Quick Edit</button>
-                            <button onClick={() => setTab('performance')}
-                                className="bg-white text-slate-600 border border-slate-200 px-5 py-2 rounded-xl font-bold text-[12px] hover:bg-slate-50 transition-all shadow-sm">View Analytics</button>
-                        </div>
+                        {/* Buttons removed from here as actions are now in the top bar */}
                     </div>
                 </div>
 
@@ -433,8 +479,8 @@ export default function VendorDetail() {
                 <div className="flex gap-1.5 mb-6 overflow-x-auto pb-1 scrollbar-hide">
                     {TABS.map(t => (
                         <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-[12px] font-bold transition-all border shrink-0
-                                ${tab === t.key ? 'bg-white border-blue-100 text-blue-600 shadow-lg shadow-blue-50/50' : 'text-slate-400 border-transparent hover:bg-white/50'}`}>
+                            className={`flex items-center gap-2.5 px-6 py-2 rounded-xl text-[12px] font-bold transition-all border shrink-0
+                                ${tab === t.key ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
                             <span className="text-base">{t.icon}</span>
                             {t.label}
                         </button>
@@ -444,109 +490,126 @@ export default function VendorDetail() {
                 {/* ── Content Panes ── */}
                 <div className="animate-in fade-in duration-500">
                     {tab === 'basic' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <VCard className="lg:col-span-2">
-                                <SectionTitle>Organizational Structure</SectionTitle>
-                                <div className="mt-8 space-y-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                        <div>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] block mb-3">Registration Details</label>
-                                            <div className="space-y-4">
-                                                <StatRow label="Trade Name" value={vendor.tradeName || '—'} />
-                                                <StatRow label="Business Type" value={vendor.businessType || '—'} />
-                                                <StatRow label="GST Reg. Type" value={vendor.gstRegistrationType || '—'} />
-                                                <StatRow label="Annual Turnover" value={vendor.annualTurnoverRange?.replace(/_/g, ' ') || '—'} />
-                                                <StatRow label="Auth Required" value={vendor.authRequired ? 'Yes (4-step review)' : 'No (Direct activation)'} />
-                                            </div>
+                        <div className="space-y-6">
+                            {/* Top Highlights Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-green-50 text-green-700 flex items-center justify-center text-lg font-bold">🏢</div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Business Type</p>
+                                        <p className="text-sm font-bold text-slate-800">{vendor.businessType || '—'}</p>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center text-lg font-bold">📊</div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">KYC Status</p>
+                                        <p className="text-sm font-bold text-indigo-700">{vendor.kycStatus || '—'}</p>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg font-bold">🛡️</div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compliance</p>
+                                        <p className="text-sm font-bold text-emerald-700">{vendor.complianceStatus || '—'}</p>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-lg font-bold">📅</div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Created Date</p>
+                                        <p className="text-sm font-bold text-slate-800">{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString('en-IN') : '—'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Main Columns Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Column 1: Organization & Registration */}
+                                <VCard className="flex flex-col h-full justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                            <span className="text-lg">📋</span>
+                                            <h3 className="text-sm font-extrabold text-slate-700 uppercase tracking-wide">Registration Info</h3>
                                         </div>
-                                        <div>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] block mb-3">Additional Info</label>
-                                            <div className="space-y-4">
-                                                <StatRow label="KYC Status" value={vendor.kycStatus || '—'} />
-                                                <StatRow label="Compliance" value={vendor.complianceStatus || '—'} />
-                                                <StatRow label="Onboarding Stage" value={vendor.onboardingStage?.replace(/_/g, ' ') || '—'} />
-                                                <StatRow label="Vendor Code" value={<span className="font-mono font-bold text-blue-600">{vendor.vendorCode || '—'}</span>} />
-                                                <StatRow label="Created" value={vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString('en-IN') : '—'} />
-                                            </div>
+                                        <div className="space-y-3.5">
+                                            <StatRow label="Trade Name" value={vendor.tradeName || '—'} />
+                                            <StatRow label="Business Type" value={vendor.businessType || '—'} />
+                                            <StatRow label="GST Reg. Type" value={vendor.gstRegistrationType || '—'} />
+                                            <StatRow label="Annual Turnover" value={vendor.annualTurnoverRange?.replace(/_/g, ' ') || '—'} />
+                                            <StatRow label="Auth Required" value={vendor.authRequired ? 'Yes (4-step review)' : 'No (Direct activation)'} />
+                                            <StatRow label="Vendor Code" value={<span className="font-mono font-bold text-green-700">{vendor.vendorCode || '—'}</span>} />
                                         </div>
                                     </div>
+                                    {vendor.notes && (
+                                        <div className="mt-6 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                                            <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Internal Notes</p>
+                                            <p className="text-[12px] text-slate-600 leading-relaxed">{vendor.notes}</p>
+                                        </div>
+                                    )}
+                                </VCard>
 
-                                    <div className="h-px bg-slate-100" />
+                                {/* Column 2: Communications & Locations */}
+                                <VCard className="flex flex-col h-full justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                            <span className="text-lg">📞</span>
+                                            <h3 className="text-sm font-extrabold text-slate-700 uppercase tracking-wide">Contacts & Sites</h3>
+                                        </div>
+                                        <div className="space-y-3.5">
+                                            <StatRow label="Website" value={vendor.website ? <a href={vendor.website} target="_blank" rel="noreferrer" className="text-green-700 hover:underline font-semibold">{vendor.website}</a> : '—'} />
+                                            <StatRow label="Primary Mobile" value={vendor.primaryMobile || vendor.mobile || '—'} />
+                                            <StatRow label="Corporate Email" value={vendor.email || vendor.primaryEmail || '—'} />
+                                            <StatRow label="Alternate Contact" value={vendor.alternateContact || 'N/A'} />
+                                        </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                        <div>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] block mb-3">Registered Locations</label>
+                                        <div className="h-px bg-slate-100 my-4" />
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Registered Locations</label>
                                             {vendor.locations?.length > 0 ? (
                                                 <div className="space-y-2">
                                                     {vendor.locations.map((loc, li) => (
-                                                        <div key={li} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                                            <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">{loc.locationType}{loc.isPrimary ? ' · Primary' : ''}</p>
-                                                            <p className="text-[13px] font-bold text-slate-700">{loc.addressLine1}</p>
-                                                            {loc.addressLine2 && <p className="text-[13px] text-slate-500">{loc.addressLine2}</p>}
-                                                            <p className="text-[13px] text-slate-500">{loc.city}{loc.stateCode ? ', ' + loc.stateCode : ''}{loc.pinCode ? ' - ' + loc.pinCode : ''}</p>
+                                                        <div key={li} className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                                                            <p className="text-[9px] font-bold text-green-700 uppercase mb-1 flex items-center gap-1">
+                                                                📍 {loc.locationType}{loc.isPrimary ? ' · Primary' : ''}
+                                                            </p>
+                                                            <p className="text-[12px] font-bold text-slate-700">{loc.addressLine1}</p>
+                                                            {loc.addressLine2 && <p className="text-[12px] text-slate-500">{loc.addressLine2}</p>}
+                                                            <p className="text-[12px] text-slate-500">{loc.city}{loc.stateCode ? ', ' + loc.stateCode : ''}{loc.pinCode ? ' - ' + loc.pinCode : ''}</p>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            ) : <p className="text-[13px] text-slate-400 italic">No locations added yet.</p>}
+                                            ) : <p className="text-[12px] text-slate-400 italic">No locations added yet.</p>}
                                         </div>
-                                        <div>
-                                            <label className="text-[11px] font-bold text-slate-400 uppercase block mb-4">Online & Communication</label>
-                                            <div className="space-y-3">
-                                                <StatRow label="Website" value={vendor.website ? <a href={vendor.website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{vendor.website}</a> : '—'} />
-                                                <StatRow label="Primary Mobile" value={vendor.primaryMobile || vendor.mobile || '—'} />
-                                                <StatRow label="Corporate Email" value={vendor.email || vendor.primaryEmail || '—'} />
-                                                <StatRow label="Alternate Contact" value={vendor.alternateContact || 'N/A'} />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-slate-100" />
-
-                                    {vendor.notes && (
-                                        <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                                            <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Internal Notes</p>
-                                            <p className="text-[13px] text-slate-600">{vendor.notes}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </VCard>
-                            <div className="space-y-8">
-                                <VCard>
-                                    <SectionTitle>Vendor Summary</SectionTitle>
-                                    <div className="mt-4 space-y-1">
-                                        <StatRow label="Vendor Code" value={<span className="font-mono font-bold text-blue-600">{vendor.vendorCode || '—'}</span>} />
-                                        <StatRow label="GST Type" value={vendor.gstRegistrationType || '—'} />
-                                        <StatRow label="Turnover" value={vendor.annualTurnoverRange?.replace(/_/g, ' ') || '—'} />
-                                        <StatRow label="Auth Required" value={vendor.authRequired ? 'Yes' : 'No'} />
-                                        <StatRow label="KYC" value={vendor.kycStatus || '—'} />
-                                        <StatRow label="Compliance" value={vendor.complianceStatus || '—'} />
-                                        <StatRow label="Created By" value={vendor.createdByName || 'System'} />
-                                        <StatRow label="Created" value={vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString('en-IN') : '—'} />
-                                        <StatRow label="Last Updated" value={vendor.updatedAt ? new Date(vendor.updatedAt).toLocaleDateString('en-IN') : (vendor.lastUpdated || '—')} />
                                     </div>
                                 </VCard>
 
-                                <VCard className="bg-slate-50 border-dashed">
-                                    <SectionTitle>Onboarding Submission</SectionTitle>
-                                    <div className="mt-6 space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-slate-400 uppercase">Submitted On</span>
-                                            <span className="text-[13px] font-bold text-slate-700">{vendor.declaration?.submissionDate || 'N/A'}</span>
+                                {/* Column 3: Verification & Signatures */}
+                                <VCard className="flex flex-col h-full justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+                                            <span className="text-lg">✍️</span>
+                                            <h3 className="text-sm font-extrabold text-slate-700 uppercase tracking-wide">Verification & Sign</h3>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-slate-400 uppercase">Signatory</span>
-                                            <span className="text-[13px] font-bold text-slate-700">{vendor.declaration?.signatoryName || 'N/A'}</span>
+                                        <div className="space-y-3.5">
+                                            <StatRow label="Submitted On" value={vendor.declaration?.submissionDate || 'N/A'} />
+                                            <StatRow label="Signatory" value={vendor.declaration?.signatoryName || 'N/A'} />
+                                            <StatRow label="Designation" value={vendor.declaration?.signatoryDesignation || 'N/A'} />
+                                            <StatRow label="Last Updated" value={vendor.updatedAt ? new Date(vendor.updatedAt).toLocaleDateString('en-IN') : (vendor.lastUpdated || '—')} />
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-slate-400 uppercase">Designation</span>
-                                            <span className="text-[13px] font-bold text-slate-500">{vendor.declaration?.signatoryDesignation || 'N/A'}</span>
-                                        </div>
-                                        <div className="pt-4 border-t border-slate-200">
-                                            <p className="text-[11px] font-bold text-slate-400 uppercase mb-3 text-center">Digital Signature</p>
-                                            <div className="bg-white rounded-xl p-4 border border-slate-200 flex justify-center">
-                                                <img src={vendor.declaration?.signatureDoc} alt="Signature" className="h-12 opacity-80" />
-                                            </div>
-                                        </div>
+
+                                        {vendor.declaration?.signatureDoc && (
+                                            <>
+                                                <div className="h-px bg-slate-100 my-4" />
+                                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 flex flex-col items-center">
+                                                    <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Digital Signature</p>
+                                                    <div className="bg-white rounded-lg p-3 border border-slate-200 flex justify-center w-full">
+                                                        <img src={vendor.declaration?.signatureDoc} alt="Signature" className="h-10 object-contain opacity-85" />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </VCard>
                             </div>
@@ -557,13 +620,13 @@ export default function VendorDetail() {
                         <VCard>
                             <div className="flex items-center justify-between mb-6">
                                 <SectionTitle>Linked Catalog Products</SectionTitle>
-                                <button onClick={() => navigate(VENDOR_ROUTES.productList)} className="text-blue-600 font-bold text-[12px] hover:underline">
+                                <button onClick={() => navigate(VENDOR_ROUTES.productList)} className="text-green-800 font-bold text-[12px] hover:underline">
                                     Manage Products ↗
                                 </button>
                             </div>
                             {productsLoading ? (
                                 <div className="flex justify-center items-center h-48">
-                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                                    <Loader2 className="w-8 h-8 text-green-800 animate-spin" />
                                 </div>
                             ) : vendorProducts && vendorProducts.length > 0 ? (
                                 <div className="overflow-x-auto rounded-xl border border-slate-100">
@@ -581,7 +644,7 @@ export default function VendorDetail() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 bg-white">
                                             {vendorProducts.map((p, idx) => (
-                                                <tr key={p.id || idx} className="hover:bg-blue-50/10 transition-colors">
+                                                <tr key={p.id || idx} className="hover:bg-green-50/10 transition-colors">
                                                     <td className="px-4 py-3">
                                                         <div className="text-[13px] font-bold text-slate-800">{p.productName}</div>
                                                         <div className="text-[10px] text-slate-400 font-medium">{p.brand || 'No Brand'} • {p.category || 'Uncategorized'}</div>
@@ -625,10 +688,10 @@ export default function VendorDetail() {
                     {tab === 'bank' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {vendor.bankAccounts?.length > 0 ? vendor.bankAccounts.map((b, i) => (
-                                <VCard key={i} className={`relative ${b.isPrimary ? 'border-blue-200 ring-4 ring-blue-50/50' : 'border-slate-100'}`}>
-                                    {b.isPrimary && <span className="absolute top-6 right-8 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold uppercase rounded-full shadow-lg shadow-blue-200">Primary Account</span>}
+                                <VCard key={i} className={`relative ${b.isPrimary ? 'border-green-200 ring-4 ring-green-50/50' : 'border-slate-100'}`}>
+                                    {b.isPrimary && <span className="absolute top-6 right-8 px-4 py-1.5 bg-green-800 text-white text-[10px] font-bold uppercase rounded-full shadow-lg shadow-green-200">Primary Account</span>}
                                     <div className="flex items-center gap-6 mb-8">
-                                        <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-3xl shadow-inner border border-blue-100">🏦</div>
+                                        <div className="w-16 h-16 rounded-2xl bg-green-50 text-green-800 flex items-center justify-center text-3xl shadow-inner border border-green-100">🏦</div>
                                         <div>
                                             <p className="text-xl font-bold text-slate-800">{b.bankName}</p>
                                             <p className="text-[13px] font-medium text-slate-400">{b.accountType || 'Current'} Account</p>
@@ -637,7 +700,7 @@ export default function VendorDetail() {
                                     <div className="space-y-5 bg-slate-50/50 p-6 rounded-[1.5rem] border border-slate-100">
                                         <StatRow label="Account Holder" value={<span className="font-bold text-slate-700">{b.accountHolderName || vendor.name}</span>} />
                                         <StatRow label="Account Number" value={<span className="font-mono font-bold text-lg tracking-wider text-slate-800">{b.accountNumber || b.accountNumberMasked || '—'}</span>} />
-                                        <StatRow label="IFSC Code" value={<span className="font-mono font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">{b.ifscCode}</span>} />
+                                        <StatRow label="IFSC Code" value={<span className="font-mono font-bold text-green-800 bg-green-50 px-3 py-1 rounded-lg border border-green-100">{b.ifscCode}</span>} />
                                         <StatRow label="Verification" value={<span className={`font-bold text-[11px] uppercase px-2 py-0.5 rounded-full ${b.verificationStatus === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{b.verificationStatus || 'PENDING'}</span>} />
                                     </div>
                                 </VCard>
@@ -692,7 +755,7 @@ export default function VendorDetail() {
                                                 </div>
                                             )}
                                             {d.fileReference && (
-                                                <a href={d.fileReference} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all text-[11px] font-bold shadow-lg shadow-blue-100">VIEW DOCUMENT</a>
+                                                <a href={d.fileReference} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-800 text-white hover:bg-green-950 transition-all text-[11px] font-bold shadow-lg shadow-green-100">VIEW DOCUMENT</a>
                                             )}
                                         </div>
                                     </div>
@@ -702,13 +765,13 @@ export default function VendorDetail() {
                             <VCard className="!p-8">
                                 <div className="flex items-center justify-between mb-8">
                                     <SectionTitle>Audit Log & Compliance History</SectionTitle>
-                                    <button onClick={handleDownloadAuditTrail} className="text-blue-600 font-bold text-[12px] hover:underline uppercase ">Download Full Audit Trail</button>
+                                    <button onClick={handleDownloadAuditTrail} className="text-green-800 font-bold text-[12px] hover:underline uppercase ">Download Full Audit Trail</button>
                                 </div>
                                 <div className="space-y-3">
                                     {vendor.auditLog?.map((log, i) => (
                                         <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 text-[13px] shadow-sm hover:border-slate-200 transition-all">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                                <div className="w-2 h-2 bg-green-800 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
                                                 <span className="font-bold text-slate-700">{log.action}</span>
                                                 <span className="px-3 py-1 bg-slate-50 rounded-lg font-bold text-slate-500 text-[11px] border border-slate-100">by {log.user}</span>
                                             </div>
@@ -728,10 +791,10 @@ export default function VendorDetail() {
                                     <div>
                                         <div className="flex justify-between mb-2">
                                             <span className="text-[12px] font-bold text-slate-400 uppercase ">Order Accuracy</span>
-                                            <span className="text-[14px] font-bold text-blue-600">98.2%</span>
+                                            <span className="text-[14px] font-bold text-green-800">98.2%</span>
                                         </div>
                                         <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5">
-                                            <div className="h-full bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]" style={{ width: '98.2%' }} />
+                                            <div className="h-full bg-green-800 rounded-full shadow-[0_0_8px_rgba(22,101,52,0.4)]" style={{ width: '98.2%' }} />
                                         </div>
                                     </div>
                                     <div>
@@ -754,11 +817,11 @@ export default function VendorDetail() {
                                     </div>
                                 </div>
                             </VCard>
-                            <VCard className="flex flex-col items-center justify-center text-center p-10 bg-gradient-to-br from-white to-blue-50/30">
-                                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center text-5xl mb-6 shadow-2xl border border-blue-50 animate-bounce duration-[3000ms]">🏆</div>
+                            <VCard className="flex flex-col items-center justify-center text-center p-10 bg-gradient-to-br from-white to-green-50/30">
+                                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center text-5xl mb-6 shadow-2xl border border-green-50 animate-bounce duration-[3000ms]">🏆</div>
                                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Top Performer Tier</h3>
                                 <p className="text-slate-500 text-[14px] font-medium max-w-[280px] leading-relaxed">{vendor.name} is currently ranked #3 in the {vendor.category} category.</p>
-                                <button onClick={handleDownloadScorecard} className="mt-8 px-10 py-4 bg-blue-600 text-white rounded-[2rem] font-bold text-[14px] shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-105 transition-all">Download Scorecard PDF</button>
+                                <button onClick={handleDownloadScorecard} className="mt-8 px-10 py-4 bg-green-800 text-white rounded-[2rem] font-bold text-[14px] shadow-2xl shadow-green-200 hover:bg-green-950 hover:scale-105 transition-all">Download Scorecard PDF</button>
                             </VCard>
                         </div>
                     )}
@@ -768,7 +831,7 @@ export default function VendorDetail() {
                             <SectionTitle>Returns</SectionTitle>
                             {returnsLoading ? (
                                 <div className="flex justify-center items-center h-48">
-                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                                    <Loader2 className="w-8 h-8 text-green-800 animate-spin" />
                                 </div>
                             ) : returnsData && returnsData.length > 0 ? (
                                 <div className="mt-6 overflow-x-auto rounded-xl border border-slate-100">
@@ -783,7 +846,7 @@ export default function VendorDetail() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 bg-white">
                                             {returnsData.map((r, idx) => (
-                                                <tr key={r.id || idx} className="hover:bg-blue-50/10 transition-colors">
+                                                <tr key={r.id || idx} className="hover:bg-green-50/10 transition-colors">
                                                     <td className="px-4 py-3 font-bold text-slate-800">{r.id || '—'}</td>
                                                     <td className="px-4 py-3 text-[13px] text-slate-600">{r.createdAt || r.date || '—'}</td>
                                                     <td className="px-4 py-3 text-[13px] text-slate-600">{r.reason || '—'}</td>
@@ -864,7 +927,7 @@ export default function VendorDetail() {
                             <SectionTitle>Payment Details</SectionTitle>
                             {paymentsLoading ? (
                                 <div className="flex justify-center items-center h-48">
-                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                                    <Loader2 className="w-8 h-8 text-green-800 animate-spin" />
                                 </div>
                             ) : paymentsData && paymentsData.length > 0 ? (
                                 <div className="mt-6 overflow-x-auto rounded-xl border border-slate-100">
@@ -880,7 +943,7 @@ export default function VendorDetail() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 bg-white">
                                             {paymentsData.map((p, idx) => (
-                                                <tr key={p.id || idx} className="hover:bg-blue-50/10 transition-colors">
+                                                <tr key={p.id || idx} className="hover:bg-green-50/10 transition-colors">
                                                     <td className="px-4 py-3 font-bold text-slate-800">{p.id || '—'}</td>
                                                     <td className="px-4 py-3 text-[13px] text-slate-600">{p.paymentDate || p.createdAt || p.date || '—'}</td>
                                                     <td className="px-4 py-3 text-[13px] font-bold text-emerald-600">
@@ -937,7 +1000,7 @@ export default function VendorDetail() {
             {/* ── Email Compose Modal ── */}
             <VModal open={showEmailModal} onClose={() => setShowEmailModal(false)} title={`Email — ${vendor.name}`}>
                 <div className="space-y-4">
-                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-[12px] text-blue-700 font-medium">
+                    <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-[12px] text-green-800 font-medium">
                         Sending to: <span className="font-bold">{vendor.email || 'vendor@example.com'}</span>
                     </div>
                     <div>
@@ -946,7 +1009,7 @@ export default function VendorDetail() {
                             value={emailSubject}
                             onChange={e => setEmailSubject(e.target.value)}
                             placeholder="e.g. Document Renewal Reminder"
-                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-400 outline-none transition-all"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-green-800 outline-none transition-all"
                         />
                     </div>
                     <div>
@@ -956,7 +1019,7 @@ export default function VendorDetail() {
                             onChange={e => setEmailBody(e.target.value)}
                             rows={5}
                             placeholder="Write your email content here..."
-                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-400 outline-none transition-all resize-none"
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-green-800 outline-none transition-all resize-none"
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
@@ -1008,6 +1071,26 @@ export default function VendorDetail() {
                     <div className="flex gap-3 pt-2">
                         <PrimaryBtn onClick={() => { toast.success('Compliance report downloaded!'); handleDownloadAuditTrail(); }} className="flex-1">💾 Download Report</PrimaryBtn>
                         <SecondaryBtn onClick={() => setShowComplianceModal(false)} className="px-6">Close</SecondaryBtn>
+                    </div>
+                </div>
+            </VModal>
+
+            {/* ── Delete Vendor Modal ── */}
+            <VModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Vendor">
+                <div className="space-y-6">
+                    <div className="flex flex-col items-center text-center py-4">
+                        <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4 text-rose-600">
+                            <AlertCircle size={32} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-2">Are you sure?</h3>
+                        <p className="text-slate-600">
+                            You are about to permanently delete <span className="font-bold text-slate-800">"{vendor.name}"</span>.
+                            This action cannot be undone and will remove all associated data.
+                        </p>
+                    </div>
+                    <div className="flex gap-3 justify-end mt-8">
+                        <SecondaryBtn onClick={() => setShowDeleteModal(false)}>Cancel</SecondaryBtn>
+                        <PrimaryBtn onClick={confirmDelete} className="!bg-rose-600 hover:!bg-rose-700">Delete Permanently</PrimaryBtn>
                     </div>
                 </div>
             </VModal>
