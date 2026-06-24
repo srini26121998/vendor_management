@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchApprovals, approveItem, rejectItem } from '../../api/vendorService';
+import { fetchApprovals, approveItem, rejectItem, updateSTOStatus } from '../../api/vendorService';
 import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn } from './VendorComponents';
-import { Check, X, Clock, User, AlertCircle, FileText, CreditCard, Box, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Check, X, Clock, User, AlertCircle, FileText, CreditCard, Box, ArrowRight, ShieldCheck, Zap, ArrowRightLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useVendorStore from '../../store/useVendorStore';
 import useApprovalStore from '../../store/useApprovalStore';
@@ -21,7 +21,8 @@ const TYPE_ICONS = {
     'Payment': <CreditCard size={20} />, 
     'GRN Override': <Box size={20} />,
     'Vendor Onboarding': <User size={20} />,
-    'Invoice Payment': <CreditCard size={20} />
+    'Invoice Payment': <CreditCard size={20} />,
+    'Stock Transfer': <ArrowRightLeft size={20} />
 };
 
 export default function ApprovalQueue() {
@@ -69,14 +70,28 @@ export default function ApprovalQueue() {
         if (id.startsWith('V')) {
             updateVendor(id, { status: 'active' });
             toast.success(`Vendor ${id} KYC Approved! ✅`);
+            finalizeApproval(id, item);
+        } else if (item?.type === 'Stock Transfer') {
+            updateSTOStatus(id, 'APPROVED', user?.id)
+                .then(() => {
+                    toast.success(`Stock Transfer ${item.displayId || id} Approved! ✅`);
+                    finalizeApproval(id, item);
+                })
+                .catch(err => toast.error('Failed to approve Stock Transfer'));
         } else {
-            toast.success(`Item ${id} Approved! ✅`);
+            toast.success(`Item ${item?.displayId || id} Approved! ✅`);
+            finalizeApproval(id, item);
+        }
+    };
+
+    const finalizeApproval = (id, item) => {
+        if (!id.startsWith('V')) {
             setApprovals(it => it.filter(x => x.id !== id));
         }
         
         // Audit Trail
         addHistory({
-            itemId: id,
+            itemId: item?.displayId || id,
             action: 'Approved',
             actor: user?.name || 'System Admin',
             vendor: item?.vendor,
@@ -103,9 +118,15 @@ export default function ApprovalQueue() {
     };
 
     const reject = (id) => {
+        const item = allItems.find(i => i.id === id);
         if (id.startsWith('V')) {
             updateVendor(id, { status: 'blocked' });
             toast.error(`Vendor KYC Rejected`);
+        } else if (item?.type === 'Stock Transfer') {
+            updateSTOStatus(id, 'CANCELLED', user?.id)
+                .then(() => toast.error(`Stock Transfer Rejected`))
+                .catch(() => toast.error('Failed to reject Stock Transfer'));
+            setApprovals(it => it.filter(x => x.id !== id));
         } else {
             toast.error(`Item Rejected`);
             setApprovals(it => it.filter(x => x.id !== id));
@@ -175,10 +196,11 @@ export default function ApprovalQueue() {
                 )}
 
                 {/* KPI Strip */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                     {[
                         { label: 'Pending KYC', count: kycPendingVendors.length, color: 'text-amber-600', icon: <User size={20} /> },
                         { label: 'Strategic POs', count: approvals.filter(x => x.type === 'Purchase Order').length, color: 'text-blue-600', icon: <FileText size={20} /> },
+                        { label: 'Stock Transfers', count: approvals.filter(x => x.type === 'Stock Transfer').length, color: 'text-emerald-600', icon: <ArrowRightLeft size={20} /> },
                         { label: 'Priority Transacts', count: approvals.filter(x => x.priority === 'high').length, color: 'text-rose-600', icon: <AlertCircle size={20} /> },
                         { label: 'SLA At Risk', count: 2, color: 'text-violet-600', icon: <Clock size={20} /> },
                     ].map((stat, i) => (
@@ -241,7 +263,7 @@ export default function ApprovalQueue() {
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap mb-2">
-                                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-sm">{item.id}</span>
+                                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-sm">{item.displayId || item.id}</span>
                                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ring-2 ring-offset-0 ${PRIORITY_CONFIG[item.priority]}`}>
                                             {item.priority} Priority
                                         </span>
@@ -290,6 +312,7 @@ export default function ApprovalQueue() {
                                             if (item.type === 'Vendor Onboarding') navigate(`/vendors/detail/${item.id}`);
                                             else if (item.type === 'Purchase Order') navigate(`/vendors/purchase-orders/${item.id}`);
                                             else if (item.type === 'Invoice Payment') navigate(VENDOR_ROUTES.purchaseInvoice);
+                                            else if (item.type === 'Stock Transfer') navigate(`/vendors/inventory/stock-transfer`);
                                             else navigate(VENDOR_ROUTES.payablesDash);
                                         }}
                                         title="View Details"

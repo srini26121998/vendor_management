@@ -8,116 +8,44 @@ import {
 import toast from 'react-hot-toast';
 import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge } from '../Vendors/VendorComponents';
 
-// --- MOCK DATA GENERATION ---
-
-const INITIAL_CATEGORIES = [
-    { id: 'c1', name: 'Milk Products', color: '#3b82f6' }, // Blue
-    { id: 'c2', name: 'Chocolates & Sweets', color: '#8b5cf6' }, // Purple
-    { id: 'c3', name: 'Grains & Dal', color: '#eab308' }, // Yellow
-    { id: 'c4', name: 'Cooking Oils', color: '#f59e0b' }, // Amber
-    { id: 'c5', name: 'Snacks', color: '#ef4444' }, // Red
-    { id: 'c6', name: 'Beverages', color: '#06b6d4' }, // Cyan
-    { id: 'c7', name: 'Biscuits', color: '#f97316' }, // Orange
-    { id: 'c8', name: 'Spices', color: '#b91c1c' }, // Dark Red
-    { id: 'c9', name: 'Personal Care', color: '#ec4899' }, // Pink
-    { id: 'c10', name: 'Household Cleaning', color: '#14b8a6' }, // Teal
-    { id: 'c11', name: 'Dry Fruits', color: '#84cc16' }, // Lime
-    { id: 'c12', name: 'Packaged Foods', color: '#6366f1' }, // Indigo
-];
-
-const generateRacks = () => {
-    const racks = [];
-    for (let r = 1; r <= 6; r++) {
-        for (let c = 1; c <= 8; c++) {
-            const randomCat = INITIAL_CATEGORIES[Math.floor(Math.random() * INITIAL_CATEGORIES.length)];
-            racks.push({
-                id: `R-${r}-${c}`,
-                row: r,
-                col: c,
-                category_id: randomCat.id
-            });
-        }
-    }
-    return racks;
-};
-
-const INITIAL_PRODUCTS = [
-    { id: 'p1', name: 'Full Cream Milk 1L', category_id: 'c1', unit: 'Pkt' },
-    { id: 'p2', name: 'Curd 500g', category_id: 'c1', unit: 'Cup' },
-    { id: 'p3', name: 'Dark Chocolate Bar', category_id: 'c2', unit: 'Pcs' },
-    { id: 'p4', name: 'Toor Dal 1kg', category_id: 'c3', unit: 'Bag' },
-    { id: 'p5', name: 'Basmati Rice 5kg', category_id: 'c3', unit: 'Bag' },
-    { id: 'p6', name: 'Sunflower Oil 1L', category_id: 'c4', unit: 'Bottle' },
-    { id: 'p7', name: 'Potato Chips', category_id: 'c5', unit: 'Pkt' },
-    { id: 'p8', name: 'Cola 2L', category_id: 'c6', unit: 'Bottle' },
-    { id: 'p9', name: 'Digestive Biscuits', category_id: 'c7', unit: 'Pkt' },
-    { id: 'p10', name: 'Turmeric Powder 200g', category_id: 'c8', unit: 'Pkt' },
-    { id: 'p11', name: 'Bathing Soap', category_id: 'c9', unit: 'Pcs' },
-    { id: 'p12', name: 'Floor Cleaner 1L', category_id: 'c10', unit: 'Bottle' },
-    { id: 'p13', name: 'Almonds 500g', category_id: 'c11', unit: 'Pkt' },
-    { id: 'p14', name: 'Cashews 500g', category_id: 'c11', unit: 'Pkt' },
-    { id: 'p15', name: 'Corn Flakes', category_id: 'c12', unit: 'Box' },
-    { id: 'p16', name: 'Instant Noodles', category_id: 'c12', unit: 'Pkt' },
-    { id: 'p17', name: 'Green Tea Bags', category_id: 'c6', unit: 'Box' },
-    { id: 'p18', name: 'Filter Coffee 200g', category_id: 'c6', unit: 'Pkt' },
-    { id: 'p19', name: 'Garam Masala', category_id: 'c8', unit: 'Pkt' },
-    { id: 'p20', name: 'Chili Powder', category_id: 'c8', unit: 'Pkt' },
-    { id: 'p21', name: 'Washing Powder 2kg', category_id: 'c10', unit: 'Bag' },
-    { id: 'p22', name: 'Dishwash Bar', category_id: 'c10', unit: 'Pcs' },
-    { id: 'p23', name: 'Shampoo 500ml', category_id: 'c9', unit: 'Bottle' },
-    { id: 'p24', name: 'Toothpaste 150g', category_id: 'c9', unit: 'Tube' },
-    { id: 'p25', name: 'Peanut Butter', category_id: 'c12', unit: 'Jar' },
-    { id: 'p26', name: 'Mixed Fruit Jam', category_id: 'c12', unit: 'Jar' },
-    { id: 'p27', name: 'Salt 1kg', category_id: 'c8', unit: 'Pkt' },
-    { id: 'p28', name: 'Sugar 1kg', category_id: 'c3', unit: 'Bag' },
-];
-
-const generateInitialStock = (racks) => {
-    const stock = [];
-    INITIAL_PRODUCTS.forEach(product => {
-        // Find racks assigned to this product's category
-        const eligibleRacks = racks.filter(r => r.category_id === product.category_id);
-        if (eligibleRacks.length > 0) {
-            // Assign to first eligible rack
-            const rack = eligibleRacks[0];
-            const qty = Math.floor(Math.random() * 100);
-            stock.push({
-                product_id: product.id,
-                rack_id: rack.id,
-                quantity: qty,
-                last_updated: new Date().toISOString()
-            });
-        }
-    });
-    return stock;
-};
-
-const getStockStatus = (qty) => {
-    if (qty <= 0) return 'OUT OF STOCK';
-    if (qty < 20) return 'LOW';
-    if (qty < 50) return 'MEDIUM';
-    return 'IN STOCK';
-};
-
-const getStockStatusColor = (status) => {
-    switch (status) {
-        case 'OUT OF STOCK': return 'bg-slate-100 text-slate-600 border-slate-300';
-        case 'LOW': return 'bg-rose-100 text-rose-700 border-rose-300';
-        case 'MEDIUM': return 'bg-amber-100 text-amber-700 border-amber-300';
-        case 'IN STOCK': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
-        default: return 'bg-gray-100 text-gray-700';
-    }
-};
+// Removed Mocks
 
 export default function WarehouseMap() {
     const [activeTab, setActiveTab] = useState('MAPPING');
 
     // System State
-    const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-    const [racks, setRacks] = useState(() => generateRacks());
-    const [products, setProducts] = useState(INITIAL_PRODUCTS);
-    const [stock, setStock] = useState(() => generateInitialStock(racks));
+    const [categories, setCategories] = useState([]);
+    const [racks, setRacks] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [stock, setStock] = useState([]);
     const [movements, setMovements] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setIsLoading(true);
+                const [cats, rks, prods, stk, movs] = await Promise.all([
+                    import('../../api/vendorService').then(m => m.fetchWarehouseCategories()),
+                    import('../../api/vendorService').then(m => m.fetchWarehouseRacks()),
+                    import('../../api/vendorService').then(m => m.fetchProducts()),
+                    import('../../api/vendorService').then(m => m.fetchWarehouseStock()),
+                    import('../../api/vendorService').then(m => m.fetchWarehouseMovements())
+                ]);
+                setCategories(cats || []);
+                setRacks(rks || []);
+                setProducts(prods || []);
+                setStock(stk || []);
+                setMovements(movs || []);
+            } catch (err) {
+                console.error("Failed to load warehouse data:", err);
+                toast.error("Failed to load warehouse data.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadData();
+    }, []);
 
     // UI States
     const [searchQuery, setSearchQuery] = useState('');
@@ -131,7 +59,7 @@ export default function WarehouseMap() {
     const [rackSearchQuery, setRackSearchQuery] = useState('');
 
     // Update Forms State
-    const [stockUpdateForm, setStockUpdateForm] = useState({ rack_id: '', product_id: '', type: 'IN', quantity: '' });
+    const [stockUpdateForm, setStockUpdateForm] = useState({ rackId: '', productId: '', type: 'IN', quantity: '' });
 
     // Warehouse Mapping State
     const [warehouses, setWarehouses] = useState([
@@ -172,61 +100,46 @@ export default function WarehouseMap() {
     const getProductById = (id) => products.find(p => p.id === id);
     const getRackById = (id) => racks.find(r => r.id === id);
 
-    const getRackStock = (rackId) => stock.filter(s => s.rack_id === rackId);
+    const getRackStock = (rackId) => stock.filter(s => s.rackId === rackId);
 
     // ─────────────────────────────────────────────────────────────────
     // Actions
     // ─────────────────────────────────────────────────────────────────
 
-    const handleStockUpdate = (e) => {
+    const handleStockUpdate = async (e) => {
         e.preventDefault();
-        const { rack_id, product_id, type, quantity } = stockUpdateForm;
+        const { rackId, productId, type, quantity } = stockUpdateForm;
         const qty = parseInt(quantity, 10);
         
-        if (!rack_id || !product_id || isNaN(qty) || qty <= 0) {
+        if (!rackId || !productId || isNaN(qty) || qty <= 0) {
             toast.error("Please fill all fields with valid data.");
             return;
         }
 
-        // Validate rack category matches product category
-        const rack = getRackById(rack_id);
-        const product = getProductById(product_id);
-        if (rack.category_id !== product.category_id) {
-            toast.error(`Rack is categorized as '${getCategoryById(rack.category_id)?.name}', but product belongs to '${getCategoryById(product.category_id)?.name}'.`);
-            return;
-        }
-
-        setStock(prev => {
-            const existing = prev.find(s => s.product_id === product_id && s.rack_id === rack_id);
-            let newStock = [...prev];
+        try {
+            const { adjustWarehouseStock } = await import('../../api/vendorService');
+            const updatedStock = await adjustWarehouseStock({ rackId: rackId, productId: productId, type, quantity: qty });
+            toast.success(`Stock ${type === 'IN' ? 'added to' : 'removed from'} rack successfully!`);
+            setStockUpdateForm({ ...stockUpdateForm, quantity: '' });
             
-            if (existing) {
-                const newQty = type === 'IN' ? existing.quantity + qty : Math.max(0, existing.quantity - qty);
-                newStock = newStock.map(s => s.product_id === product_id && s.rack_id === rack_id ? { ...s, quantity: newQty, last_updated: new Date().toISOString() } : s);
-            } else {
-                if (type === 'OUT') {
-                    toast.error("Cannot stock out from an empty rack.");
-                    return prev;
-                }
-                newStock.push({
-                    product_id, rack_id, quantity: qty, last_updated: new Date().toISOString()
-                });
-            }
-            return newStock;
-        });
-
-        setMovements(prev => [{
-            id: `M-${Date.now()}`,
-            product_id, rack_id, type, quantity: qty, timestamp: new Date().toISOString()
-        }, ...prev]);
-
-        toast.success(`Stock ${type === 'IN' ? 'added to' : 'removed from'} rack successfully!`);
-        setStockUpdateForm({ ...stockUpdateForm, quantity: '' });
+            // Refresh stock & movements
+            const { fetchWarehouseStock, fetchWarehouseMovements } = await import('../../api/vendorService');
+            setStock(await fetchWarehouseStock());
+            setMovements(await fetchWarehouseMovements());
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to adjust stock.");
+        }
     };
 
-    const handleRackCategoryChange = (rackId, newCategoryId) => {
-        setRacks(prev => prev.map(r => r.id === rackId ? { ...r, category_id: newCategoryId } : r));
-        toast.success("Rack category updated.");
+    const handleRackCategoryChange = async (rackId, newCategoryId) => {
+        try {
+            const { updateWarehouseRackCategory, fetchWarehouseRacks } = await import('../../api/vendorService');
+            await updateWarehouseRackCategory(rackId, newCategoryId);
+            toast.success("Rack category updated.");
+            setRacks(await fetchWarehouseRacks());
+        } catch (err) {
+            toast.error("Failed to update rack category.");
+        }
     };
 
     // ─────────────────────────────────────────────────────────────────
@@ -313,9 +226,9 @@ export default function WarehouseMap() {
                             }}
                         >
                             {racks.map((rack, idx) => {
-                                const cat = getCategoryById(rack.category_id);
+                                const cat = getCategoryById(rack.categoryId);
                                 const rackStock = getRackStock(rack.id);
-                                const isHighlighted = searchQuery && (rack.id.toLowerCase().includes(searchQuery.toLowerCase()) || cat?.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                                const isHighlighted = searchQuery && (rack.id.toLowerCase().includes(searchQuery.toLowerCase()) || (cat?.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
                                 const isSelected = selectedRack === rack.id;
 
                                 return (
@@ -362,11 +275,11 @@ export default function WarehouseMap() {
                                                 </div>
                                                 <div className="space-y-1">
                                                     {rackStock.length > 0 ? rackStock.map(s => {
-                                                        const p = getProductById(s.product_id);
+                                                        const p = getProductById(s.productId);
                                                         return (
-                                                            <div key={s.product_id} className="flex justify-between text-[11px]">
-                                                                <span className="text-slate-300 truncate max-w-[100px]">{p?.name}</span>
-                                                                <span className="font-bold text-blue-400">{s.quantity} {p?.unit}</span>
+                                                            <div key={s.productId} className="flex justify-between text-[11px]">
+                                                                <span className="text-slate-300 truncate max-w-[100px]">{p?.productName}</span>
+                                                                <span className="font-bold text-blue-400">{s.quantity} {p?.unitOfMeasure}</span>
                                                             </div>
                                                         );
                                                     }) : (
@@ -395,7 +308,7 @@ export default function WarehouseMap() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {categories.map(cat => {
-                        const racksAssigned = racks.filter(r => r.category_id === cat.id).length;
+                        const racksAssigned = racks.filter(r => r.categoryId === cat.id).length;
                         return (
                             <div key={cat.id} className="p-4 rounded-2xl border border-slate-100 hover:shadow-lg transition-all bg-white group flex items-start gap-4">
                                 <div className="w-12 h-12 rounded-xl shadow-inner flex-shrink-0 border-2 border-white" style={{ backgroundColor: cat.color }} />
@@ -440,7 +353,7 @@ export default function WarehouseMap() {
                         </thead>
                         <tbody className="text-[13px]">
                             {racks.filter(r => r.id.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 20).map(rack => {
-                                const cat = getCategoryById(rack.category_id);
+                                const cat = getCategoryById(rack.categoryId);
                                 return (
                                     <tr key={rack.id} className="border-b border-slate-100 hover:bg-blue-50/40 transition-colors group">
                                         <td className="p-5 font-extrabold text-slate-800">
@@ -509,7 +422,7 @@ export default function WarehouseMap() {
     );
 
     const renderProducts = () => {
-        const filtered = products.filter(p => !selectedCategoryFilter || p.category_id === selectedCategoryFilter);
+        const filtered = products.filter(p => !selectedCategoryFilter || categories.find(c => c.name === p.category)?.id === selectedCategoryFilter);
         const ITEMS_PER_PAGE = 8;
         const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
         const paginatedProducts = filtered.slice((productPage - 1) * ITEMS_PER_PAGE, productPage * ITEMS_PER_PAGE);
@@ -541,8 +454,8 @@ export default function WarehouseMap() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                         {paginatedProducts.map((product, idx) => {
-                            const cat = getCategoryById(product.category_id);
-                            const totalStock = stock.filter(s => s.product_id === product.id).reduce((sum, s) => sum + s.quantity, 0);
+                            const cat = getCategoryById(categories.find(c => c.name === product.category)?.id);
+                            const totalStock = stock.filter(s => s.productId === product.id).reduce((sum, s) => sum + s.quantity, 0);
                             return (
                                 <motion.div 
                                     initial={{ opacity: 0, scale: 0.9 }} 
@@ -557,13 +470,13 @@ export default function WarehouseMap() {
                                             <Package size={22} className="group-hover:scale-110 transition-transform" />
                                         </div>
                                         <div className="flex flex-col items-end gap-1 relative z-10">
-                                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-lg uppercase border border-slate-200 shadow-sm">{product.unit}</span>
+                                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-extrabold rounded-lg uppercase border border-slate-200 shadow-sm">{product.unitOfMeasure}</span>
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${totalStock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                                                 {totalStock > 0 ? `${totalStock} IN STOCK` : 'OUT OF STOCK'}
                                             </span>
                                         </div>
                                     </div>
-                                    <h4 className="font-extrabold text-[16px] text-slate-800 leading-tight mb-2 group-hover:text-blue-700 transition-colors relative z-10">{product.name}</h4>
+                                    <h4 className="font-extrabold text-[16px] text-slate-800 leading-tight mb-2 group-hover:text-blue-700 transition-colors relative z-10">{product.productName}</h4>
                                     <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-50 relative z-10">
                                         <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: cat?.color }}></div>
                                         <span className="text-[12px] font-bold text-slate-500">{cat?.name}</span>
@@ -627,8 +540,8 @@ export default function WarehouseMap() {
                                 onClick={() => setIsRackDropdownOpen(!isRackDropdownOpen)}
                                 className={`w-full px-4 py-3 border ${isRackDropdownOpen ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-blue-400'} rounded-xl text-[13px] font-bold bg-slate-50 flex items-center justify-between transition-all outline-none`}
                             >
-                                <span className={stockUpdateForm.rack_id ? 'text-slate-800' : 'text-slate-400'}>
-                                    {stockUpdateForm.rack_id ? `${stockUpdateForm.rack_id} (${getCategoryById(getRackById(stockUpdateForm.rack_id)?.category_id)?.name})` : 'Search and choose a rack...'}
+                                <span className={stockUpdateForm.rackId ? 'text-slate-800' : 'text-slate-400'}>
+                                    {stockUpdateForm.rackId ? `${stockUpdateForm.rackId} (${getCategoryById(getRackById(stockUpdateForm.rackId)?.categoryId)?.name})` : 'Search and choose a rack...'}
                                 </span>
                                 <div className={`text-slate-400 transition-transform duration-200 ${isRackDropdownOpen ? 'rotate-180 text-blue-500' : ''}`}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -661,23 +574,23 @@ export default function WarehouseMap() {
                                         <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 p-2">
                                             {racks.filter(r => 
                                                 r.id.toLowerCase().includes(rackSearchQuery.toLowerCase()) || 
-                                                getCategoryById(r.category_id)?.name.toLowerCase().includes(rackSearchQuery.toLowerCase())
+                                                (getCategoryById(r.categoryId)?.name || '').toLowerCase().includes(rackSearchQuery.toLowerCase())
                                             ).length > 0 ? (
                                                 racks.filter(r => 
                                                     r.id.toLowerCase().includes(rackSearchQuery.toLowerCase()) || 
-                                                    getCategoryById(r.category_id)?.name.toLowerCase().includes(rackSearchQuery.toLowerCase())
+                                                    (getCategoryById(r.categoryId)?.name || '').toLowerCase().includes(rackSearchQuery.toLowerCase())
                                                 ).map(r => {
-                                                    const cat = getCategoryById(r.category_id);
+                                                    const cat = getCategoryById(r.categoryId);
                                                     return (
                                                         <button
                                                             key={r.id}
                                                             type="button"
                                                             onClick={() => {
-                                                                setStockUpdateForm({ ...stockUpdateForm, rack_id: r.id, product_id: '' });
+                                                                setStockUpdateForm({ ...stockUpdateForm, rackId: r.id, productId: '' });
                                                                 setIsRackDropdownOpen(false);
                                                                 setRackSearchQuery('');
                                                             }}
-                                                            className={`w-full flex items-center p-3 rounded-lg text-left transition-colors mb-1 last:mb-0 ${stockUpdateForm.rack_id === r.id ? 'bg-blue-50 border border-blue-100' : 'hover:bg-slate-50 border border-transparent'}`}
+                                                            className={`w-full flex items-center p-3 rounded-lg text-left transition-colors mb-1 last:mb-0 ${stockUpdateForm.rackId === r.id ? 'bg-blue-50 border border-blue-100' : 'hover:bg-slate-50 border border-transparent'}`}
                                                         >
                                                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-3 flex-shrink-0">
                                                                 <GridIcon size={14} className="text-slate-400" />
@@ -689,7 +602,7 @@ export default function WarehouseMap() {
                                                                     <span className="text-[11px] font-bold text-slate-500">{cat?.name}</span>
                                                                 </div>
                                                             </div>
-                                                            {stockUpdateForm.rack_id === r.id && <CheckCircle2 size={16} className="text-blue-500" />}
+                                                            {stockUpdateForm.rackId === r.id && <CheckCircle2 size={16} className="text-blue-500" />}
                                                         </button>
                                                     );
                                                 })
@@ -702,19 +615,19 @@ export default function WarehouseMap() {
                             </AnimatePresence>
                         </div>
                         
-                        {stockUpdateForm.rack_id && (
+                        {stockUpdateForm.rackId && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative">
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Select Product <span className="text-rose-500">*</span></label>
                                 <div className="relative">
                                     <select 
                                         className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none transition-all shadow-sm cursor-pointer"
-                                        value={stockUpdateForm.product_id}
-                                        onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, product_id: e.target.value })}
+                                        value={stockUpdateForm.productId}
+                                        onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, productId: e.target.value })}
                                         required
                                     >
                                         <option value="" disabled>Choose a product...</option>
-                                        {products.filter(p => p.category_id === getRackById(stockUpdateForm.rack_id)?.category_id).map(p => 
-                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        {products.filter(p => categories.find(c => c.name === p.category)?.id === getRackById(stockUpdateForm.rackId)?.categoryId).map(p => 
+                                            <option key={p.id} value={p.id}>{p.productName}</option>
                                         )}
                                     </select>
                                     <Package size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -724,7 +637,7 @@ export default function WarehouseMap() {
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-2 px-1">
                                     <Info size={12} className="text-blue-500" />
-                                    <p className="text-[10px] text-slate-500 font-medium">Filtered by category: <span className="font-bold text-slate-700">{getCategoryById(getRackById(stockUpdateForm.rack_id)?.category_id)?.name}</span></p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Filtered by category: <span className="font-bold text-slate-700">{getCategoryById(getRackById(stockUpdateForm.rackId)?.categoryId)?.name}</span></p>
                                 </div>
                             </motion.div>
                         )}
@@ -778,7 +691,7 @@ export default function WarehouseMap() {
                     <SectionTitle>Recent Movements Log</SectionTitle>
                     <div className="mt-4 space-y-3">
                         {movements.length > 0 ? movements.slice(0, 10).map((m, i) => {
-                            const p = getProductById(m.product_id);
+                            const p = getProductById(m.productId);
                             const isIN = m.type === 'IN';
                             return (
                                 <div key={m.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
@@ -787,12 +700,12 @@ export default function WarehouseMap() {
                                             {isIN ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                                         </div>
                                         <div>
-                                            <div className="font-bold text-[13px] text-slate-800">{p?.name}</div>
-                                            <div className="text-[11px] text-slate-500 font-medium mt-0.5">Rack: {m.rack_id} • {new Date(m.timestamp).toLocaleTimeString()}</div>
+                                            <div className="font-bold text-[13px] text-slate-800">{p?.productName}</div>
+                                            <div className="text-[11px] text-slate-500 font-medium mt-0.5">Rack: {m.rackId} • {new Date(m.timestamp).toLocaleTimeString()}</div>
                                         </div>
                                     </div>
                                     <div className={`font-extrabold text-[15px] ${isIN ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {isIN ? '+' : '-'}{m.quantity} {p?.unit}
+                                        {isIN ? '+' : '-'}{m.quantity} {p?.unitOfMeasure}
                                     </div>
                                 </div>
                             );
@@ -810,8 +723,8 @@ export default function WarehouseMap() {
 
     const renderLowStock = () => {
         const aggregatedStock = stock.reduce((acc, curr) => {
-            if (!acc[curr.product_id]) acc[curr.product_id] = 0;
-            acc[curr.product_id] += curr.quantity;
+            if (!acc[curr.productId]) acc[curr.productId] = 0;
+            acc[curr.productId] += curr.quantity;
             return acc;
         }, {});
 
@@ -845,7 +758,7 @@ export default function WarehouseMap() {
                                 </thead>
                                 <tbody className="text-[13px]">
                                     {reportData.map(item => {
-                                        const cat = getCategoryById(item.category_id);
+                                        const cat = getCategoryById(categories.find(c => c.name === p.category)?.id);
                                         return (
                                             <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                                                 <td className="p-4 font-extrabold text-slate-800">{item.name}</td>

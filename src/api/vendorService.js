@@ -293,15 +293,22 @@ export const searchGlobalInventory = async (query) => {
 // Uses real backend endpoints — no dedicated /api/approvals controller needed.
 export const fetchApprovals = async () => {
   try {
-    const [posRes, invoicesRes] = await Promise.allSettled([
+    const [posRes, invoicesRes, stoRes] = await Promise.allSettled([
       api.get('/purchase-orders'),
       api.get('/finance/invoices'),
+      api.get('/inventory/sto'),
     ]);
     const pos = posRes.status === 'fulfilled'
-      ? (posRes.value?.data || []).filter(p => p.status === 'PENDING' || p.status === 'pending')
+      ? (Array.isArray(posRes.value?.data ?? posRes.value) ? (posRes.value?.data ?? posRes.value) : []).filter(p => p.status === 'PENDING' || p.status === 'pending')
       : [];
     const invoices = invoicesRes.status === 'fulfilled'
-      ? (invoicesRes.value?.data || []).filter(i => i.submissionStatus === 'UNDER_REVIEW')
+      ? (Array.isArray(invoicesRes.value?.data ?? invoicesRes.value) ? (invoicesRes.value?.data ?? invoicesRes.value) : []).filter(i => i.submissionStatus === 'UNDER_REVIEW')
+      : [];
+    const stos = stoRes.status === 'fulfilled'
+      ? (Array.isArray(stoRes.value?.data ?? stoRes.value) ? (stoRes.value?.data ?? stoRes.value) : []).filter(s => {
+          const st = (s.status || '').toUpperCase();
+          return st === 'PENDING' || st === 'DRAFT';
+        })
       : [];
     const poApprovals = pos.map(p => ({
       id: p.id, type: 'Purchase Order',
@@ -319,7 +326,15 @@ export const fetchApprovals = async () => {
       since: i.createdAt || i.invoiceDate || 'Recent',
       priority: 'high',
     }));
-    return [...poApprovals, ...invoiceApprovals];
+    const stoApprovals = stos.map(s => ({
+      id: s.id, displayId: s.stoNumber, type: 'Stock Transfer',
+      vendor: `${s.sourceBranchName || 'Branch'} to ${s.destBranchName || 'Branch'}`,
+      requester: s.requestedBy || 'Warehouse',
+      amount: s.items?.length || s.transferQuantity || s.totalQuantity || 0,
+      since: s.createdAt || s.date || 'Recent',
+      priority: 'medium',
+    }));
+    return [...poApprovals, ...invoiceApprovals, ...stoApprovals];
   } catch { return []; }
 };
 
