@@ -38,7 +38,6 @@ export default function PurchaseOrderList() {
         { id: 'items', label: 'SKUs', visible: true, sortable: false },
         { id: 'amount', label: 'Total Amount', visible: true, sortable: true },
         { id: 'status', label: 'Status', visible: true, sortable: false },
-        { id: 'actions', label: 'Actions', visible: true, sortable: false },
     ]);
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
@@ -219,18 +218,17 @@ export default function PurchaseOrderList() {
                         <p className="text-[11px] text-[#64748b] mt-0.5">Manage procurement, tracking, and approval cycles</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setAdvMode(!advMode)}
-                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                        <PrimaryBtn onClick={() => setAdvMode(!advMode)}>
                             <Settings className={`w-4 h-4 ${advMode ? 'animate-spin' : ''}`} />
                             {advMode ? 'Config Active' : 'View Config'}
-                        </button>
-                        <div className="relative group">
-                            <button className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm hover:bg-gray-50 transition-colors font-bold group-hover:border-blue-400 group-hover:text-blue-600">
+                        </PrimaryBtn>
+                        <div className="relative group/dropdown">
+                            <PrimaryBtn className="group/btn">
                                 <Share2 className="w-4 h-4" />
                                 Share & Export
-                                <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
-                            </button>
-                            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
+                                <ChevronDown className="w-4 h-4 transition-transform group-hover/dropdown:rotate-180" />
+                            </PrimaryBtn>
+                            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover/dropdown:opacity-100 group-hover/dropdown:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
                                 <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
                                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                                     Export Excel
@@ -245,18 +243,12 @@ export default function PurchaseOrderList() {
                                 </button>
                             </div>
                         </div>
-                        <button onClick={() => setView(v => v === 'table' ? 'kanban' : 'table')}
-                            className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm hover:bg-gray-50 transition-colors">
-                            {view === 'table' ? 'Kanban View' : 'Table View'}
-                        </button>
-                        <button onClick={loadPurchases} disabled={isLoading}
-                            className="bg-white p-2 rounded-lg border border-gray-200 text-gray-600 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
+                        <PrimaryBtn onClick={loadPurchases} disabled={isLoading} className="!px-3">
                             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        </button>
-                        <button onClick={() => navigate(VENDOR_ROUTES.poCreate)}
-                            className="bg-blue-600 px-5 py-2 rounded-lg text-white text-[13px] font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                        </PrimaryBtn>
+                        <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.poCreate)}>
                             + Generate New PO
-                        </button>
+                        </PrimaryBtn>
                     </div>
                 </div>
 
@@ -274,7 +266,11 @@ export default function PurchaseOrderList() {
                     <div className="flex items-center gap-2 overflow-x-auto pb-1">
                         {STATUS_FILTERS.map(f => (
                             <button key={f.value} onClick={() => { setFilter(f.value); setCurrentPage(1); }}
-                                className={`px-5 py-1.5 text-[12px] font-bold rounded-full transition-all whitespace-nowrap ${filter === f.value ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'}`}>
+                                className={`group flex items-center justify-center gap-2 px-5 py-1.5 text-[11px] font-bold rounded-full border active:scale-95 transition-all duration-300 whitespace-nowrap uppercase tracking-wider ${
+                                    filter === f.value 
+                                        ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' 
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                }`}>
                                 {f.label}
                             </button>
                         ))}
@@ -286,11 +282,11 @@ export default function PurchaseOrderList() {
                 {/* ── Content View ── */}
                 {view === 'table' ? (
                     <div className="space-y-4">
-                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="text-[11px] text-gray-400 font-bold border-b border-gray-50">
+                                        <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
 
                                             {visibleCols.map(col => (
                                                 <th key={col.id} draggable={advMode}
@@ -298,7 +294,7 @@ export default function PurchaseOrderList() {
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={(e) => handleDrop(e, col.id)}
                                                     onClick={() => col.sortable && requestSort(col.id)}
-                                                    className={`px-6 py-4 uppercase tracking-wider ${col.sortable && !advMode ? 'cursor-pointer hover:text-gray-600' : ''}`}>
+                                                    className={`${['id', 'vendor'].includes(col.id) ? 'px-8' : 'px-4'} py-4 whitespace-nowrap transition-colors ${col.sortable && !advMode ? 'cursor-pointer hover:text-slate-900' : ''}`}>
                                                     <div className="flex items-center gap-1">
                                                         {col.label} {col.sortable && !advMode && <SortIndicator column={col.id} />}
                                                     </div>
@@ -306,7 +302,7 @@ export default function PurchaseOrderList() {
                                             ))}
                                         </tr>
                                     </thead>
-                                    <tbody className="text-[13px] divide-y divide-gray-50">
+                                    <tbody className="">
                                         {paginatedData.length === 0 ? (
                                             <tr>
                                                 <td colSpan={visibleCols.length} className="py-20 text-center">
@@ -314,11 +310,11 @@ export default function PurchaseOrderList() {
                                                 </td>
                                             </tr>
                                         ) : paginatedData.map((po) => (
-                                            <tr key={po.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <tr key={po.id} onClick={() => navigate(`/vendors/purchase-orders/${po.id}`)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
                                                 {visibleCols.map(col => (
-                                                    <td key={col.id} className="px-6 py-4">
+                                                    <td key={col.id} className={`${['id', 'vendor'].includes(col.id) ? 'px-8' : 'px-4'} py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200`}>
                                                         {col.id === 'id' && (
-                                                            <span className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-md text-[11px] font-mono font-bold">
+                                                            <span className="px-2 py-1 text-slate-800 rounded-md text-[11px] font-mono font-bold">
                                                                 {po.id}
                                                             </span>
                                                         )}
@@ -334,26 +330,6 @@ export default function PurchaseOrderList() {
                                                         {col.id === 'items' && <span className="text-gray-700 font-bold">{po.items} Items</span>}
                                                         {col.id === 'amount' && <span className="text-gray-700 font-bold">{formatCurrency(po.amount)}</span>}
                                                         {col.id === 'status' && <StatusBadge status={po.status} size="sm" />}
-                                                        {col.id === 'actions' && (
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <button onClick={() => navigate(`/vendors/purchase-orders/${po.id}`)}
-                                                                    className="p-1.5 rounded-md bg-blue-50 text-blue-500 hover:bg-blue-100 transition-all shadow-sm border border-blue-100/50">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                                                </button>
-                                                                <button onClick={() => handleEdit(po.id)}
-                                                                    className="p-1.5 rounded-md bg-amber-50 text-amber-600 hover:bg-amber-100 transition-all shadow-sm border border-amber-100/50">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                                </button>
-                                                                <button onClick={() => handleDelete(po.id)}
-                                                                    className="p-1.5 rounded-md bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all shadow-sm border border-rose-100/50">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                                </button>
-                                                                <button onClick={() => handlePrint(po)}
-                                                                    className="p-1.5 rounded-md bg-purple-50 text-purple-500 hover:bg-purple-100 transition-all shadow-sm border border-purple-100/50">
-                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                                                                </button>
-                                                            </div>
-                                                        )}
                                                     </td>
                                                 ))}
                                             </tr>

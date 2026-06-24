@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatCurrency, formatDate, VENDOR_ROUTES } from './vendorConstants';
 import { VCard, Stepper, StatusBadge, SectionTitle } from './VendorComponents';
-import { ArrowLeft, MessageCircle, Download, Package, Loader2, Send, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Download, Package, Loader2, Send, CheckCircle, FileText, ThumbsUp, CheckSquare, Receipt, Link, CreditCard } from 'lucide-react';
 import purchaseService from '../../api/purchaseService';
 import toast from 'react-hot-toast';
 
 const PO_STAGES = [
-    { label: 'PO Created', icon: '📋' },
-    { label: 'PO Approved', icon: '👍' },
-    { label: 'Sent to Vendor', icon: '📤' }, { label: 'GRN Initiated', icon: '📦' },
-    { label: 'GRN Complete', icon: '✔' }, { label: 'Invoice Rcvd', icon: '🧾' },
-    { label: 'Invoice Matched', icon: '🔗' }, { label: 'Payment Done', icon: '💳' },
+    { label: 'PO Created', icon: <FileText size={16} /> },
+    { label: 'PO Approved', icon: <ThumbsUp size={16} /> },
+    { label: 'Sent to Vendor', icon: <Send size={16} /> }, { label: 'GRN Initiated', icon: <Package size={16} /> },
+    { label: 'GRN Complete', icon: <CheckSquare size={16} /> }, { label: 'Invoice Rcvd', icon: <Receipt size={16} /> },
+    { label: 'Invoice Matched', icon: <Link size={16} /> }, { label: 'Payment Done', icon: <CreditCard size={16} /> },
 ];
 
 const STATUS_TO_STAGE = {
@@ -144,9 +144,26 @@ export default function PODetail() {
                     </nav>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => toast.success('Connecting to Vendor...')}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition-all">
-                        <MessageCircle size={13} /> WhatsApp
+                    <button onClick={() => navigate(VENDOR_ROUTES.poCreate, { state: { po: po, mode: 'edit' } })}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition-all">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        Edit
+                    </button>
+                    <button onClick={async () => {
+                        if(window.confirm('Are you sure you want to delete this PO?')) {
+                            await purchaseService.deletePurchase(po.id);
+                            toast.success('PO Deleted');
+                            navigate(VENDOR_ROUTES.poList);
+                        }
+                    }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition-all">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Delete
+                    </button>
+                    <button onClick={() => toast.success('Printing...')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg text-[11px] font-bold text-purple-700 hover:bg-purple-100 transition-all">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        Print
                     </button>
                     <button className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 transition-all">
                         <Download size={13} /> Export PDF

@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, VENDOR_ROUTES } from './vendorConstants';
 import { fetchGRNs } from '../../api/vendorService';
 import {
-    PageHeader, StatusBadge, SearchBar, VCard,
-    PrimaryBtn, SecondaryBtn, EmptyState, ColumnConfig
+    PageHeader, StatusBadge, FilterBar, SearchBar, VCard,
+    PrimaryBtn, SecondaryBtn, EmptyState, VModal, ColumnConfig
 } from './VendorComponents';
 import { exportToExcel, exportToPDF, printData } from '../../utils/exportUtils';
-import { Settings, ChevronDown, FileSpreadsheet, FileText, Upload, Eye, Edit3, Printer } from 'lucide-react';
+import { Settings, ChevronDown, FileSpreadsheet, FileText, Share2, Send, RefreshCw, Upload, Eye, Edit3, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FILTERS = [
@@ -30,8 +30,7 @@ export default function GRNList() {
         { id: 'date', label: 'Date', visible: true, sortable: true },
         { id: 'items', label: 'Items', visible: true, sortable: true },
         { id: 'amount', label: 'Amount', visible: true, sortable: true },
-        { id: 'receivedBy', label: 'Received By', visible: true, sortable: true },
-        { id: 'actions', label: 'Actions', visible: true, sortable: false },
+        { id: 'receivedBy', label: 'Received By', visible: true, sortable: true }
     ]);
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
@@ -71,26 +70,23 @@ export default function GRNList() {
         };
     };
 
-    useEffect(() => {
-        let isMounted = true;
-        const load = async () => {
-            try {
-                setLoading(true);
-                const response = await fetchGRNs();
-                const data = response.data || response;
-                if (isMounted) {
-                    if (Array.isArray(data)) {
-                        setGrns(data.map(adaptGRN));
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch GRNs from backend:", err);
-            } finally {
-                if (isMounted) setLoading(false);
+    const load = async () => {
+        try {
+            setLoading(true);
+            const response = await fetchGRNs();
+            const data = response.data || response;
+            if (Array.isArray(data)) {
+                setGrns(data.map(adaptGRN));
             }
-        };
+        } catch (err) {
+            console.error("Failed to fetch GRNs from backend:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         load();
-        return () => { isMounted = false; };
     }, []);
 
     const toggleSelect = (id) => {
@@ -98,7 +94,7 @@ export default function GRNList() {
     };
 
     const selectAll = () => {
-        if (selected.length === paginatedData.length) setSelected([]);
+        if (selected.length === paginatedData.length && paginatedData.length > 0) setSelected([]);
         else setSelected(paginatedData.map(v => v.id));
     };
 
@@ -184,33 +180,35 @@ export default function GRNList() {
     const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const SortIndicator = ({ column }) => {
-        if (sortConfig.key !== column) return <span className="ml-1 opacity-20">⇅</span>;
-        return <span className="ml-1 text-blue-500">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+        if (sortConfig.key !== column) return <span className="ml-1 opacity-20 text-[8px]">⇅</span>;
+        return <span className="ml-1 text-blue-500 text-[8px]">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
     };
 
     const visibleCols = cols.filter(c => c.visible);
 
     return (
-        <div className="w-full bg-[#F3F5F9] min-h-screen p-4 sm:p-8 pb-32" style={{ fontFamily: '"Inter", sans-serif' }}>
-            <div className="max-w-[1600px] mx-auto">
+        <div className="w-full bg-[#F3F5F9] min-h-screen" style={{ fontFamily: '"Inter", sans-serif' }}>
+            <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');`}</style>
+            <div className="max-w-[1600px] mx-auto p-4 sm:p-6 space-y-4 pt-4">
+
                 {/* ── Header ── */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-[24px] font-bold text-[#1e293b]">GRN List & History</h1>
+                        <h1 className="text-[20px] font-bold text-[#1e293b]">GRN List & History</h1>
+                        <p className="text-[11px] text-[#64748b] mt-0.5">Manage goods receipt notes and vendor deliveries</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setAdvMode(!advMode)}
-                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                    <div className="flex items-center gap-2">
+                        <PrimaryBtn onClick={() => setAdvMode(!advMode)}>
                             <Settings className={`w-4 h-4 ${advMode ? 'animate-spin' : ''}`} />
                             {advMode ? 'Config Active' : 'View Config'}
-                        </button>
-                        <div className="relative group">
-                            <button className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors font-bold uppercase tracking-wider group-hover:border-blue-400 group-hover:text-blue-600">
-                                <Upload className="w-4 h-4 rotate-180" />
-                                Export
-                                <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
-                            </button>
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
+                        </PrimaryBtn>
+                        <div className="relative group/dropdown">
+                            <PrimaryBtn className="group/btn">
+                                <Share2 className="w-4 h-4" />
+                                Share & Export
+                                <ChevronDown className="w-4 h-4 transition-transform group-hover/dropdown:rotate-180" />
+                            </PrimaryBtn>
+                            <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl opacity-0 invisible group-hover/dropdown:opacity-100 group-hover/dropdown:visible transition-all z-50 p-2 border-b-4 border-b-blue-600">
                                 <button onClick={() => handleExport('excel')} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
                                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                                     Export Excel
@@ -221,179 +219,121 @@ export default function GRNList() {
                                 </button>
                             </div>
                         </div>
-                        <button onClick={() => navigate(VENDOR_ROUTES.grnEntry)}
-                            className="bg-blue-600 px-5 py-2 rounded-lg flex items-center gap-2 text-[13px] text-white font-bold shadow-sm hover:bg-blue-700 transition-all">
-                            <span className="text-lg">📷</span> New GRN Scan
-                        </button>
+                        <PrimaryBtn onClick={load} disabled={loading} className="!px-3">
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        </PrimaryBtn>
+                        <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.grnEntry)}>
+                            + New GRN Scan
+                        </PrimaryBtn>
+                    </div>
+                </div>
+
+                {/* ── Search & Filters ── */}
+                <div className="space-y-4">
+                    <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">🔍</span>
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search by GRN Number or Vendor Name..."
+                            className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-blue-400 transition-all shadow-sm"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        {FILTERS.map(f => (
+                            <button key={f.value} onClick={() => { setFilter(f.value); setCurrentPage(1); }}
+                                className={`group flex items-center justify-center gap-2 px-5 py-1.5 text-[11px] font-bold rounded-full border active:scale-95 transition-all duration-300 whitespace-nowrap uppercase tracking-wider ${
+                                    filter === f.value 
+                                        ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' 
+                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                }`}>
+                                {f.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 <ColumnConfig cols={cols} onChange={toggleCol} advMode={advMode} setAdvMode={setAdvMode} />
 
-                {/* ── Search & Filter ── */}
-                <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                        <div className="md:col-span-3 relative group">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">🔍</span>
-                            <input
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search by GRN Number or Vendor Name..."
-                                className="w-full pl-11 pr-4 py-2.5 bg-gray-50/50 border border-transparent rounded-lg text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:bg-white focus:border-blue-200 transition-all"
-                            />
-                        </div>
-                        <div className="flex gap-1 p-1 bg-gray-100/50 rounded-lg">
-                            {FILTERS.map(f => (
-                                <button
-                                    key={f.value}
-                                    onClick={() => { setFilter(f.value); setCurrentPage(1); }}
-                                    className={`flex-1 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${filter === f.value
-                                        ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
-                                        : 'text-gray-500 hover:bg-gray-200/50'}`}
-                                >
-                                    {f.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Table Section ── */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="text-[11px] text-gray-400 font-bold bg-gray-50/50 border-b border-gray-50">
-
-                                    {visibleCols.map(col => (
-                                        <th key={col.id}
-                                            draggable={advMode}
-                                            onDragStart={(e) => handleDragStart(e, col.id)}
-                                            onDragOver={(e) => e.preventDefault()}
-                                            onDrop={(e) => handleDrop(e, col.id)}
-                                            onClick={() => col.sortable && requestSort(col.id)}
-                                            className={`px-4 py-4 uppercase tracking-wider transition-all 
-                                                ${col.sortable && !advMode ? 'cursor-pointer hover:bg-gray-100/50 hover:text-gray-700' : ''}
-                                                ${advMode ? 'bg-blue-50/50 cursor-move border-x border-blue-50/20' : ''}`}>
-                                            <div className="flex items-center gap-2">
-                                                {col.label} {col.sortable && !advMode && <SortIndicator column={col.id} />}
-                                                {advMode && <span className="ml-auto opacity-40 text-[10px]">⋮⋮</span>}
-                                            </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="text-[13px] divide-y divide-gray-50">
-                                {loading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <tr key={i} className="animate-pulse">
-                                            <td className="px-6 py-4"><div className="w-4 h-4 bg-slate-200 rounded" /></td>
+                {/* ── Content View ── */}
+                <div className="space-y-4">
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
+                                        {visibleCols.map(col => (
+                                            <th key={col.id} draggable={advMode}
+                                                onDragStart={(e) => handleDragStart(e, col.id)}
+                                                onDragOver={(e) => e.preventDefault()}
+                                                onDrop={(e) => handleDrop(e, col.id)}
+                                                onClick={() => col.sortable && requestSort(col.id)}
+                                                className={`${['id', 'vendor'].includes(col.id) ? 'px-8' : 'px-4'} py-4 whitespace-nowrap transition-colors ${col.sortable && !advMode ? 'cursor-pointer hover:text-slate-900' : ''}`}>
+                                                <div className="flex items-center gap-1">
+                                                    {col.label} {col.sortable && !advMode && <SortIndicator column={col.id} />}
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={visibleCols.length} className="py-20 text-center text-slate-500">
+                                                Loading...
+                                            </td>
+                                        </tr>
+                                    ) : paginatedData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={visibleCols.length} className="py-20 text-center">
+                                                <EmptyState icon="📋" title="No results found" desc="Adjust your filters or search keywords" />
+                                            </td>
+                                        </tr>
+                                    ) : paginatedData.map((grn) => (
+                                        <tr key={grn.id} onClick={() => navigate(`/vendors/grn/${grn.id}`)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
                                             {visibleCols.map(col => (
-                                                <td key={col.id} className="px-4 py-4">
-                                                    <div className="h-4 bg-slate-100 rounded w-2/3" />
+                                                <td key={col.id} className={`${['id', 'vendor'].includes(col.id) ? 'px-8' : 'px-4'} py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200`}>
+                                                    {col.id === 'id' && (
+                                                        <span className="px-2 py-1 text-slate-800 rounded-md text-[11px] font-mono font-bold">
+                                                            {grn.grnNumber}
+                                                        </span>
+                                                    )}
+                                                    {col.id === 'poId' && (
+                                                        <span className="text-slate-500 font-medium">{grn.poId}</span>
+                                                    )}
+                                                    {col.id === 'vendor' && (
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-[11px]">
+                                                                {grn.vendor.charAt(0)}
+                                                            </div>
+                                                            <span className="font-medium text-gray-700">{grn.vendor}</span>
+                                                        </div>
+                                                    )}
+                                                    {col.id === 'date' && <span className="text-gray-500 font-medium">{formatDate(grn.date)}</span>}
+                                                    {col.id === 'items' && <span className="text-gray-700 font-bold">{grn.items} Items</span>}
+                                                    {col.id === 'amount' && <span className="text-gray-700 font-bold">{formatCurrency(grn.amount)}</span>}
+                                                    {col.id === 'receivedBy' && <span className="text-gray-600 font-medium">{grn.receivedBy}</span>}
                                                 </td>
                                             ))}
                                         </tr>
-                                    ))
-                                ) : paginatedData.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={visibleCols.length} className="py-20 text-center">
-                                            <EmptyState icon="📦" title="No results found" desc="Adjust your filters or search keywords" />
-                                        </td>
-                                    </tr>
-                                ) : paginatedData.map((grn) => (
-                                    <tr key={grn.id} className="hover:bg-gray-50/50 transition-colors group">
-                                        {visibleCols.map(col => (
-                                            <td key={col.id} className="px-4 py-4">
-                                                {col.id === 'id' && (
-                                                    <span className="font-mono text-[11px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded inline-block border border-blue-100/50">
-                                                        {grn.grnNumber}
-                                                    </span>
-                                                )}
-                                                {col.id === 'poId' && <span className="font-mono text-[11px] text-gray-500 font-bold">{grn.poId}</span>}
-                                                {col.id === 'vendor' && (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-blue-600 font-bold text-[10px] border border-gray-200/50 group-hover:scale-110 transition-transform">
-                                                            {grn.vendor.charAt(0)}
-                                                        </div>
-                                                        <span className="font-semibold text-gray-700">{grn.vendor}</span>
-                                                    </div>
-                                                )}
-                                                {col.id === 'date' && <span className="text-gray-500 font-medium whitespace-nowrap">{formatDate(grn.date)}</span>}
-                                                {col.id === 'items' && <span className="px-2 py-0.5 bg-gray-100 rounded text-[11px] font-bold text-gray-600">{grn.items} Items</span>}
-                                                {col.id === 'amount' && <span className="font-bold text-gray-800">{formatCurrency(grn.amount)}</span>}
-                                                {col.id === 'receivedBy' && <span className="text-gray-600 font-semibold">{grn.receivedBy}</span>}
-                                                {col.id === 'actions' && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <button
-                                                            onClick={() => navigate(`/vendors/grn/${grn.id}`)}
-                                                            title="View GRN"
-                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-sm border border-blue-100/50">
-                                                            <Eye className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => navigate(VENDOR_ROUTES.grnEntry, { state: { grn, mode: 'edit' } })}
-                                                            title="Edit GRN"
-                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100/50">
-                                                            <Edit3 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => printData([grn], `GRN: ${grn.id}`, [
-                                                                { header: 'GRN #', accessor: 'id' },
-                                                                { header: 'PO Ref', accessor: 'poId' },
-                                                                { header: 'Vendor', accessor: 'vendor' },
-                                                                { header: 'Date', accessor: 'date' },
-                                                                { header: 'Items', accessor: 'items' },
-                                                                { header: 'Amount', accessor: 'amount' },
-                                                            ])}
-                                                            title="Print GRN"
-                                                            className="w-7 h-7 flex items-center justify-center rounded-lg bg-purple-50 text-purple-500 hover:bg-purple-500 hover:text-white transition-all shadow-sm border border-purple-100/50">
-                                                            <Printer className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
-
-                {/* ── Pagination ── */}
-                <div className="flex items-center justify-between py-6 px-2">
-                    <div className="text-[12px] font-medium text-gray-400">
-                        Showing <span className="font-bold text-gray-700">{paginatedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-bold text-gray-700">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="font-bold text-gray-700">{sortedData.length}</span> entries
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="flex items-center gap-1 px-3 py-2 rounded-lg text-[12px] font-bold text-gray-500 bg-white border border-gray-100 shadow-sm hover:bg-gray-50 disabled:opacity-30 transition-all">
-                            ← <span className="hidden sm:inline">Prev</span>
-                        </button>
-
-                        <div className="flex items-center gap-1 mx-1">
-                            {[...Array(totalPages)].map((_, i) => (
-                                <button key={i} onClick={() => setCurrentPage(i + 1)}
-                                    className={`w-9 h-9 rounded-lg text-[12px] font-bold transition-all shadow-sm ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-gray-400 hover:text-gray-700 border border-gray-50'}`}>
-                                    {i + 1}
-                                </button>
-                            ))}
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
 
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="flex items-center gap-1 px-3 py-2 rounded-lg text-[12px] font-bold text-gray-500 bg-white border border-gray-100 shadow-sm hover:bg-gray-50 disabled:opacity-30 transition-all">
-                            <span className="hidden sm:inline">Next</span> →
-                        </button>
+                    {/* ── Pagination ── */}
+                    <div className="flex items-center justify-end gap-2 pb-8">
+                        {[...Array(totalPages)].map((_, i) => (
+                            <button key={i} onClick={() => setCurrentPage(i + 1)}
+                                className={`w-9 h-9 rounded-lg text-[12px] font-bold transition-all shadow-sm border ${currentPage === i + 1 ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' : 'bg-white text-gray-400 hover:text-gray-900 border-gray-100 hover:border-gray-300'}`}>
+                                {i + 1}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+

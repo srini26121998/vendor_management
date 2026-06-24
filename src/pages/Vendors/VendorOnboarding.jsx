@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import useVendorStore from '../../store/useVendorStore';
 import * as svc from '../../api/vendorService';
 
+import { Building2, MapPin, Landmark, FileText } from 'lucide-react';
+
 const BIZ  = ['MANUFACTURER','DISTRIBUTOR','TRADER','IMPORTER','SERVICE_PROVIDER'];
 const GST  = ['REGULAR','COMPOSITION','SEZ','UNREGISTERED','EXPORT_ONLY'];
 const TRN  = [{v:'LT_1CR',l:'< ₹1 Cr'},{v:'1_10CR',l:'₹1–10 Cr'},{v:'10_50CR',l:'₹10–50 Cr'},{v:'50_200CR',l:'₹50–200 Cr'},{v:'GT_200CR',l:'> ₹200 Cr'}];
@@ -13,7 +15,7 @@ const LOCS = ['FACTORY','WAREHOUSE','OFFICE','SHIPPING_POINT'];
 const ACCT = ['CURRENT','SAVINGS','CC','OD'];
 const STTS = ['AN','AP','AR','AS','BR','CG','CH','DL','GA','GJ','HR','HP','JK','JH','KA','KL','LA','MP','MH','MN','ML','MZ','NL','OD','PY','PB','RJ','SK','TN','TS','TR','UP','UK','WB'];
 const DOCS = ['GSTIN','FSSAI','PAN','TRADE_LICENSE','DRUG_LICENSE','CIN','OTHER'];
-const STEPS = [{label:'Vendor Info',icon:'🏢'},{label:'Location',icon:'📍'},{label:'Bank Account',icon:'🏦'},{label:'Documents',icon:'📄'}];
+const STEPS = [{label:'Vendor Info',icon:<Building2 size={16}/>},{label:'Location',icon:<MapPin size={16}/>},{label:'Bank Account',icon:<Landmark size={16}/>},{label:'Documents',icon:<FileText size={16}/>}];
 
 // exact same input class as VendorList.jsx filter inputs
 const IC = (err) => `w-full px-4 h-11 bg-white border ${err?'border-rose-400 bg-rose-50/20':'border-slate-200'} rounded-xl text-[13px] font-medium text-slate-700 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm placeholder:text-slate-300`;

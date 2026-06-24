@@ -304,7 +304,9 @@ input[type="number"]::-webkit-outer-spin-button {
    ══════════════════════════════════════════════════════════════════ */
 
 /* Forcefully remove all box shadows and apply Outfit font family globally */
-*, ::before, ::after {
+*,
+::before,
+::after {
   box-shadow: none !important;
   --tw-shadow: none !important;
   --tw-shadow-colored: none !important;
@@ -314,9 +316,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Ensure cards and dashboard panels have clean, professional borders */
-.card, 
-.v-card, 
-[class*="VCard"], 
+.card,
+.v-card,
+[class*="VCard"],
 [class*="card"],
 .bg-white.rounded-2xl.border,
 .bg-white.rounded-3xl.border {
@@ -325,22 +327,22 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Enhanced tactile hover feedback on cards without shadows */
-.card:hover, 
-.v-card:hover, 
+.card:hover,
+.v-card:hover,
 [class*="VCard"]:hover {
   border-color: #cbd5e1 !important;
   background-color: #fafbfc !important;
 }
 
 /* Clean, crisp flat borders for all forms and input controls */
-.v-input, 
-.v-input-sm, 
-.v-search-input, 
-select, 
-input[type="text"], 
-input[type="number"], 
-input[type="email"], 
-input[type="date"], 
+.v-input,
+.v-input-sm,
+.v-search-input,
+select,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="date"],
 textarea {
   border: 1.5px solid #cbd5e1 !important;
   border-radius: 8px !important;
@@ -349,20 +351,22 @@ textarea {
 }
 
 /* High accessibility solid focus ring instead of shadows */
-.v-input:focus, 
-.v-input-sm:focus, 
-.v-search-input:focus, 
-select:focus, 
-input:focus, 
+.v-input:focus,
+.v-input-sm:focus,
+.v-search-input:focus,
+select:focus,
+input:focus,
 textarea:focus {
-  border-color: #166534 !important; /* Dark Green */
-  outline: 2px solid #bbf7d0 !important; /* Soft green outline */
+  border-color: #166534 !important;
+  /* Dark Green */
+  outline: 2px solid #bbf7d0 !important;
+  /* Soft green outline */
   background-color: #ffffff !important;
 }
 
 /* Clean border separator for headers instead of shadow */
-header, 
-.sticky-header, 
+header,
+.sticky-header,
 [class*="StickyTopBar"],
 .sticky {
   border-bottom: 2px solid #e2e8f0 !important;
@@ -399,4 +403,126 @@ tr:hover {
 
 .text-indigo-700 {
   color: #3730a3 !important;
+}
+
+@layer utilities {
+
+  /* Reduce font thickness globally */
+  .font-semibold,
+  .font-medium {
+    font-weight: 400 !important;
+  }
+
+  .font-bold,
+  th {
+    font-weight: 500 !important;
+  }
+
+  .font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  .font-black {
+    font-weight: 700 !important;
+  }
+
+  /* Apply okchl green to buttons/bg, but keep text black as requested */
+  .text-blue-600,
+  .text-blue-500,
+  .text-green-800,
+  .text-green-700 {
+    color: #000000 !important;
+  }
+
+  .bg-blue-600,
+  .bg-blue-500,
+  .bg-green-800,
+  .bg-green-700 {
+    background-color: oklch(0.627 0.265 142.89) !important;
+  }
+
+  .bg-blue-50,
+  .bg-green-50 {
+    background-color: oklch(0.96 0.05 142.89) !important;
+  }
+
+  .bg-blue-100,
+  .bg-green-100 {
+    background-color: oklch(0.92 0.1 142.89) !important;
+  }
+
+  .text-blue-700,
+  .text-green-950 {
+    color: #000000 !important;
+  }
+
+  .border-blue-100,
+  .border-green-100,
+  .border-green-200 {
+    border-color: oklch(0.9 0.1 142.89) !important;
+  }
+
+  .border-blue-200,
+  .border-green-300 {
+    border-color: oklch(0.85 0.15 142.89) !important;
+  }
+
+  .border-blue-400,
+  .border-green-400 {
+    border-color: oklch(0.7 0.2 142.89) !important;
+  }
+
+  .border-blue-500,
+  .border-green-800,
+  .border-green-700 {
+    border-color: oklch(0.627 0.265 142.89) !important;
+  }
+
+  .shadow-blue-100,
+  .shadow-green-100 {
+    --tw-shadow-color: oklch(0.9 0.1 142.89) !important;
+    --tw-shadow: var(--tw-shadow-colored) !important;
+  }
+
+  .shadow-blue-200,
+  .shadow-green-200 {
+    --tw-shadow-color: oklch(0.85 0.15 142.89) !important;
+    --tw-shadow: var(--tw-shadow-colored) !important;
+  }
+
+  .hover\:bg-blue-700:hover,
+  .hover\:bg-green-800:hover,
+  .hover\:bg-green-900:hover {
+    background-color: oklch(0.55 0.2 142.89) !important;
+  }
+
+  .hover\:bg-blue-100:hover,
+  .hover\:bg-green-100:hover {
+    background-color: oklch(0.92 0.1 142.89) !important;
+  }
+
+  .group-hover\:text-blue-600:hover,
+  .group-hover\:text-green-700:hover,
+  .group-hover\:text-green-800:hover {
+    color: #000000 !important;
+  }
+
+  .focus-within\:text-blue-500:focus-within,
+  .group-focus-within\:text-green-700:focus-within {
+    color: #000000 !important;
+  }
+
+  .focus\:border-blue-400:focus,
+  .focus\:border-green-800:focus {
+    border-color: oklch(0.7 0.2 142.89) !important;
+  }
+
+  .hover\:border-green-300:hover,
+  .group-hover\:border-green-400:hover {
+    border-color: oklch(0.7 0.2 142.89) !important;
+  }
+
+  .hover\:text-green-950:hover {
+    color: #000000 !important;
+  }
 }

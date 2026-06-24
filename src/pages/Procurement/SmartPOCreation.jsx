@@ -4,7 +4,7 @@ import {
     VENDOR_ROUTES, formatCurrency,
     PO_TYPES, PAYMENT_TERMS, TAX_CATEGORIES
 } from '../Vendors/vendorConstants';
-import { fetchVendors, fetchProducts } from '../../api/vendorService';
+import { fetchVendors, fetchProducts, createPO } from '../../api/vendorService';
 
 const STORE_LIST = [
     { id: 'S001', name: 'Main Warehouse - Mumbai', address: 'Plot 45, MIDC Industrial Area, Andheri East, Mumbai 400069' },
@@ -18,10 +18,20 @@ const mapProductToSku = (p) => ({
     name: p.productName || p.name || 'Unknown Product',
     uom: p.unitOfMeasure || p.uom || 'PCS',
     hsn: p.hsnCode || p.hsn || '--',
-    price90d: p.purchasePrice || p.price || 0,
+    price90d: p.purchasePrice || p.price || p.unitPrice || p.purchaseRate || p.basePrice || p.standardPrice || 0,
     safetyStock: p.minStock || p.reorderLevel || 0,
     stock: p.currentStock || p.stockQuantity || 0,
     doc: p.daysOfCover || 14,
+});
+
+const mapVendor = (v) => ({
+    ...v,
+    id: v.id,
+    name: v.tradeName || v.legalName || v.name || 'Unknown Vendor',
+    status: v.complianceStatus === 'BLOCKED' || v.kycStatus === 'BLOCKED' ? 'blocked' : 'active',
+    shippingPoints: v.locations ? v.locations.map(l => `${l.city || ''} - ${l.addressLine1 || ''}`.trim().replace(/^-|-$/g, '')) : [],
+    factoryLocations: [],
+    rating: v.rating || 5, // Mock rating if missing
 });
 import { VCard, PrimaryBtn, SecondaryBtn, VendorBreadcrumb } from '../Vendors/VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,8 +52,15 @@ export default function SmartPOCreation() {
     const [skus, setSkus] = useState([]);
 
     useEffect(() => {
-        fetchVendors().then(d => setVendors(Array.isArray(d) ? d : []));
-        fetchProducts().then(d => setSkus(Array.isArray(d) ? d.map(mapProductToSku) : []));
+        fetchVendors().then(res => {
+            const data = res?.data?.content || res?.data || res || [];
+            setVendors(Array.isArray(data) ? data.map(mapVendor) : []);
+        }).catch(() => setVendors([]));
+        
+        fetchProducts().then(res => {
+            const data = res?.data?.content || res?.data || res || [];
+            setSkus(Array.isArray(data) ? data.map(mapProductToSku) : []);
+        }).catch(() => setSkus([]));
     }, []);
 
     // Header States
@@ -57,6 +74,7 @@ export default function SmartPOCreation() {
     const [specialInstructions, setSpecialInstructions] = useState('');
     const [attachments, setAttachments] = useState([]);
     const [selectedDetailSku, setSelectedDetailSku] = useState(null);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const [items, setItems] = useState([{
         id: Date.now(),
@@ -102,6 +120,30 @@ export default function SmartPOCreation() {
             }
             return updated;
         }));
+    };
+
+    const recommendVendor = () => {
+        if (vendors.length === 0) {
+            toast.error('No vendors available to recommend');
+            return;
+        }
+        
+        // Algorithmic Recommendation (No AI): 
+        // Filter out blocked vendors and pick the one with the highest combined rating score.
+        const activeVendors = vendors.filter(v => v.status !== 'blocked');
+        if (activeVendors.length === 0) return;
+        
+        const bestVendor = activeVendors.reduce((prev, current) => {
+            const prevScore = parseFloat(prev.rating || 0);
+            const currScore = parseFloat(current.rating || 0);
+            return (currScore > prevScore) ? current : prev;
+        }, activeVendors[0]);
+
+        setSelectedVendorId(bestVendor.id);
+        toast.success(`Smart Recommended: ${bestVendor.name} (Best Rating)`);
+        
+        const locs = bestVendor.factoryLocations || bestVendor.shippingPoints || [];
+        if (locs.length > 0) setVendorLocation(locs[0]);
     };
 
     const addItem = () => {
@@ -190,7 +232,48 @@ export default function SmartPOCreation() {
         return sku && item.rate > sku.price90d * 1.05;
     });
 
-    const isAllMandatoryFilled = selectedVendorId && vendorLocation && deliveryStoreId && expectedDate && paymentTerms && items.every(i => i.skuId && i.qty > 0 && i.rate > 0);
+    const isAllMandatoryFilled = selectedVendorId && deliveryStoreId && expectedDate && paymentTerms && items.every(i => i.skuId && i.qty > 0 && i.rate > 0);
+
+    const submitPO = async () => {
+        if (!isAllMandatoryFilled) return;
+        try {
+            const payload = {
+                poType,
+                vendorId: selectedVendorId,
+                supplierId: selectedVendorId,
+                vendorLocation,
+                deliveryStoreId,
+                expectedDate,
+                dueDate: expectedDate,
+                paymentTerms,
+                paymentMode: 'BANK_TRANSFER',
+                poRef,
+                specialInstructions,
+                items: items.filter(i => i.skuId).map(i => ({
+                    productId: i.skuId,
+                    quantity: Number(i.qty),
+                    purchaseRate: Number(i.rate),
+                    discountPct: Number(i.discount),
+                    gstRate: parseFloat(i.taxCategory) || 18,
+                    remarks: i.remarks
+                })),
+                freightCharges: Number(freightCharges),
+                otherCharges: Number(otherCharges),
+                subtotal: totals.subtotal,
+                totalGst: totals.totalGst,
+                roundOff: totals.roundOff,
+                grandTotal: totals.grandTotal,
+                status: 'ACTIVE'
+            };
+            
+            await createPO(payload);
+            toast.success('PO Submitted Successfully!');
+            navigate('/vendors/purchase-orders');
+        } catch (error) {
+            console.error('Submit PO Error:', error);
+            toast.error('Failed to submit PO');
+        }
+    };
 
     return (
         <div className="min-h-screen w-full bg-[#F3F5F9] flex flex-col pb-10" style={{ fontFamily: '"Inter", sans-serif' }}>
@@ -220,6 +303,7 @@ export default function SmartPOCreation() {
                         <PrimaryBtn
                             small
                             disabled={!isAllMandatoryFilled}
+                            onClick={submitPO}
                             className={`!bg-blue-600 ${!isAllMandatoryFilled ? 'opacity-50 grayscale' : ''}`}
                             icon={<CheckCircle2 size={14} />}
                         >
@@ -246,26 +330,19 @@ export default function SmartPOCreation() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                {/* PO Type */}
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">PO Type <span className="text-rose-500">*</span></label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {PO_TYPES.map(type => (
-                                            <button
-                                                key={type}
-                                                onClick={() => setPoType(type)}
-                                                className={`px-3 py-2 text-[10px] font-bold rounded-lg border transition-all text-center ${poType === type ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}
-                                            >
-                                                {type}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {/* Vendor */}
                                 <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Vendor <span className="text-red-500">*</span></label>
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Vendor <span className="text-red-500">*</span></label>
+                                        <button 
+                                            onClick={recommendVendor} 
+                                            title="Algorithmically pick the best vendor based on rating"
+                                            className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                                        >
+                                            <Sparkles size={10} /> Smart Pick
+                                        </button>
+                                    </div>
                                     <div className="relative group">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={14} />
                                         <select
@@ -283,21 +360,6 @@ export default function SmartPOCreation() {
                                     </div>
                                 </div>
 
-                                {/* Vendor Location */}
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Vendor Location <span className="text-red-500">*</span></label>
-                                    <select
-                                        value={vendorLocation}
-                                        onChange={e => setVendorLocation(e.target.value)}
-                                        disabled={!selectedVendorId}
-                                        className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none disabled:bg-slate-50 disabled:opacity-60 shadow-sm"
-                                    >
-                                        <option value="">Select shipping point...</option>
-                                        {selectedVendor?.factoryLocations?.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                                        {selectedVendor?.shippingPoints?.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                                    </select>
-                                </div>
-
                                 {/* Delivery Store */}
                                 <div className="space-y-3">
                                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Delivery Store <span className="text-red-500">*</span></label>
@@ -309,18 +371,9 @@ export default function SmartPOCreation() {
                                         <option value="">Select destination store...</option>
                                         {STORE_LIST.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
-                                {/* Delivery Address (Read-only) */}
-                                <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2 ml-1">
-                                        Delivery Address <Info size={10} className="text-slate-400" title="Auto-populated from store selection" />
-                                    </label>
-                                    <div className="px-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-medium text-slate-500 flex items-center shadow-inner">
-                                        {selectedStore?.address || 'Select a store to view full address'}
-                                    </div>
+                                    {selectedStore && (
+                                        <p className="text-[10px] text-slate-500 italic ml-1 mt-1 truncate">{selectedStore.address}</p>
+                                    )}
                                 </div>
 
                                 {/* Expected Delivery Date */}
@@ -338,147 +391,148 @@ export default function SmartPOCreation() {
                                     </div>
                                     <p className="text-[9px] font-bold text-indigo-500">Min: Today + Vendor Lead Time</p>
                                 </div>
-
-                                {/* Payment Terms */}
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Terms <span className="text-red-500">*</span></label>
-                                    <select
-                                        value={paymentTerms}
-                                        onChange={e => setPaymentTerms(e.target.value)}
-                                        className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
-                                    >
-                                        <option value="">Select terms...</option>
-                                        {PAYMENT_TERMS.map(term => <option key={term} value={term}>{term}</option>)}
-                                    </select>
-                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-10">
-                                {/* Currency (Read-only) */}
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Currency</label>
-                                    <div className="px-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-400 flex items-center justify-between shadow-inner">
-                                        INR <span>🇮🇳</span>
-                                    </div>
-                                </div>
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick={() => setShowAdvanced(!showAdvanced)}
+                                    className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider flex items-center gap-1 bg-slate-50 px-4 py-2 rounded-full border border-slate-200"
+                                >
+                                    {showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'}
+                                </button>
+                            </div>
 
-                                {/* PO Reference */}
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">PO Reference / Buyer Ref</label>
-                                    <input
-                                        type="text"
-                                        maxLength={30}
-                                        placeholder="Internal reference number..."
-                                        value={poRef}
-                                        onChange={e => setPoRef(e.target.value)}
-                                        className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
-                                    />
-                                </div>
-
-                                {/* Special Instructions */}
-                                <div className="md:col-span-4 space-y-3">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Special Instructions</label>
-                                    <div className="relative">
-                                        <textarea
-                                            rows={4}
-                                            maxLength={500}
-                                            placeholder="Enter any specific packaging instructions, delivery time-slots, quality inspection requirements, or other buyer notes here..."
-                                            value={specialInstructions}
-                                            onChange={e => setSpecialInstructions(e.target.value)}
-                                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-[14px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none shadow-sm min-h-[120px]"
-                                        />
-                                        <div className="absolute bottom-4 right-5 flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg shadow-inner">
-                                            <span className="text-[10px] font-bold text-slate-400 tracking-tight">{specialInstructions.length} / 500 characters</span>
+                            {showAdvanced && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    className="mt-6 pt-6 border-t border-slate-100 space-y-8 overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        {/* Vendor Location */}
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Vendor Location</label>
+                                            <select
+                                                value={vendorLocation}
+                                                onChange={e => setVendorLocation(e.target.value)}
+                                                disabled={!selectedVendorId}
+                                                className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none disabled:bg-slate-50 disabled:opacity-60 shadow-sm"
+                                            >
+                                                <option value="">Select shipping point...</option>
+                                                {selectedVendor?.factoryLocations?.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                                                {selectedVendor?.shippingPoints?.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                                            </select>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* Attachments - Full Width */}
-                                <div className="md:col-span-4 space-y-4">
-                                    <div className="flex items-center justify-between ml-1">
-                                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supporting Documents / Attachments</label>
-                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
-                                            {attachments.length} / 5 Files
-                                        </span>
-                                    </div>
+                                        {/* Payment Terms */}
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Terms</label>
+                                            <select
+                                                value={paymentTerms}
+                                                onChange={e => setPaymentTerms(e.target.value)}
+                                                className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
+                                            >
+                                                <option value="">Select terms...</option>
+                                                {PAYMENT_TERMS.map(term => <option key={term} value={term}>{term}</option>)}
+                                            </select>
+                                        </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Upload Area */}
-                                        <div
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="group relative h-32 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 hover:bg-blue-50/30 hover:border-blue-400 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 overflow-hidden"
-                                        >
+                                        {/* PO Reference */}
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">PO Reference</label>
                                             <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={handleFileUpload}
-                                                multiple
-                                                hidden
+                                                type="text"
+                                                maxLength={30}
+                                                placeholder="Internal reference number..."
+                                                value={poRef}
+                                                onChange={e => setPoRef(e.target.value)}
+                                                className="w-full px-4 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none shadow-sm"
                                             />
-                                            <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
-                                                <FileUp size={20} />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-[12px] font-bold text-slate-600">Click to upload or drag and drop</p>
-                                                <p className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase tracking-tighter">PDF, DOC, XLS up to 10MB each</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Special Instructions & Attachments */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Special Instructions */}
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Special Instructions</label>
+                                            <div className="relative">
+                                                <textarea
+                                                    rows={4}
+                                                    maxLength={500}
+                                                    placeholder="Enter any specific packaging instructions, delivery time-slots, quality inspection requirements, or other buyer notes here..."
+                                                    value={specialInstructions}
+                                                    onChange={e => setSpecialInstructions(e.target.value)}
+                                                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-[13px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none shadow-sm min-h-[120px]"
+                                                />
+                                                <div className="absolute bottom-4 right-5 flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg shadow-inner">
+                                                    <span className="text-[10px] font-bold text-slate-400 tracking-tight">{specialInstructions.length} / 500 chars</span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* File List */}
-                                        <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                                            {attachments.length === 0 ? (
-                                                <div className="h-full flex flex-col items-center justify-center border-2 border-slate-100 border-dotted rounded-2xl bg-slate-50/30 opacity-60">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase">No files attached yet</p>
+                                        {/* Attachments */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between ml-1">
+                                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Supporting Documents</label>
+                                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                                                    {attachments.length} / 5 Files
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {/* Upload Area */}
+                                                <div
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="group relative h-20 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:bg-blue-50/30 hover:border-blue-400 transition-all cursor-pointer flex items-center justify-center gap-3 overflow-hidden"
+                                                >
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        onChange={handleFileUpload}
+                                                        multiple
+                                                        hidden
+                                                    />
+                                                    <div className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                                                        <FileUp size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-slate-600">Click to upload files</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Max 10MB each</p>
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <AnimatePresence>
-                                                    {attachments.map((file, idx) => (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            exit={{ opacity: 0, scale: 0.95 }}
-                                                            key={`${file.name}-${idx}`}
-                                                            className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all group"
-                                                        >
-                                                            <div className="flex items-center gap-3 min-w-0">
-                                                                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500 shrink-0">
-                                                                    <FileText size={16} />
+
+                                                {/* File List */}
+                                                <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                                                    <AnimatePresence>
+                                                        {attachments.map((file, idx) => (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, x: -10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                                key={`${file.name}-${idx}`}
+                                                                className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all group"
+                                                            >
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <div className="w-6 h-6 bg-blue-50 rounded flex items-center justify-center text-blue-500 shrink-0">
+                                                                        <FileText size={12} />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[11px] font-bold text-slate-700 truncate">{file.name}</p>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="min-w-0">
-                                                                    <p className="text-[11px] font-bold text-slate-700 truncate">{file.name}</p>
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                                <div className="flex items-center">
+                                                                    <button onClick={(e) => { e.stopPropagation(); handlePreview(file); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition-all" title="Preview"><Eye size={12} /></button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); removeAttachment(idx); }} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded transition-all" title="Delete"><Trash2 size={12} /></button>
                                                                 </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handlePreview(file);
-                                                                    }}
-                                                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
-                                                                    title="Preview File"
-                                                                >
-                                                                    <Eye size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        removeAttachment(idx);
-                                                                    }}
-                                                                    className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                                                    title="Delete File"
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                                </AnimatePresence>
-                                            )}
+                                                            </motion.div>
+                                                        ))}
+                                                    </AnimatePresence>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </motion.div>
+                            )}
                         </VCard>
 
                         {/* 2. Line Item Grid Section */}
@@ -806,6 +860,7 @@ export default function SmartPOCreation() {
                                 {/* Main Action Buttons */}
                                 <div className="mt-8 space-y-3">
                                     <button
+                                        onClick={submitPO}
                                         disabled={!isAllMandatoryFilled}
                                         className={`w-full py-4 rounded-2xl font-bold text-[14px] uppercase  shadow-xl transition-all active:scale-[0.98] ${!isAllMandatoryFilled ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700 hover:shadow-blue-300'}`}
                                     >

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, VENDOR_ROUTES } from './vendorConstants';
 import { fetchGRNById, fetchPOById, approveGRN } from '../../api/vendorService';
+import { printData } from '../../utils/exportUtils';
 import toast from 'react-hot-toast';
+import { PrimaryBtn } from './VendorComponents';
 import {
     ArrowLeft, Package, FileText, Building2, Calendar, Hash,
     User, DollarSign, ClipboardList, CheckCircle2, Clock,
@@ -229,9 +231,18 @@ export default function GRNDetail() {
                         <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-[13px] font-bold rounded-xl hover:bg-slate-50 transition-all shadow-sm">
                             <Download size={14} /> Export
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-xl hover:bg-blue-700 transition-all shadow-sm">
-                            <Printer size={14} /> Print GRN
-                        </button>
+                        <PrimaryBtn 
+                            onClick={() => printData([grn], `GRN: ${grn.id}`, [
+                                { header: 'GRN #', accessor: 'grnNumber' },
+                                { header: 'PO Ref', accessor: 'purchaseOrderNumber' },
+                                { header: 'Vendor', accessor: 'vendorName' },
+                                { header: 'Date', accessor: 'receivedDate' },
+                                { header: 'Items', accessor: 'items' },
+                                { header: 'Amount', accessor: 'amount' },
+                            ])}
+                            icon={<Printer size={14} />}>
+                            Print GRN
+                        </PrimaryBtn>
                     </div>
                 </div>
 
@@ -331,7 +342,7 @@ export default function GRNDetail() {
                                         <tr key={item.id || i} className="hover:bg-slate-50/40 transition-colors group">
                                             <td className="px-6 py-4 text-[12px] text-slate-400 font-bold">{i + 1}</td>
                                             <td className="px-4 py-4">
-                                                <span className="font-mono text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                                <span className="font-mono text-[10px] font-semibold text-slate-600">
                                                     {item.productBarcode || item.vendorProductSku || 'No SKU'}
                                                 </span>
                                             </td>

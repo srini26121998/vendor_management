@@ -7,7 +7,7 @@ import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis
 } from 'recharts';
 import { getStatusStyle, formatCurrency } from './vendorConstants';
-import { Settings } from 'lucide-react';
+import { Settings, Diamond, Award, Medal, Trophy, PackageOpen, BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon, PieChart as PieChartIcon, Activity } from 'lucide-react';
 
 // ─── Column Configuration ──────────────────────────────────────────────────
 export const ColumnConfig = ({ cols, onChange, advMode, setAdvMode }) => {
@@ -211,17 +211,17 @@ export const SearchBar = ({ value, onChange, placeholder = 'Search...', extra })
 // ─── Primary Button ────────────────────────────────────────────────────────
 export const PrimaryBtn = ({ children, onClick, icon, small, className = '', disabled }) => (
     <button onClick={onClick} disabled={disabled}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-3.5 py-2 text-[11px]' : 'px-5 py-2.5 text-xs'} font-bold rounded-lg bg-green-800 text-white hover:bg-green-700 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 ${className} uppercase tracking-wider`}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-green-200 bg-green-50 text-green-800 shadow-sm hover:bg-green-100 hover:border-green-300 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
-        <span>{children}</span>
+        {children}
     </button>
 );
 
 export const SecondaryBtn = ({ children, onClick, icon, small, className = '' }) => (
     <button onClick={onClick}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-3.5 py-2 text-[11px]' : 'px-5 py-2.5 text-xs'} font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-300 ${className} uppercase tracking-wider`}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-green-200 bg-green-50 text-green-800 shadow-sm hover:bg-green-100 hover:border-green-300 active:scale-95 transition-all duration-300 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
-        <span>{children}</span>
+        {children}
     </button>
 );
 
@@ -289,14 +289,19 @@ export const VTable = ({ cols, rows, onRowClick, emptyMsg = 'No records found' }
 );
 
 // ─── Tier Badge ────────────────────────────────────────────────────────────
-const TIER_COLORS = { Platinum: { bg: '#e0e7ff', text: '#4338ca', emoji: '💎' }, Gold: { bg: '#fef3c7', text: '#92400e', emoji: '🥇' }, Silver: { bg: '#f1f5f9', text: '#475569', emoji: '🥈' }, Bronze: { bg: '#ffedd5', text: '#9a3412', emoji: '🥉' } };
+const TIER_COLORS = { 
+    Platinum: { bg: '#e0e7ff', text: '#4338ca', icon: <Diamond size={12} /> }, 
+    Gold: { bg: '#fef3c7', text: '#92400e', icon: <Award size={12} /> }, 
+    Silver: { bg: '#f1f5f9', text: '#475569', icon: <Medal size={12} /> }, 
+    Bronze: { bg: '#ffedd5', text: '#9a3412', icon: <Trophy size={12} /> } 
+};
 export const TierBadge = ({ tier }) => {
     if (!tier) return null;
     const c = TIER_COLORS[tier] || TIER_COLORS.Bronze;
     return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
             style={{ background: c.bg, color: c.text }}>
-            {c.emoji} {tier}
+            {c.icon} {tier}
         </span>
     );
 };
@@ -320,17 +325,17 @@ export const SnapshotCard = ({ title, items }) => (
 );
 
 // ─── Empty State ───────────────────────────────────────────────────────────
-export const EmptyState = ({ icon = '📦', title, desc, action }) => (
+export const EmptyState = ({ icon = <PackageOpen size={64} className="text-slate-300" />, title, desc, action }) => (
     <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="relative mb-8 mt-4 flex flex-col items-center justify-center">
             {/* 3D Floating Box Animation */}
-            <motion.div 
-                animate={{ 
+            <motion.div
+                animate={{
                     y: [0, -20, 0],
                     rotate: [-3, 3, -3]
                 }}
-                transition={{ 
-                    duration: 4, 
+                transition={{
+                    duration: 4,
                     repeat: Infinity,
                     ease: "easeInOut"
                 }}
@@ -340,12 +345,12 @@ export const EmptyState = ({ icon = '📦', title, desc, action }) => (
             </motion.div>
             {/* Animated Dynamic Shadow */}
             <motion.div
-                animate={{ 
+                animate={{
                     scale: [1, 0.5, 1],
                     opacity: [0.3, 0.1, 0.3]
                 }}
-                transition={{ 
-                    duration: 4, 
+                transition={{
+                    duration: 4,
                     repeat: Infinity,
                     ease: "easeInOut"
                 }}
@@ -385,12 +390,12 @@ export const Stepper = ({ steps, current }) => (
             return (
                 <React.Fragment key={i}>
                     <div className="flex flex-col items-center flex-shrink-0 relative group">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all duration-300 border-2
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold transition-all duration-300 border-2
                             ${done
                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                 : active
-                                    ? 'bg-green-800 border-green-800 text-white shadow-lg shadow-green-100'
-                                    : 'bg-white border-slate-200 text-slate-300'}`}>
+                                    ? 'bg-[#00b020] border-[#00b020] text-white shadow-lg shadow-green-100'
+                                    : 'bg-white border-slate-200 text-slate-400'}`}>
                             {done ? '✓' : icon}
                         </div>
                         <span className={`text-[9px] mt-2 font-bold text-center uppercase tracking-tight max-w-[70px] leading-tight transition-colors
@@ -508,11 +513,11 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 
 // ─── Multi Chart Switcher ──────────────────────────────────────────────────
 const CHART_TYPES_NAV = [
-    { key: 'bar', label: 'Bar', icon: '📊' },
-    { key: 'line', label: 'Line', icon: '📈' },
-    { key: 'area', label: 'Area', icon: '🎨' },
-    { key: 'pie', label: 'Pie', icon: '🥧' },
-    { key: 'radar', label: 'Radar', icon: '🕸️' },
+    { key: 'bar', label: 'Bar', icon: <BarChart3 size={14} /> },
+    { key: 'line', label: 'Line', icon: <LineChartIcon size={14} /> },
+    { key: 'area', label: 'Area', icon: <AreaChartIcon size={14} /> },
+    { key: 'pie', label: 'Pie', icon: <PieChartIcon size={14} /> },
+    { key: 'radar', label: 'Radar', icon: <Activity size={14} /> },
 ];
 
 const PIE_COLORS = ['#166534', '#16a34a', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];

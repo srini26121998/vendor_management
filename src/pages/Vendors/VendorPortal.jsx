@@ -47,7 +47,7 @@ export default function VendorPortal() {
         try {
             await vendorRespondToPO(id, 'ACCEPTED');
             toast.success(`PO Acknowledged successfully!`);
-            setPos(prev => prev.map(po => po.id === id ? { ...po, status: 'ACTIVE' } : po));
+            setPos(prev => prev.map(po => po.id === id ? { ...po, status: 'ACCEPTED' } : po));
         } catch (error) {
             toast.error('Failed to acknowledge PO');
         }
@@ -169,7 +169,7 @@ export default function VendorPortal() {
                                                         <SecondaryBtn icon={<Download size={14} />} onClick={() => toast.success(`PO PDF downloaded`)} className="flex-1 md:flex-none !py-1.5 !px-4 !text-[11px]">
                                                             PDF
                                                         </SecondaryBtn>
-                                                        {((po.status || '').toUpperCase() === 'PENDING' || (po.status || '').toUpperCase() === 'SENT') ? (
+                                                        {((po.status || '').toUpperCase() === 'ACTIVE') ? (
                                                             <PrimaryBtn icon={<CheckCircle size={14} />} onClick={() => handleAcknowledge(po.id)} className="flex-1 !py-1.5 !px-4 !text-[11px]">
                                                                 Acknowledge
                                                             </PrimaryBtn>

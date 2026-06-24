@@ -217,44 +217,48 @@ const Table = ({
                     <div className="text-xs text-slate-500 font-medium">
                         Showing <span className="font-bold text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="font-bold text-slate-700">{sortedData.length}</span> results
                     </div>
-                    <div className="flex items-center gap-1">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => prev - 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        
-                        {/* Page Numbers */}
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                let pageNum;
-                                if (totalPages <= 5) pageNum = i + 1;
-                                else if (currentPage <= 3) pageNum = i + 1;
-                                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                                else pageNum = currentPage - 2 + i;
-                                
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => setCurrentPage(pageNum)}
-                                        className={`w-9 h-9 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => prev - 1)}
+                                className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                            >
+                                &lt; Prev
+                            </button>
+                            
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
 
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => prev + 1)}
-                            className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
+                            {/* Page Numbers */}
+                            <div className="flex items-center gap-1 px-1">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum;
+                                    if (totalPages <= 5) pageNum = i + 1;
+                                    else if (currentPage <= 3) pageNum = i + 1;
+                                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                    else pageNum = currentPage - 2 + i;
+                                    
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`min-w-[36px] h-9 px-2 rounded-xl text-sm font-bold transition-all ${currentPage === pageNum ? 'bg-[#00b020] text-white shadow-md' : 'bg-transparent text-slate-600 hover:bg-slate-50'}`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => prev + 1)}
+                                className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+                            >
+                                Next &gt;
+                            </button>
+                        </div>
                 </div>
             )}
         </div>

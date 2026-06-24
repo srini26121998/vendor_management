@@ -391,30 +391,37 @@ export default function VendorReportsHub() {
                                                 : `Showing ${pagination.page * pagination.pageSize + 1}–${Math.min((pagination.page + 1) * pagination.pageSize, pagination.totalRecords)} of ${pagination.totalRecords} records`
                                             }
                                         </span>
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
                                             <button
                                                 disabled={!pagination.hasPrevious}
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                                                <ChevronLeft size={14} />
+                                                className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1">
+                                                &lt; Prev
                                             </button>
-                                            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                                // Simple windowing for page numbers
-                                                let p = i + 1;
-                                                if (pagination.totalPages > 5 && page > 3) p = page - 2 + i;
-                                                if (p > pagination.totalPages) return null;
-                                                return (
-                                                    <button key={p} onClick={() => setPage(p)}
-                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-bold transition-all ${page === p ? 'bg-green-800 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
-                                                        {p}
-                                                    </button>
-                                                )
-                                            })}
+                                            
+                                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+                                            <div className="flex items-center gap-1 px-1">
+                                                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                                    let p = i + 1;
+                                                    if (pagination.totalPages > 5 && page > 3) p = page - 2 + i;
+                                                    if (p > pagination.totalPages) return null;
+                                                    return (
+                                                        <button key={p} onClick={() => setPage(p)}
+                                                            className={`min-w-[36px] h-9 px-2 rounded-xl text-sm font-bold transition-all ${page === p ? 'bg-[#00b020] text-white shadow-md' : 'bg-transparent text-slate-600 hover:bg-slate-50'}`}>
+                                                            {p}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+
+                                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
                                             <button
                                                 disabled={!pagination.hasNext}
                                                 onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                                                <ChevronRight size={14} />
+                                                className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1">
+                                                Next &gt;
                                             </button>
                                         </div>
                                     </div>

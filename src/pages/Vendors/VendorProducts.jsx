@@ -177,7 +177,7 @@ export default function VendorProducts() {
     const [sortConfig, setSortConfig] = useState({ key: 'productName', dir: 'asc' });
 
     // Layout and Drag states
-    const [viewMode, setViewMode] = useState('rack');
+    const [viewMode, setViewMode] = useState('grid');
     const [draggedProduct, setDraggedProduct] = useState(null);
     const [draggedIndex, setDraggedIndex] = useState(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
