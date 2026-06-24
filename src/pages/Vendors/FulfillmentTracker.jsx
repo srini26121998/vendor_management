@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, VENDOR_ROUTES } from './vendorConstants';
 import { fetchPurchaseOrders } from '../../api/vendorService';
 import { PageHeader, VCard, SectionTitle, StatusBadge, SecondaryBtn } from './VendorComponents';
+import { CheckCircle2, Clock, RotateCw, AlertTriangle, Settings, Settings2, Calendar, Eye, EyeOff, LayoutGrid, List } from 'lucide-react';
 
 const PIPELINE_STAGES = [
     { key: 'created', label: 'PO Created', color: '#94a3b8' },
@@ -76,8 +77,8 @@ export default function FulfillmentTracker() {
     };
 
     const SortIcon = ({ currentKey }) => {
-        if (sortConfig.key !== currentKey) return <span className="ml-1 opacity-20 text-[8px]">⇅</span>;
-        return <span className="ml-1 text-blue-500 text-[8px]">{sortConfig.dir === 'asc' ? '▲' : '▼'}</span>;
+        if (sortConfig.key !== currentKey) return <span className="ml-1 opacity-20 text-[10px]">⇅</span>;
+        return <span className="ml-1 text-green-800 text-[10px]">{sortConfig.dir === 'asc' ? '▲' : '▼'}</span>;
     };
 
     const toggleCol = (id) => {
@@ -138,11 +139,11 @@ export default function FulfillmentTracker() {
                     <div className="flex items-center gap-3">
                         <button onClick={() => setAdvMode(!advMode)}
                             className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
-                            ⚙️ {advMode ? 'Config Active' : 'View Config'}
+                            <Settings size={16} /> {advMode ? 'Config Active' : 'View Config'}
                         </button>
                         <button onClick={() => setView(v => v === 'pipeline' ? 'table' : 'pipeline')}
                             className="bg-white px-4 py-2 rounded-lg border border-gray-200 flex items-center gap-2 text-[13px] text-gray-600 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
-                            {view === 'pipeline' ? '☰ Table View' : '⊞ Pipeline View'}
+                            {view === 'pipeline' ? <><List size={16} /> Table View</> : <><LayoutGrid size={16} /> Pipeline View</>}
                         </button>
                     </div>
                 </div>
@@ -152,15 +153,15 @@ export default function FulfillmentTracker() {
                 <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm mb-6 animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
                         <h3 className="text-[11px] font-bold text-gray-400 uppercase  flex items-center gap-2">
-                            <span>🛠️</span> Column Configuration Mode
+                            <Settings2 size={14} className="text-blue-500" /> Column Configuration Mode
                         </h3>
                         <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Drag to reorder • Toggle visibility</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {cols.map(c => (
                             <button key={c.id} onClick={() => toggleCol(c.id)}
-                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${c.visible ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400 opacity-60'}`}>
-                                {c.visible ? '👁️' : '🚫'} {c.label}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${c.visible ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400 opacity-60'}`}>
+                                {c.visible ? <Eye size={14} /> : <EyeOff size={14} />} {c.label}
                             </button>
                         ))}
                     </div>
@@ -170,10 +171,10 @@ export default function FulfillmentTracker() {
             {/* KPI Section */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'Fulfillment Rate', value: `${fulfillmentRate}%`, color: 'text-emerald-600', icon: '✅', bg: 'bg-emerald-50' },
-                    { label: 'On-Time Delivery', value: '87.3%', color: 'text-blue-600', icon: '⏱', bg: 'bg-blue-50' },
-                    { label: 'Avg Cycle Time', value: '8.4 days', color: 'text-amber-600', icon: '🔄', bg: 'bg-amber-50' },
-                    { label: 'Stuck > SLA', value: '3', color: 'text-rose-600', icon: '🚨', bg: 'bg-rose-50' },
+                    { label: 'Fulfillment Rate', value: `${fulfillmentRate}%`, color: 'text-emerald-600', icon: <CheckCircle2 size={18} />, bg: 'bg-emerald-50' },
+                    { label: 'On-Time Delivery', value: '87.3%', color: 'text-blue-600', icon: <Clock size={18} />, bg: 'bg-blue-50' },
+                    { label: 'Avg Cycle Time', value: '8.4 days', color: 'text-amber-600', icon: <RotateCw size={18} />, bg: 'bg-amber-50' },
+                    { label: 'Stuck > SLA', value: '3', color: 'text-rose-600', icon: <AlertTriangle size={18} />, bg: 'bg-rose-50' },
                 ].map((k, i) => (
                     <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                         <div className={`w-8 h-8 rounded-lg ${k.bg} flex items-center justify-center text-sm mb-3`}>{k.icon}</div>
@@ -191,11 +192,10 @@ export default function FulfillmentTracker() {
                             <div className="flex gap-4 mb-4">
                                 {PIPELINE_STAGES.map((stage, i) => (
                                     <div key={i} className="w-64 flex-shrink-0">
-                                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-[12px] font-bold text-white shadow-md transition-transform hover:-translate-y-0.5"
-                                            style={{ background: `linear-gradient(135deg, ${stage.color}dd, ${stage.color})` }}>
-                                            <span className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-[10px] shadow-sm">{i + 1}</span>
+                                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-[12px] font-bold text-slate-800 bg-white border border-slate-200 shadow-sm transition-transform hover:-translate-y-0.5">
+                                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-sm text-white" style={{ backgroundColor: stage.color }}>{i + 1}</span>
                                             <span className="uppercase tracking-wider">{stage.label}</span>
-                                            <span className="ml-auto bg-white/20 px-2 py-0.5 rounded-md text-[10px]">
+                                            <span className="ml-auto px-2 py-0.5 rounded-md text-[10px] font-bold" style={{ backgroundColor: `${stage.color}15`, color: stage.color }}>
                                                 {purchaseOrders.filter(po => po.stage === i).length}
                                             </span>
                                         </div>
@@ -233,7 +233,7 @@ export default function FulfillmentTracker() {
                                                             </div>
 
                                                             <div className="flex items-center gap-2 text-[11px] text-gray-500 font-medium">
-                                                                <span className="text-gray-400">📅</span> Delivery: <span className="text-gray-700 font-semibold">{formatDate(po.delivery)}</span>
+                                                                <Calendar size={12} className="text-gray-400" /> Delivery: <span className="text-gray-700 font-semibold">{formatDate(po.delivery)}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -253,11 +253,11 @@ export default function FulfillmentTracker() {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <VCard noPad>
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[1000px]">
                                 <thead>
-                                    <tr className="text-[11px] text-gray-400 font-bold bg-gray-50/50 border-b border-gray-50">
+                                    <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
                                         {visibleCols.map(col => (
                                             <th key={col.id}
                                                 draggable={advMode}
@@ -265,9 +265,9 @@ export default function FulfillmentTracker() {
                                                 onDragOver={(e) => e.preventDefault()}
                                                 onDrop={(e) => handleDrop(e, col.id)}
                                                 onClick={() => col.sortable && handleSort(col.id)}
-                                                className={`px-6 py-4 uppercase tracking-wider transition-all ${col.sortable && !advMode ? 'cursor-pointer hover:text-gray-600' : ''} ${advMode ? 'bg-blue-50/50 cursor-move border-x border-blue-50/20' : ''}`}>
-                                                <div className="flex items-center">
-                                                    {col.label}
+                                                className={`px-4 py-4 cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap ${advMode ? 'bg-blue-50/50 cursor-move border-x border-blue-50/20' : ''}`}>
+                                                <div className="flex items-center gap-1.5">
+                                                    {col.label.toUpperCase()}
                                                     {col.sortable && !advMode && <SortIcon currentKey={col.id} />}
                                                     {advMode && <span className="ml-auto opacity-40 text-[10px]">⋮⋮</span>}
                                                 </div>
@@ -275,22 +275,22 @@ export default function FulfillmentTracker() {
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody className="text-[13px] divide-y divide-gray-50">
+                                <tbody className="">
                                     {paginatedData.map((po, i) => {
                                         const stage = PIPELINE_STAGES[Math.min(po.stage, PIPELINE_STAGES.length - 1)];
                                         const days = Math.floor(Math.random() * 10) + 1;
                                         const sla = days > 5 ? 'overdue' : days > 3 ? 'pending' : 'approved';
                                         return (
-                                            <tr key={po.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <tr key={po.id} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
                                                 {cols.find(c => c.id === 'id')?.visible && (
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
                                                         <span className="font-mono text-[11px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded inline-block border border-blue-100/50">
                                                             {po.poNumber}
                                                         </span>
                                                     </td>
                                                 )}
                                                 {cols.find(c => c.id === 'vendor')?.visible && (
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold text-[10px] border border-gray-200/50 group-hover:scale-110 transition-transform">
                                                                 {po.vendor.charAt(0)}
@@ -303,10 +303,10 @@ export default function FulfillmentTracker() {
                                                     </td>
                                                 )}
                                                 {cols.find(c => c.id === 'amount')?.visible && (
-                                                    <td className="px-6 py-4 font-bold text-gray-900">{formatCurrency(po.amount)}</td>
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 font-bold text-gray-900">{formatCurrency(po.amount)}</td>
                                                 )}
                                                 {cols.find(c => c.id === 'stage')?.visible && (
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
                                                         <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border"
                                                             style={{
                                                                 backgroundColor: `${stage.color}10`,
@@ -318,7 +318,7 @@ export default function FulfillmentTracker() {
                                                     </td>
                                                 )}
                                                 {cols.find(c => c.id === 'duration')?.visible && (
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
                                                         <div className="flex flex-col">
                                                             <span className="font-bold text-gray-700">{po.duration} days</span>
                                                             <span className="text-[10px] text-gray-400 uppercase tracking-tighter">In Queue</span>
@@ -326,10 +326,10 @@ export default function FulfillmentTracker() {
                                                     </td>
                                                 )}
                                                 {cols.find(c => c.id === 'sla')?.visible && (
-                                                    <td className="px-6 py-4"><StatusBadge status={sla} size="xs" /></td>
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200"><StatusBadge status={sla} size="xs" /></td>
                                                 )}
                                                 {cols.find(c => c.id === 'status')?.visible && (
-                                                    <td className="px-6 py-4"><StatusBadge status={po.status} size="xs" /></td>
+                                                    <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200"><StatusBadge status={po.status} size="xs" /></td>
                                                 )}
                                             </tr>
                                         );
@@ -337,38 +337,40 @@ export default function FulfillmentTracker() {
                                 </tbody>
                             </table>
                         </div>
-                    </VCard>
+                    </div>
                 </div>
             )}
 
             {/* ── Common Pagination ── */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between bg-white px-5 py-4 rounded-xl border border-gray-100 shadow-sm mt-6">
-                    <div className="text-[13px] font-medium text-gray-500">
-                        Showing <span className="font-bold text-blue-600">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-blue-600">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="font-bold text-gray-700">{sortedData.length}</span> entries
+            {totalPages > 0 && (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pb-12 mt-4">
+                    <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                        Showing <span className="text-slate-700">{sortedData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="text-slate-700">{sortedData.length}</span> entries
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                    <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <button
                             disabled={currentPage === 1}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:text-blue-600 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-600 transition-all"
-                        >
-                            <span className="text-lg leading-none">‹</span> Prev
+                            onClick={() => setCurrentPage(s => s - 1)}
+                            className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                            Prev
                         </button>
-                        <div className="flex items-center gap-1.5 px-2">
+                        <div className="flex items-center gap-1 px-2 border-x border-slate-100">
                             {[...Array(totalPages)].map((_, i) => (
-                                <button key={i} onClick={() => setCurrentPage(i + 1)}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-200 scale-105' : 'bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent hover:border-gray-200'}`}>
+                                <button
+                                    key={i}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-all duration-300 ${currentPage === i + 1 ? 'bg-green-800 text-white shadow-md shadow-green-200/50 scale-105' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                                     {i + 1}
                                 </button>
                             ))}
                         </div>
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                        <button
                             disabled={currentPage === totalPages}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold text-gray-600 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:text-blue-600 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-gray-600 transition-all"
-                        >
-                            Next <span className="text-lg leading-none">›</span>
+                            onClick={() => setCurrentPage(s => s + 1)}
+                            className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                            Next
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                         </button>
                     </div>
                 </div>

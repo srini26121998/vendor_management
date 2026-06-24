@@ -161,7 +161,7 @@ export const PageHeader = ({ title, subtitle, actions, badge }) => (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 animate-fadeIn">
         <div>
             <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold tracking-tight text-[#1e293b] drop-shadow-sm">{title}</h1>
+                <h1 className="text-xl font-bold tracking-tight text-[#1e293b]">{title}</h1>
                 {badge && (
                     <span className="px-2 py-0.5 text-[9px] font-bold rounded-lg uppercase tracking-wide flex items-center shadow-lg border border-green-200"
                         style={{ background: 'linear-gradient(135deg, #15803d, #166534)', color: '#fff' }}>
@@ -457,7 +457,7 @@ export const FilterBar = ({ filters, active, onChange }) => (
         {filters.map(f => (
             <button key={f.value} onClick={() => onChange(f.value)}
                 className={`px-5 py-1.5 text-[12px] font-bold rounded-full border transition-all duration-300 uppercase tracking-wider ${active === f.value
-                    ? 'border-green-800 bg-green-800 text-white shadow-md shadow-green-100'
+                    ? 'border-green-200 bg-green-50 text-green-800 shadow-sm'
                     : 'border-gray-100 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'}`}>
                 {f.label} {f.count !== undefined && <span className="ml-1 opacity-50">[{f.count}]</span>}
             </button>

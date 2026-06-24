@@ -163,7 +163,7 @@ export default function PurchaseInvoice() {
     const visibleCols = cols.filter(c => c.visible);
 
     return (
-        <div className="w-full bg-slate-50/30 min-h-screen p-4 sm:p-6 pb-32" style={{ fontFamily: '"Inter", sans-serif' }}>
+        <div className="w-full bg-[#F3F5F9] min-h-screen p-4 sm:p-6 pb-32" style={{ fontFamily: '"Inter", sans-serif' }}>
             <div className="max-w-[1600px] mx-auto">
                 {/* ── Header ── */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -172,21 +172,16 @@ export default function PurchaseInvoice() {
                         <p className="text-sm text-slate-500 mt-1">3-way match verification with ITC tracking and reconciliation</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setAdvMode(!advMode)}
-                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                        <PrimaryBtn onClick={() => setAdvMode(!advMode)}>
                             <Settings className={`w-4 h-4 ${advMode ? 'animate-spin' : ''}`} />
                             {advMode ? 'Config Active' : 'View Config'}
-                        </button>
-                        <button onClick={() => navigate(VENDOR_ROUTES.ocrInvoice)}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm">
+                        </PrimaryBtn>
+                        <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.ocrInvoice)}>
                             <span className="text-base">📷</span> Scan Invoice OCR
-                        </button>
-                        <button
-                            onClick={() => navigate(VENDOR_ROUTES.invoiceCreate)}
-                            className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
-                        >
-                            <span className="text-lg">+</span> Record Invoice
-                        </button>
+                        </PrimaryBtn>
+                        <PrimaryBtn onClick={() => navigate(VENDOR_ROUTES.invoiceCreate)}>
+                            + Record Invoice
+                        </PrimaryBtn>
                     </div>
                 </div>
 
@@ -238,9 +233,11 @@ export default function PurchaseInvoice() {
                                     <button
                                         key={f.value}
                                         onClick={() => { setFilter(f.value); setCurrentPage(1); }}
-                                        className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${filter === f.value
-                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                        className={`group flex items-center justify-center gap-2 px-5 py-1.5 text-[11px] font-bold rounded-full border active:scale-95 transition-all duration-300 whitespace-nowrap uppercase tracking-wider ${
+                                            filter === f.value 
+                                                ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' 
+                                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                        }`}
                                     >
                                         {f.label}
                                     </button>
@@ -286,7 +283,7 @@ export default function PurchaseInvoice() {
                                         {visibleCols.map(col => (
                                             <td key={col.id} className="px-6 py-4">
                                                 {col.id === 'id' && (
-                                                    <span className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-xs font-bold font-mono">
+                                                    <span className="px-2 py-1 text-slate-800 rounded-md text-[11px] font-mono font-bold">
                                                         {inv.id}
                                                     </span>
                                                 )}

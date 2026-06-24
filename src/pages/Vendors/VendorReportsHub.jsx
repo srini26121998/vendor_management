@@ -227,12 +227,12 @@ export default function VendorReportsHub() {
                             </div>
                             <div className="p-2 space-y-1">
                                 {REPORT_CATEGORIES.map(r => (
-                                    <button key={r.key} onClick={() => changeReport(r.key)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${selectedKey === r.key ? 'bg-green-800 text-white shadow-md shadow-green-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-                                        <span className={`${selectedKey === r.key ? 'text-white' : 'text-slate-400'}`}>{r.icon}</span>
+                                <button key={r.key} onClick={() => changeReport(r.key)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${selectedKey === r.key ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                                        <span className={`${selectedKey === r.key ? 'text-green-800' : 'text-slate-400'}`}>{r.icon}</span>
                                         <div className="text-left overflow-hidden">
                                             <div className="text-[13px] font-bold truncate">{r.name}</div>
-                                            <div className={`text-[9px] font-bold uppercase ${selectedKey === r.key ? 'text-green-100' : 'text-slate-400'}`}>Insights Available</div>
+                                            <div className={`text-[9px] font-bold uppercase ${selectedKey === r.key ? 'text-green-600' : 'text-slate-400'}`}>Insights Available</div>
                                         </div>
                                     </button>
                                 ))}
@@ -305,7 +305,7 @@ export default function VendorReportsHub() {
                                             <span className="text-[11px] font-bold text-slate-400 uppercase ">Time Period:</span>
                                             {['TODAY', 'WEEK', 'MONTH', 'YEAR'].map(p => (
                                                 <button key={p} onClick={() => setTimePeriod(p)}
-                                                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border transition-all ${timePeriod === p ? 'bg-blue-50 text-blue-600 border-blue-100' : 'text-slate-400 border-transparent hover:border-slate-200'}`}>
+                                                    className={`text-[10px] font-bold px-4 py-1.5 rounded-full border transition-all ${timePeriod === p ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'text-slate-400 border-transparent hover:border-slate-200'}`}>
                                                     {p}
                                                 </button>
                                             ))}
@@ -314,7 +314,7 @@ export default function VendorReportsHub() {
                                 </VCard>
 
                                 {/* Table */}
-                                <VCard noPad className="overflow-hidden border-slate-200 relative">
+                                <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden relative">
                                     {isLoading && (
                                         <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                                             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-lg border border-slate-100">
@@ -324,29 +324,29 @@ export default function VendorReportsHub() {
                                         </div>
                                     )}
 
-                                    <div className="px-5 py-3.5 border-b border-slate-100 bg-white flex items-center justify-between">
+                                    <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between">
                                         <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-tight">Detailed Report Records</h3>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase ">{pagination.totalRecords} Results</span>
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left min-w-[640px]">
-                                            <thead className="bg-white border-b border-slate-100 text-[10px] font-bold uppercase ">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50/75 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                                 <tr>
                                                     {columns.map(({ col, label }) => (
                                                         <th key={col}
                                                             onClick={() => handleSort(col)}
-                                                            className={`px-5 py-3.5 text-left cursor-pointer select-none whitespace-nowrap transition-colors hover:bg-slate-100/80 ${sortCol === col ? 'text-green-800' : 'text-slate-400'}`}>
+                                                            className={`px-6 py-4 cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap ${sortCol === col ? 'text-slate-800' : ''}`}>
                                                             {label}
                                                             <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
                                                         </th>
                                                     ))}
                                                     {selectedKey === 'master' && (
-                                                        <th className="px-5 py-3.5 text-right text-slate-400">Action</th>
+                                                        <th className="px-6 py-4 text-right">Action</th>
                                                     )}
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-50 text-[13px]">
+                                            <tbody className="">
                                                 {tableData.length === 0 && !isLoading ? (
                                                     <tr>
                                                         <td colSpan={10} className="px-5 py-10 text-center text-slate-400 font-bold text-[12px]">
@@ -354,9 +354,9 @@ export default function VendorReportsHub() {
                                                         </td>
                                                     </tr>
                                                 ) : tableData.map((row, idx) => (
-                                                    <tr key={row.id || idx} className="hover:bg-green-50/30 transition-colors">
+                                                    <tr key={row.id || idx} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 border-b border-slate-200 last:border-0 text-[13px]">
                                                         {columns.map(({ col }) => (
-                                                            <td key={col} className="px-5 py-3.5">
+                                                            <td key={col} className="px-6 py-3.5 whitespace-nowrap bg-inherit">
                                                                 {col === 'status' || col === 'complianceStatus' ? (
                                                                     <StatusBadge status={row[col]} size="xs" />
                                                                 ) : col.toLowerCase().includes('amount') || col.includes('outstanding') || col.includes('current') || col.includes('Days') ? (
@@ -369,10 +369,10 @@ export default function VendorReportsHub() {
                                                             </td>
                                                         ))}
                                                         {selectedKey === 'master' && (
-                                                            <td className="px-5 py-3.5 text-right">
+                                                            <td className="px-6 py-3.5 text-right">
                                                                 <button
                                                                     onClick={() => navigate(`${VENDOR_ROUTES.detail}/${row.id}`)}
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-800 hover:bg-green-950 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all shadow-sm">
+                                                                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 text-[10px] font-bold rounded-full uppercase tracking-wider transition-all shadow-sm">
                                                                     Profile <ArrowRight size={11} />
                                                                 </button>
                                                             </td>
@@ -384,48 +384,46 @@ export default function VendorReportsHub() {
                                     </div>
 
                                     {/* Pagination */}
-                                    <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-between gap-4 flex-wrap">
+                                    <div className="px-6 py-4 bg-white flex items-center justify-between gap-4 flex-wrap">
                                         <span className="text-[11px] text-slate-400 font-bold">
                                             {pagination.totalRecords === 0
                                                 ? 'No records'
                                                 : `Showing ${pagination.page * pagination.pageSize + 1}–${Math.min((pagination.page + 1) * pagination.pageSize, pagination.totalRecords)} of ${pagination.totalRecords} records`
                                             }
                                         </span>
-                                        <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
+                                        <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
                                             <button
                                                 disabled={!pagination.hasPrevious}
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                                                className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1">
-                                                &lt; Prev
+                                                className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                                                Prev
                                             </button>
                                             
-                                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-
-                                            <div className="flex items-center gap-1 px-1">
+                                            <div className="flex items-center gap-1 px-2 border-x border-slate-100">
                                                 {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                                                     let p = i + 1;
                                                     if (pagination.totalPages > 5 && page > 3) p = page - 2 + i;
                                                     if (p > pagination.totalPages) return null;
                                                     return (
                                                         <button key={p} onClick={() => setPage(p)}
-                                                            className={`min-w-[36px] h-9 px-2 rounded-xl text-sm font-bold transition-all ${page === p ? 'bg-[#00b020] text-white shadow-md' : 'bg-transparent text-slate-600 hover:bg-slate-50'}`}>
+                                                            className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-all duration-300 ${page === p ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                                                             {p}
                                                         </button>
                                                     )
                                                 })}
                                             </div>
 
-                                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-
                                             <button
                                                 disabled={!pagination.hasNext}
                                                 onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                                                className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1">
-                                                Next &gt;
+                                                className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                                                Next
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                                             </button>
                                         </div>
                                     </div>
-                                </VCard>
+                                </div>
 
                             </motion.div>
                         </AnimatePresence>

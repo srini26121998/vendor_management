@@ -3,17 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate, VENDOR_ROUTES } from './vendorConstants';
 import { fetchInvoices } from '../../api/vendorService';
 import {
-    VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, EmptyState, VendorBreadcrumb, MultiChart, ColumnConfig
+    VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, EmptyState, VendorBreadcrumb, ColumnConfig
 } from './VendorComponents';
 import { ArrowLeft, Settings, CreditCard, Database, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const PAYMENT_MODES = [
-    { mode: 'NEFT', time: 'Same Day', icon: '🏦' }, { mode: 'RTGS', time: '2-4 hrs', icon: '⚡' },
-    { mode: 'UPI', time: 'Instant', icon: '📱' }, { mode: 'Cheque', time: '2-3 days', icon: '📝' }, { mode: 'Cash', time: 'Instant', icon: '💵' },
-];
 
-const DONUT_COLORS = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'];
 const BUCKET_COLORS = {
     '0-30 DAYS': 'text-emerald-600 bg-emerald-50 border-emerald-100',
     '31-60 DAYS': 'text-amber-600 bg-amber-50 border-amber-100',
@@ -214,7 +209,7 @@ export default function PayablesDashboard() {
 
                     <div className="flex items-center gap-2">
                         <button onClick={() => setAdvMode(!advMode)}
-                            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-lg border transition-all shadow-sm ${advMode ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                            className={`flex items-center gap-2 px-6 py-2.5 text-[11px] uppercase tracking-wider font-bold rounded-full border transition-all shadow-sm ${advMode ? 'bg-green-50 text-green-800 border-green-200 shadow-green-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                             <Settings className={`w-4 h-4 ${advMode ? 'animate-spin' : ''}`} />
                             {advMode ? 'Config Active' : 'View Config'}
                         </button>
@@ -239,7 +234,7 @@ export default function PayablesDashboard() {
                     {/* All bucket reset */}
                     <button onClick={() => { setActiveBucket('all'); setCurrentPage(1); }}
                         className={`p-4 rounded-xl text-left border transition-all bg-white shadow-sm hover:shadow-md ${
-                            activeBucket === 'all' ? 'border-blue-400 ring-1 ring-blue-400' : 'border-gray-100'
+                            activeBucket === 'all' ? 'bg-green-50 border-green-200 ring-1 ring-green-200' : 'border-gray-100'
                         }`}>
                         <div className="text-[11px] font-bold text-slate-500 uppercase mb-1">All Invoices</div>
                         <div className="text-xl font-bold text-gray-900">{invoices.length}</div>
@@ -247,7 +242,7 @@ export default function PayablesDashboard() {
                     </button>
                     {agingData.map((ag, i) => (
                         <button key={i} onClick={() => { setActiveBucket(ag.range); setCurrentPage(1); }}
-                            className={`p-4 rounded-xl text-left border transition-all relative overflow-hidden group bg-white shadow-sm hover:shadow-md ${activeBucket === ag.range ? 'border-blue-400 ring-1 ring-blue-400' : 'border-gray-100'}`}>
+                            className={`p-4 rounded-xl text-left border transition-all relative overflow-hidden group bg-white shadow-sm hover:shadow-md ${activeBucket === ag.range ? 'bg-green-50 border-green-200 ring-1 ring-green-200' : 'border-gray-100'}`}>
                             <div className="flex items-center justify-between mb-2 relative z-10">
                                 <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${BUCKET_COLORS[ag.range]}`}>{ag.range}</span>
                                 <span className="text-[11px] font-bold text-gray-400">{ag.count} Items</span>
@@ -267,7 +262,9 @@ export default function PayablesDashboard() {
                             <p className="text-base font-bold tracking-tight text-gray-800">Available Overdraft: <span className="text-emerald-600 font-bold">₹50,000</span> <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg ml-3 border border-blue-100">HDFC PLATINUM FLOW</span></p>
                         </div>
                     </div>
-                    <button onClick={() => setShowFacility(true)} className="px-4 py-2 bg-blue-600 text-white text-[11px] font-bold uppercase rounded-lg hover:bg-blue-700 transition-all shadow-sm">Facility Hub</button>
+                    <SecondaryBtn small onClick={() => setShowFacility(true)}>
+                        Facility Hub
+                    </SecondaryBtn>
                 </div>
 
                 {/* ── Invoice Search Bar ── */}
@@ -287,22 +284,22 @@ export default function PayablesDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    <div className="lg:col-span-9">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="lg:col-span-12">
+                        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="text-[11px] text-gray-400 font-bold bg-gray-50/50 border-b border-gray-50">
+                                        <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
 
                                             {visibleCols.map(col => (
-                                                <th key={col.id}
-                                                    draggable={advMode}
-                                                    onDragStart={(e) => handleDragStart(e, col.id)}
-                                                    onDragOver={(e) => e.preventDefault()}
-                                                    onDrop={(e) => handleDrop(e, col.id)}
-                                                    className={`px-4 py-4 uppercase tracking-wider transition-all 
-                                                        ${col.sortable && !advMode ? 'cursor-pointer hover:bg-gray-100/50 hover:text-gray-700' : ''}
-                                                        ${advMode ? 'bg-blue-50/50 cursor-move border-x border-blue-50/20' : ''}`}>
+                                                    <th key={col.id}
+                                                        draggable={advMode}
+                                                        onDragStart={(e) => handleDragStart(e, col.id)}
+                                                        onDragOver={(e) => e.preventDefault()}
+                                                        onDrop={(e) => handleDrop(e, col.id)}
+                                                        className={`px-4 py-4 uppercase tracking-wider transition-all 
+                                                            ${col.sortable && !advMode ? 'cursor-pointer hover:text-slate-900' : ''}
+                                                            ${advMode ? 'bg-blue-50/50 cursor-move border-x border-blue-50/20' : ''}`}>
                                                     <div className="flex items-center gap-2">
                                                         {col.label} {col.sortable && !advMode && <SortIndicator column={col.id} />}
                                                     </div>
@@ -323,7 +320,7 @@ export default function PayablesDashboard() {
                                             const diffDays = Math.floor((today - due) / (1000 * 60 * 60 * 24));
                                             const daysOverdue = inv.status === 'paid' ? null : diffDays;
                                             return (
-                                                <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors group">
+                                                <tr key={inv.id} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group border-b border-slate-200 last:border-0">
                                                     {visibleCols.map(col => (
                                                         <td key={col.id} className="px-4 py-4">
                                                             {col.id === 'vendor' && (
@@ -357,14 +354,13 @@ export default function PayablesDashboard() {
                                                             {col.id === 'status' && <StatusBadge status={inv.status} size="xs" />}
                                                             {col.id === 'actions' && (
                                                                 inv.status === 'paid' ? (
-                                                                    <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-slate-200/50 inline-block shadow-sm select-none">
+                                                                    <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider rounded-full border border-slate-200/50 inline-block shadow-sm select-none">
                                                                         Settled
                                                                     </span>
                                                                 ) : (
-                                                                    <button onClick={() => navigate(VENDOR_ROUTES.paymentProcess, { state: { invoiceId: inv.id } })}
-                                                                        className="px-4 py-1.5 bg-blue-600 text-white text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-blue-700 transition-all shadow-sm">
+                                                                    <SecondaryBtn small onClick={() => navigate(VENDOR_ROUTES.paymentProcess, { state: { invoiceId: inv.id } })}>
                                                                         Pay Now
-                                                                    </button>
+                                                                    </SecondaryBtn>
                                                                 )
                                                             )}
                                                         </td>
@@ -378,72 +374,43 @@ export default function PayablesDashboard() {
                         </div>
 
                         {/* ── Pagination ── */}
-                        <div className="flex items-center justify-between py-3 px-2">
-                            <div className="text-[12px] font-medium text-gray-400">
-                                Showing <span className="font-bold text-gray-700">{paginatedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-bold text-gray-700">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="font-bold text-gray-700">{sortedData.length}</span> entries
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 px-2 mt-2">
+                            <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+                                Showing <span className="text-slate-700">{paginatedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="text-slate-700">{sortedData.length}</span> entries
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg text-[12px] font-bold text-gray-500 bg-white border border-gray-100 shadow-sm hover:bg-gray-50 disabled:opacity-30 transition-all">
-                                    ← Prev
+                            <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                                    Prev
                                 </button>
-                                <div className="flex items-center gap-1 mx-1">
-                                    {[...Array(totalPages)].map((_, i) => (
-                                        <button key={i} onClick={() => setCurrentPage(i + 1)}
-                                            className={`w-9 h-9 rounded-lg text-[12px] font-bold transition-all shadow-sm ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-gray-400 hover:text-gray-700 border border-gray-50'}`}>
-                                            {i + 1}
-                                        </button>
-                                    ))}
+                                
+                                <div className="flex items-center gap-1 px-2 border-x border-slate-100">
+                                    {Array.from({ length: totalPages }, (_, i) => {
+                                        const p = i + 1;
+                                        return (
+                                            <button key={p} onClick={() => setCurrentPage(p)}
+                                                className={`w-9 h-9 flex items-center justify-center rounded-xl text-[13px] font-bold transition-all duration-300 ${currentPage === p ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
+                                                {p}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg text-[12px] font-bold text-gray-500 bg-white border border-gray-100 shadow-sm hover:bg-gray-50 disabled:opacity-30 transition-all">
-                                    Next →
+
+                                <button
+                                    disabled={currentPage === totalPages || totalPages === 0}
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    className="px-4 py-2 rounded-xl text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all flex items-center gap-1">
+                                    Next
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* ── Sidebar ── */}
-                    <div className="lg:col-span-3 space-y-4">
-                        <VCard>
-                            <SectionTitle>Payout Modes</SectionTitle>
-                            <div className="space-y-2 mt-3">
-                                {PAYMENT_MODES.map(pm => (
-                                    <div key={pm.mode} className="flex items-center justify-between p-3 rounded-lg border border-gray-50 bg-white hover:border-blue-200 cursor-pointer transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-base group-hover:scale-110 transition-transform">{pm.icon}</div>
-                                            <div>
-                                                <p className="text-[11px] font-bold text-gray-900 uppercase leading-none mb-0.5">{pm.mode}</p>
-                                                <p className="text-[10px] text-gray-400 font-semibold">{pm.time}</p>
-                                            </div>
-                                        </div>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-blue-500 transition-colors" />
-                                    </div>
-                                ))}
-                            </div>
-                        </VCard>
 
-                        <VCard>
-                            <MultiChart
-                                title="Aging Analytics"
-                                data={agingData}
-                                series={[
-                                    { key: 'amount', label: 'Amount', color: '#3b82f6' }
-                                ]}
-                                xAxisKey="range"
-                                height={200}
-                                defaultType="pie"
-                            />
-                            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 pt-3 border-t border-gray-50">
-                                {agingData.map((ag, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap">{ag.range.split(' ')[0]}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </VCard>
-                    </div>
                 </div>
 
 

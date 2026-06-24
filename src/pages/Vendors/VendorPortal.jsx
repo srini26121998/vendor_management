@@ -113,10 +113,10 @@ export default function VendorPortal() {
                             <div className="p-2 space-y-1">
                                 {TABS.map(t => (
                                     <button key={t.key} onClick={() => setTab(t.key)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold transition-all ${tab === t.key ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-[13px] font-bold transition-all ${tab === t.key ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                                         {t.icon}
                                         {t.label}
-                                        {tab === t.key && <motion.div layoutId="tab-dot" className="ml-auto w-1.5 h-1.5 rounded-full bg-white" />}
+                                        {tab === t.key && <motion.div layoutId="tab-dot" className="ml-auto w-1.5 h-1.5 rounded-full bg-green-800" />}
                                     </button>
                                 ))}
                             </div>
@@ -152,7 +152,7 @@ export default function VendorPortal() {
                                         {pos.slice(0, 4).map((po, i) => (
                                             <VCard key={i} className="group hover:border-blue-200 transition-all">
                                                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                                                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm shrink-0">
+                                                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 transition-all shadow-sm shrink-0">
                                                         <Layout size={20} />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -282,7 +282,7 @@ export default function VendorPortal() {
                                                     <VCard key={i} className="group hover:border-emerald-200 transition-all shadow-sm">
                                                         <div className="flex items-center justify-between gap-4">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all shrink-0">
+                                                                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 transition-all shrink-0">
                                                                     <CreditCard size={18} />
                                                                 </div>
                                                                 <div>

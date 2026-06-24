@@ -287,7 +287,7 @@ export default function GSTReconciliation() {
       </VCard>
 
       {/* ── Data Table ── */}
-      <VCard noPad>
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between">
           <h3 className="text-[12px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
             {activeTab === 'input' ? (
@@ -306,7 +306,7 @@ export default function GSTReconciliation() {
         ) : (
           <OutputTaxTable data={filteredOutput} onView={r => handleView(r, 'output')} onEdit={r => handleEdit(r, 'output')} onDelete={r => handleDeletePrompt(r, 'output')} />
         )}
-      </VCard>
+      </div>
 
       {/* ── Legend ── */}
       {/* <VCard>
@@ -385,17 +385,16 @@ export default function GSTReconciliation() {
 function KpiCard({ label, value, subtitle, icon, color, bg }) {
   return (
     <div
-      className="rounded-xl p-4 relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg border border-white/50 hover:scale-105 cursor-pointer"
-      style={{ background: bg }}
+      className="bg-white rounded-xl p-4 relative overflow-hidden group transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg border border-slate-200 hover:scale-105 cursor-pointer"
     >
-      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none group-hover:scale-150 transition-transform duration-500" style={{ background: color }} />
+      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl opacity-10 pointer-events-none group-hover:scale-150 transition-transform duration-500" style={{ background: color }} />
       <div className="flex items-start justify-between mb-2 relative z-10">
         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-300">{label}</div>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center opacity-70 group-hover:scale-110 group-hover:rotate-12 group-hover:opacity-100 transition-all duration-300" style={{ color }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center opacity-80 group-hover:scale-110 group-hover:rotate-12 group-hover:opacity-100 transition-all duration-300" style={{ color }}>
           {icon}
         </div>
       </div>
-      <div className="text-xl font-bold tracking-tight relative z-10 truncate group-hover:scale-105 origin-left transition-transform duration-300" style={{ color }}>
+      <div className="text-xl font-bold text-slate-800 tracking-tight relative z-10 truncate group-hover:scale-105 origin-left transition-transform duration-300">
         {value}
       </div>
       {subtitle && (
@@ -452,9 +451,9 @@ function InputTaxTable({ data, onView, onEdit, onDelete }) {
   return (
     <div className="flex flex-col w-full">
       <div className="overflow-x-auto w-full">
-        <table className="w-full text-sm min-w-[900px]">
-          <thead style={{ background: '#F8FAFC' }}>
-            <tr className="border-b border-slate-100 text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+        <table className="w-full text-left border-collapse min-w-[900px]">
+          <thead>
+            <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
               <SortHeader label="Vendor Name" sortKey="vendorName" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Batch / GRN #" sortKey="batchNumber" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="PO Number" sortKey="poNumber" currentSort={sortConfig} onSort={handleSort} />
@@ -463,21 +462,20 @@ function InputTaxTable({ data, onView, onEdit, onDelete }) {
               <SortHeader label="Taxable Amount" sortKey="taxableAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
               <SortHeader label="GST Rate" sortKey="gstRate" currentSort={sortConfig} onSort={handleSort} align="center" />
               <SortHeader label="Tax Amount" sortKey="gstAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
-              <SortHeader label="Actions" align="center" />
             </tr>
           </thead>
           <tbody>
             {paginatedData.map((row, i) => (
-          <tr key={i} className="border-b border-slate-50 hover:bg-blue-50/30 transition-colors group">
-            <td className="px-4 py-3">
+          <tr key={i} onClick={() => onView(row)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-[10px] border border-blue-100/50 flex-shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center text-green-600 font-bold text-[10px] border border-green-100/50 flex-shrink-0">
                   {(row.vendorName || 'V')[0].toUpperCase()}
                 </div>
-                <span className="font-bold text-[12px] text-slate-800 truncate max-w-[160px]">{row.vendorName || '—'}</span>
+                <span className="font-bold text-[13px] text-slate-800 truncate max-w-[160px] group-hover:text-green-800 transition-colors">{row.vendorName || '—'}</span>
               </div>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               <div className="flex flex-col gap-1">
                 {row.batchNumber ? (
                   <span className="font-mono text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100/50 w-fit" title="Batch Number">
@@ -489,63 +487,46 @@ function InputTaxTable({ data, onView, onEdit, onDelete }) {
                 </span>
               </div>
             </td>
-            <td className="px-4 py-3">
-              <span className="font-mono text-[11px] text-slate-600 font-bold">{row.poNumber || '—'}</span>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
+              <span className="font-mono text-[13px] font-medium text-slate-600">{row.poNumber || '—'}</span>
             </td>
-            <td className="px-4 py-3">
-              <span className="text-[11px] text-slate-600 font-medium truncate max-w-[140px] block">{row.productName || '—'}</span>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
+              <span className="text-[13px] text-slate-600 font-medium truncate max-w-[140px] block">{row.productName || '—'}</span>
             </td>
-            <td className="px-4 py-3">
-              <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
+              <span className="text-[13px] text-slate-500 font-medium whitespace-nowrap">
                 {row.orderDate ? new Date(row.orderDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
               </span>
             </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[12px] text-slate-700">{formatCurrency(row.taxableAmount || 0)}</span>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 text-right">
+              <span className="font-bold text-[13px] text-slate-700">{formatCurrency(row.taxableAmount || 0)}</span>
             </td>
-            <td className="px-4 py-3 text-center">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 text-center">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                 {row.gstRate || 0}%
               </span>
             </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[12px] text-blue-700">{formatCurrency(row.gstAmount || 0)}</span>
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onView(row)} title="View Details"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all border border-blue-100/50 hover:border-blue-600 hover:shadow-lg hover:shadow-blue-200">
-                  <Eye size={13} />
-                </button>
-                <button disabled title="Edit Disabled"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100/50 opacity-50 grayscale">
-                  <Edit3 size={13} />
-                </button>
-                <button disabled title="Delete Disabled"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100/50 opacity-50 grayscale">
-                  <Trash2 size={13} />
-                </button>
-              </div>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 text-right">
+              <span className="font-bold text-[13px] text-slate-700">{formatCurrency(row.gstAmount || 0)}</span>
             </td>
           </tr>
         ))}
             {/* Totals Row (Over entire dataset) */}
-            <tr className="bg-blue-50/50 border-t-2 border-blue-100">
+            <tr className="bg-green-50/50 border-t-2 border-green-100">
               <td colSpan={5} className="px-4 py-3 text-right">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Input Tax (All Records)</span>
               </td>
               <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[12px] text-slate-700">
+                <span className="font-bold text-[13px] text-slate-700">
                   {formatCurrency(data.reduce((s, r) => s + (r.taxableAmount || 0), 0))}
                 </span>
               </td>
               <td className="px-4 py-3" />
               <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[14px] text-blue-700">
+                <span className="font-bold text-[14px] text-slate-700">
                   {formatCurrency(data.reduce((s, r) => s + (r.gstAmount || 0), 0))}
                 </span>
               </td>
-              <td className="px-4 py-3" />
             </tr>
           </tbody>
         </table>
@@ -602,9 +583,9 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
   return (
     <div className="flex flex-col w-full">
       <div className="overflow-x-auto w-full">
-        <table className="w-full text-sm min-w-[1000px]">
-          <thead style={{ background: '#F8FAFC' }}>
-            <tr className="border-b border-slate-100 text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
+          <thead>
+            <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
               <SortHeader label="Invoice #" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Category" sortKey="category" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Vendor Name" sortKey="vendorName" currentSort={sortConfig} onSort={handleSort} />
@@ -613,31 +594,30 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
               <SortHeader label="Sale Date" sortKey="saleDate" currentSort={sortConfig} onSort={handleSort} />
               <SortHeader label="Taxable Amount" sortKey="taxableAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
               <SortHeader label="Total GST" sortKey="totalGstAmount" currentSort={sortConfig} onSort={handleSort} align="right" />
-              <SortHeader label="Actions" align="center" />
             </tr>
           </thead>
           <tbody>
             {paginatedData.map((row, i) => (
-          <tr key={i} className="border-b border-slate-50 hover:bg-emerald-50/30 transition-colors group">
-            <td className="px-4 py-3">
-              <span className="font-mono text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/50">
+          <tr key={i} onClick={() => onView(row)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
+              <span className="font-mono text-[13px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/50">
                 {row.invoiceNumber || '—'}
               </span>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                 {row.category || 'General'}
               </span>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-[10px] border border-emerald-100/50 flex-shrink-0">
                   {(row.vendorName || 'M')[0].toUpperCase()}
                 </div>
-                <span className="font-bold text-[12px] text-slate-800 truncate max-w-[160px]">{row.vendorName || 'Multiple / Unknown'}</span>
+                <span className="font-bold text-[13px] text-slate-800 truncate max-w-[160px] group-hover:text-green-800 transition-colors">{row.vendorName || 'Multiple / Unknown'}</span>
               </div>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               {row.batchNumber ? (
                   <span className="font-mono text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100/50 w-fit" title="Batch Number">
                     {row.batchNumber}
@@ -646,59 +626,42 @@ function OutputTaxTable({ data, onView, onEdit, onDelete }) {
                 <span className="text-[11px] text-slate-400 italic">No Batch Tracking</span>
               )}
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-[9px] border border-emerald-100/50 flex-shrink-0">
                   {(row.customerName || 'W')[0].toUpperCase()}
                 </div>
-                <span className="text-[11px] font-bold text-slate-700 truncate max-w-[130px]">{row.customerName || 'Walk-in'}</span>
+                <span className="text-[13px] font-bold text-slate-700 truncate max-w-[130px]">{row.customerName || 'Walk-in'}</span>
               </div>
             </td>
-            <td className="px-4 py-3">
-              <span className="text-[11px] text-slate-500 font-medium whitespace-nowrap">
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200">
+              <span className="text-[13px] text-slate-500 font-medium whitespace-nowrap">
                 {row.saleDate ? new Date(row.saleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
               </span>
             </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[12px] text-slate-700">{formatCurrency(row.taxableAmount || 0)}</span>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 text-right">
+              <span className="font-bold text-[13px] text-slate-700">{formatCurrency(row.taxableAmount || 0)}</span>
             </td>
-            <td className="px-4 py-3 text-right">
-              <span className="font-bold text-[12px] text-emerald-700">{formatCurrency(row.totalGstAmount || 0)}</span>
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex items-center justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => onView(row)} title="View Details"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100/50 hover:border-emerald-600 hover:shadow-lg hover:shadow-emerald-200">
-                  <Eye size={13} />
-                </button>
-                <button disabled title="Edit Disabled"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100/50 opacity-50 grayscale">
-                  <Edit3 size={13} />
-                </button>
-                <button disabled title="Delete Disabled"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100/50 opacity-50 grayscale">
-                  <Trash2 size={13} />
-                </button>
-              </div>
+            <td className="px-4 py-3.5 whitespace-nowrap bg-inherit border-b border-slate-200 text-right">
+              <span className="font-bold text-[13px] text-emerald-700">{formatCurrency(row.totalGstAmount || 0)}</span>
             </td>
           </tr>
         ))}
             {/* Totals Row (Over entire dataset) */}
-            <tr className="bg-emerald-50/50 border-t-2 border-emerald-100">
+            <tr className="bg-green-50/50 border-t-2 border-green-100">
               <td colSpan={6} className="px-4 py-3 text-right">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Output Tax (All Records)</span>
               </td>
               <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[12px] text-slate-700">
+                <span className="font-bold text-[13px] text-slate-700">
                   {formatCurrency(data.reduce((s, r) => s + (r.taxableAmount || 0), 0))}
                 </span>
               </td>
               <td className="px-4 py-3 text-right">
-                <span className="font-bold text-[14px] text-emerald-700">
+                <span className="font-bold text-[14px] text-slate-700">
                   {formatCurrency(data.reduce((s, r) => s + (r.totalGstAmount || 0), 0))}
                 </span>
               </td>
-              <td className="px-4 py-3" />
             </tr>
           </tbody>
         </table>
@@ -750,6 +713,14 @@ function ViewDetailModal({ open, row, type, onClose }) {
             </span>
           </div>
         ))}
+      </div>
+      <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+        <button disabled className="flex-1 py-3 bg-slate-50 border border-slate-200 text-slate-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
+          <Edit3 size={14} /> Edit Record
+        </button>
+        <button disabled className="flex-1 py-3 bg-slate-50 border border-slate-200 text-slate-400 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed opacity-60">
+          <Trash2 size={14} /> Delete Record
+        </button>
       </div>
     </VModal>
   );
@@ -870,20 +841,16 @@ function EditRecordModal({ open, row, type, onClose, onSave }) {
 // ─── Reusable Sort Header & Pagination ─────────────────────────────────────
 function SortHeader({ label, sortKey, currentSort, onSort, align = 'left' }) {
   if (!sortKey) {
-    return <th className={`px-4 py-3 text-${align}`}>{label}</th>;
+    return <th className={`px-4 py-4 text-${align} whitespace-nowrap`}>{label}</th>;
   }
   const isActive = currentSort?.key === sortKey;
   return (
-    <th className={`px-4 py-3 text-${align} cursor-pointer hover:bg-slate-100/50 transition-colors group select-none`} onClick={() => onSort(sortKey)}>
-      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'}`}>
+    <th className={`px-4 py-4 text-${align} cursor-pointer hover:text-slate-900 transition-colors whitespace-nowrap group select-none`} onClick={() => onSort(sortKey)}>
+      <div className={`flex items-center gap-1.5 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'}`}>
         {label}
-        <div className="flex flex-col text-slate-300">
-          {isActive ? (
-            currentSort.direction === 'asc' ? <ChevronUp size={12} className="text-blue-600" /> : <ChevronDown size={12} className="text-blue-600" />
-          ) : (
-            <ChevronUp size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-          )}
-        </div>
+        {isActive && (
+          <span className="text-green-800 text-[10px]">{currentSort.direction === 'asc' ? '▲' : '▼'}</span>
+        )}
       </div>
     </th>
   );

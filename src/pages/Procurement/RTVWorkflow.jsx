@@ -30,7 +30,7 @@ const RETURN_REASONS = [
 
 const PIPELINE_STATES = [
     { id: 'FLAGGED', label: 'Return Initiated', color: 'orange', desc: 'Staff raised return; item moved to Red Zone.' },
-    { id: 'DEBIT_NOTE_RAISED', label: 'Debit Note Generated', color: 'blue', desc: 'Auto-generated on creation; vendor notified.' },
+    { id: 'DEBIT_NOTE_RAISED', label: 'Debit Note Generated', color: 'green', desc: 'Auto-generated on creation; vendor notified.' },
     { id: 'VENDOR_NOTIFIED', label: 'Awaiting SLA Response', color: 'amber', desc: 'Vendor portal notification sent; 72hr SLA.' },
     { id: 'SHIPPED_BACK', label: 'Shipped Back to Vendor', color: 'purple', desc: 'Physical inventory dispatched; tracking logged.' },
     { id: 'DISPUTED', label: 'Dispute Raised by Vendor', color: 'red', desc: 'Vendor challenged the return value/quality.' },
@@ -346,7 +346,7 @@ export default function RTVWorkflow() {
                         <div>
                             <div className="flex items-center gap-2 mb-0.5">
                                 <h1 className="text-[18px] font-bold text-slate-800 tracking-tight">Returns & Claims</h1>
-                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded-md border border-indigo-100 uppercase tracking-widest">RTV.v2</span>
+                                <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-bold rounded-md border border-green-100 uppercase tracking-widest">RTV.v2</span>
                             </div>
                         </div>
                     </div>
@@ -372,7 +372,7 @@ export default function RTVWorkflow() {
             <div className="max-w-[1600px] mx-auto p-4 lg:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {loading ? (
                     <div className="lg:col-span-12 flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-200 shadow-sm animate-in fade-in duration-300">
-                        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+                        <Loader2 className="w-10 h-10 text-green-600 animate-spin mb-4" />
                         <h3 className="text-sm font-bold text-slate-700">Loading Reverse Logistics...</h3>
                         <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Fetching claims and active GRNs</p>
                     </div>
@@ -385,7 +385,7 @@ export default function RTVWorkflow() {
                                     {/* Lobby KPI Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
                                         <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-all">
-                                            <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-50 rounded-full -mr-8 -mt-8 opacity-40 blur-lg group-hover:scale-150 transition-all"></div>
+                                            <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-full -mr-8 -mt-8 opacity-40 blur-lg group-hover:scale-150 transition-all"></div>
                                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Returned Value</div>
                                             <div className="text-xl font-bold text-slate-800 mt-2">₹{totalClaimsValue.toLocaleString()}</div>
                                             <div className="text-[9px] font-medium text-slate-400 mt-1">Accrued reverse logistics claims</div>
@@ -420,10 +420,10 @@ export default function RTVWorkflow() {
                                                     value={lobbySearch}
                                                     onChange={(e) => setLobbySearch(e.target.value)}
                                                     placeholder="Search by RTV ID, Vendor Name, or PO Number..."
-                                                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-medium transition-all shadow-inner"
+                                                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-green-500 outline-none text-xs font-medium transition-all shadow-inner"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+                                            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
                                                 {[
                                                     { label: 'All Claims', value: 'ALL' },
                                                     { label: 'Active', value: 'ACTIVE' },
@@ -434,9 +434,9 @@ export default function RTVWorkflow() {
                                                     <button
                                                         key={f.value}
                                                         onClick={() => setLobbyStatusFilter(f.value)}
-                                                        className={`px-3 py-1.5 text-[10px] font-bold rounded-full transition-all whitespace-nowrap uppercase tracking-wider ${lobbyStatusFilter === f.value
-                                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                        className={`px-4 py-2 text-[10px] font-bold rounded-full transition-all whitespace-nowrap uppercase tracking-wider border ${lobbyStatusFilter === f.value
+                                                            ? 'bg-green-50 text-green-800 border-green-200 shadow-sm hover:bg-green-100 hover:border-green-300'
+                                                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                                                             }`}
                                                     >
                                                         {f.label}
@@ -449,7 +449,7 @@ export default function RTVWorkflow() {
                                     {/* Lobby Claims Table VCard */}
                                     <VCard className="p-6 border-slate-200 bg-white shadow-md relative overflow-hidden">
                                         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-slate-50">
-                                            <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+                                            <div className="p-1.5 bg-green-600 rounded-lg text-white">
                                                 <Package size={18} />
                                             </div>
                                             <div>
@@ -457,67 +457,71 @@ export default function RTVWorkflow() {
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Historical log of all generated debit notes and claims</p>
                                             </div>
                                         </div>
-                                        <VTable
-                                            cols={[
-                                                {
-                                                    label: 'RTV Request ID', key: 'rtvNumber', render: (row) => (
-                                                        <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-[10px] font-bold font-mono">
-                                                            {row.rtvNumber}
-                                                        </span>
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Vendor', key: 'vendorName', render: (row) => (
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-extrabold text-[9px] shadow-sm">
-                                                                {row.vendorName ? row.vendorName.charAt(0).toUpperCase() : 'V'}
-                                                            </div>
-                                                            <span className="font-bold text-slate-700">{row.vendorName || 'General Vendor'}</span>
-                                                        </div>
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Linked Documents', key: 'poNumber', render: (row) => (
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-[10px] text-slate-600 font-bold uppercase tracking-tight">PO: {row.purchaseOrderNumber || 'N/A'}</span>
-                                                            <span className="text-[9px] text-slate-400 font-medium">GRN: {row.grnNumber || 'N/A'}</span>
-                                                        </div>
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Return Value', key: 'totalReturnValue', render: (row) => (
-                                                        <span className="font-bold text-slate-800">₹{(row.totalReturnValue || 0).toLocaleString()}</span>
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Initiated Date', key: 'createdAt', render: (row) => (
-                                                        <span className="text-slate-500 font-medium">
-                                                            {new Date(row.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                        </span>
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Status', key: 'status', render: (row) => (
-                                                        <StatusBadge status={row.status} size="xs" />
-                                                    )
-                                                },
-                                                {
-                                                    label: 'Actions', key: 'actions', render: (row) => (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleViewDetails(row);
-                                                            }}
-                                                            className="px-3 py-1.5 bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
-                                                        >
-                                                            View Details
-                                                        </button>
-                                                    )
-                                                }
-                                            ]}
-                                            rows={filteredRtvs}
-                                            emptyMsg="No return claims matching filters in registry"
-                                        />
+                                        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mt-4">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="text-[11px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200 bg-slate-50/75">
+                                                            <th className="px-8 py-4 whitespace-nowrap">RTV Request ID</th>
+                                                            <th className="px-4 py-4 whitespace-nowrap">Vendor</th>
+                                                            <th className="px-4 py-4 whitespace-nowrap">Linked Documents</th>
+                                                            <th className="px-4 py-4 whitespace-nowrap">Return Value</th>
+                                                            <th className="px-4 py-4 whitespace-nowrap">Initiated Date</th>
+                                                            <th className="px-4 py-4 whitespace-nowrap">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {filteredRtvs.length > 0 ? (
+                                                            filteredRtvs.map((row) => (
+                                                                <tr key={row.id} onClick={() => handleViewDetails(row)} className="bg-white even:bg-slate-50/50 hover:bg-green-50/30 transition-all duration-200 group cursor-pointer border-b border-slate-200 last:border-0">
+                                                                    <td className="px-8 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <span className="px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-lg text-[10px] font-bold font-mono">
+                                                                            {row.rtvNumber}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 rounded bg-green-50 border border-green-200 flex items-center justify-center text-green-700 font-extrabold text-[9px] shadow-sm">
+                                                                                {row.vendorName ? row.vendorName.charAt(0).toUpperCase() : 'V'}
+                                                                            </div>
+                                                                            <span className="font-bold text-slate-700 group-hover:text-green-800 transition-colors">{row.vendorName || 'General Vendor'}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <div className="flex flex-col gap-0.5">
+                                                                            <span className="text-[10px] text-slate-600 font-bold uppercase tracking-tight">PO: {row.purchaseOrderNumber || 'N/A'}</span>
+                                                                            <span className="text-[9px] text-slate-400 font-medium">GRN: {row.grnNumber || 'N/A'}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <span className="font-bold text-slate-800">₹{(row.totalReturnValue || 0).toLocaleString()}</span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <span className="text-[13px] font-medium text-slate-600">
+                                                                            {new Date(row.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3.5 whitespace-nowrap border-b border-slate-200">
+                                                                        <StatusBadge status={row.status} size="sm" />
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan={6} className="py-24 text-center">
+                                                                    <div className="flex flex-col items-center justify-center space-y-4">
+                                                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
+                                                                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                        </div>
+                                                                        <h3 className="text-[18px] font-medium text-slate-700">No matching return claims found</h3>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </VCard>
                                 </>
                             ) : (
@@ -525,7 +529,7 @@ export default function RTVWorkflow() {
                                     {/* INITIATION FORM */}
                                     <VCard className="p-6 shadow-md border-slate-200 relative overflow-hidden bg-white">
                                         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-slate-50">
-                                            <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+                                            <div className="p-1.5 bg-green-50 text-green-800 border border-green-200 shadow-sm rounded-lg">
                                                 <Package size={18} />
                                             </div>
                                             <div>
@@ -540,11 +544,11 @@ export default function RTVWorkflow() {
                                             <div className="relative md:col-span-2 lg:col-span-1">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase  mb-2 block">GRN Reference <span className="text-rose-500">*</span></label>
                                                 <div className="relative group">
-                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-green-500 transition-colors" size={18} />
                                                     <input
                                                         type="text"
                                                         placeholder="Search GRN #..."
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-[12px] font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm"
+                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-[12px] font-bold focus:bg-white focus:border-green-500 outline-none transition-all shadow-sm"
                                                         value={searchTerm}
                                                         onChange={(e) => setSearchTerm(e.target.value)}
                                                     />
@@ -559,10 +563,10 @@ export default function RTVWorkflow() {
                                                                     className="w-full px-5 py-3 text-left hover:bg-slate-50 flex items-center justify-between group transition-colors"
                                                                 >
                                                                     <div>
-                                                                        <p className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-600">{grn.grnNumber}</p>
+                                                                        <p className="text-[13px] font-bold text-slate-800 group-hover:text-green-600">{grn.grnNumber}</p>
                                                                         <p className="text-[10px] font-bold text-slate-400 uppercase">{grn.vendor} | {grn.po}</p>
                                                                     </div>
-                                                                    <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                                                                    <ChevronRight size={16} className="text-slate-300 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
                                                                 </button>
                                                             )) : (
                                                                 <div className="px-5 py-4 text-center text-slate-400 text-[11px] font-bold uppercase ">No matching GRNs found</div>
@@ -585,7 +589,7 @@ export default function RTVWorkflow() {
                                                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                     <input
                                                         type="date"
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-[12px] font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm"
+                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-2 text-[12px] font-bold focus:bg-white focus:border-green-500 outline-none transition-all shadow-sm"
                                                         value={formData.returnDate}
                                                         onChange={(e) => setFormData({ ...formData, returnDate: e.target.value })}
                                                     />
@@ -622,15 +626,15 @@ export default function RTVWorkflow() {
                                                                 key={item.sku}
                                                                 onClick={() => handleItemToggle(item)}
                                                                 className={`p-4 rounded-2xl border-2 text-left transition-all group ${formData.selectedItems.find(i => i.sku === item.sku)
-                                                                    ? 'bg-indigo-50 border-indigo-500 shadow-lg shadow-indigo-50'
+                                                                    ? 'bg-green-50 border-green-500 shadow-lg shadow-green-50'
                                                                     : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50 shadow-sm'
                                                                     }`}
                                                             >
                                                                 <div className="flex justify-between items-start mb-2">
-                                                                    <div className={`p-1.5 rounded-lg ${formData.selectedItems.find(i => i.sku === item.sku) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                    <div className={`p-1.5 rounded-lg ${formData.selectedItems.find(i => i.sku === item.sku) ? 'bg-green-50 text-green-800 border border-green-200 shadow-sm' : 'bg-slate-100 text-slate-400'}`}>
                                                                         <Package size={14} />
                                                                     </div>
-                                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${formData.selectedItems.find(i => i.sku === item.sku) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${formData.selectedItems.find(i => i.sku === item.sku) ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-slate-100 text-slate-500'}`}>
                                                                         {item.sku}
                                                                     </span>
                                                                 </div>
@@ -718,7 +722,7 @@ export default function RTVWorkflow() {
                                                                     <div>
                                                                         <label className="text-[9px] font-bold text-slate-500 uppercase  mb-2 block">Return Reason *</label>
                                                                         <select
-                                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm"
+                                                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold focus:bg-white focus:border-green-500 outline-none transition-all shadow-sm"
                                                                             value={item.reason}
                                                                             onChange={(e) => updateItemField(item.sku, 'reason', e.target.value)}
                                                                         >
@@ -735,7 +739,7 @@ export default function RTVWorkflow() {
                                                                                 type="text"
                                                                                 placeholder="Describe the issue..."
                                                                                 maxLength={200}
-                                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm"
+                                                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[11px] font-bold focus:bg-white focus:border-green-500 outline-none transition-all shadow-sm"
                                                                                 value={item.subReason}
                                                                                 onChange={(e) => updateItemField(item.sku, 'subReason', e.target.value)}
                                                                             />
@@ -771,7 +775,7 @@ export default function RTVWorkflow() {
                                                                         {item.photos.length < 10 && (
                                                                             <button
                                                                                 onClick={() => updateItemField(item.sku, 'photos', [...item.photos, 'photo_url'])}
-                                                                                className="w-16 h-16 bg-indigo-50 border-2 border-dashed border-indigo-200 rounded-xl flex flex-col items-center justify-center text-indigo-500 hover:bg-indigo-100 transition-all gap-1"
+                                                                                className="w-16 h-16 bg-green-50 border-2 border-dashed border-green-200 rounded-xl flex flex-col items-center justify-center text-green-500 hover:bg-green-100 transition-all gap-1"
                                                                             >
                                                                                 <Upload size={16} />
                                                                                 <span className="text-[8px] font-bold uppercase">Add</span>
@@ -785,7 +789,7 @@ export default function RTVWorkflow() {
                                                         {/* Financial Impact per item */}
                                                         <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
-                                                                <DollarSign size={14} className="text-indigo-500" />
+                                                                <DollarSign size={14} className="text-green-500" />
                                                                 <span className="text-[11px] font-bold text-slate-500 uppercase">Estimated Return Value:</span>
                                                                 <span className="text-[14px] font-bold text-slate-900">₹{(item.qty * item.price).toLocaleString()}</span>
                                                             </div>
@@ -813,7 +817,7 @@ export default function RTVWorkflow() {
                                     {view === 'initiate' && (
                                         <VCard className="p-5 border-slate-200 bg-white shadow-xl overflow-hidden">
                                             <div className="flex items-center gap-2 mb-4">
-                                                <div className="p-1.5 bg-indigo-600 rounded-lg text-white">
+                                                <div className="p-1.5 bg-green-50 text-green-800 border border-green-200 shadow-sm rounded-lg">
                                                     <RefreshCw size={16} />
                                                 </div>
                                                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">RTV Summary</h3>
@@ -821,11 +825,11 @@ export default function RTVWorkflow() {
 
                                             <div className="space-y-3">
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <div className="p-3 bg-white rounded-xl border border-indigo-50/50 shadow-sm">
+                                                    <div className="p-3 bg-white rounded-xl border border-green-50/50 shadow-sm">
                                                         <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Total Items</span>
                                                         <span className="text-base font-bold text-slate-800">{formData.selectedItems.length}</span>
                                                     </div>
-                                                    <div className="p-3 bg-white rounded-xl border border-indigo-50/50 shadow-sm">
+                                                    <div className="p-3 bg-white rounded-xl border border-green-50/50 shadow-sm">
                                                         <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Total Qty</span>
                                                         <span className="text-base font-bold text-slate-800">
                                                             {formData.selectedItems.reduce((acc, i) => acc + i.qty, 0)} <span className="text-[10px] font-medium text-slate-400">U</span>
@@ -834,16 +838,16 @@ export default function RTVWorkflow() {
                                                 </div>
 
                                                 <div className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-900 shadow-sm relative overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-50 rounded-full -mr-8 -mt-8 blur-2xl opacity-50"></div>
+                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-full -mr-8 -mt-8 blur-2xl opacity-50"></div>
                                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Debit Note Amount</span>
                                                     <div className="text-3xl font-bold tracking-tight mt-1 text-slate-800">₹{calculateTotalDebit().toLocaleString()}</div>
-                                                    <div className="mt-3 flex items-center gap-1.5 text-[8px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg w-fit">
+                                                    <div className="mt-3 flex items-center gap-1.5 text-[8px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg w-fit">
                                                         <ShieldCheck size={10} /> AUTO-CALCULATED
                                                     </div>
                                                 </div>
 
                                                 {/* Preference */}
-                                                <div className="pt-3 border-t border-indigo-100/50">
+                                                <div className="pt-3 border-t border-green-100/50">
                                                     <label className="text-[9px] font-bold text-slate-500 uppercase mb-2 block">Settlement Preference</label>
                                                     <div className="flex flex-col gap-1.5">
                                                         {['Debit Note from vendor', 'Credit Note adjustment'].map(opt => (
@@ -851,8 +855,8 @@ export default function RTVWorkflow() {
                                                                 key={opt}
                                                                 onClick={() => setFormData({ ...formData, creditNotePreference: opt })}
                                                                 className={`w-full px-3 py-2.5 rounded-xl border flex items-center gap-3 transition-all ${formData.creditNotePreference === opt
-                                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
-                                                                    : 'bg-white border-slate-100 text-slate-500 hover:border-indigo-200'
+                                                                    ? 'bg-green-50 text-green-800 border-green-200 shadow-sm'
+                                                                    : 'bg-white border-slate-100 text-slate-500 hover:border-green-200'
                                                                     }`}
                                                             >
                                                                 <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.creditNotePreference === opt ? 'border-white' : 'border-slate-200'}`}>
@@ -865,7 +869,7 @@ export default function RTVWorkflow() {
                                                 </div>
 
                                                 <PrimaryBtn
-                                                    className="w-full !py-3.5 mt-2 shadow-xl shadow-indigo-100"
+                                                    className="w-full !py-3.5 mt-2 shadow-xl shadow-green-100"
                                                     icon={<Send size={16} />}
                                                     onClick={handleSubmit}
                                                 >
@@ -923,14 +927,14 @@ export default function RTVWorkflow() {
 
                                                                 return (
                                                                     <div key={state.id} className="relative z-10 flex gap-4 group">
-                                                                        <div className={`w-7 h-7 rounded-full border-2 border-white shadow-sm flex items-center justify-center shrink-0 transition-all ${isActive ? 'bg-indigo-600 scale-110 shadow-indigo-100' : isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-50'
+                                                                        <div className={`w-7 h-7 rounded-full border-2 shadow-sm flex items-center justify-center shrink-0 transition-all ${isActive ? 'bg-green-50 text-green-800 border-green-200 scale-110 shadow-green-100' : isCompleted ? 'bg-emerald-500 border-white text-white' : 'bg-slate-50 border-white'
                                                                             }`}>
                                                                             {isActive ? <RefreshCw size={10} className="text-white animate-spin" /> :
                                                                                 isCompleted ? <CheckCircle size={12} className="text-white" /> :
                                                                                     <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
                                                                         </div>
                                                                         <div>
-                                                                            <h4 className={`text-[11px] font-bold leading-none mb-1 uppercase tracking-tight ${isActive ? 'text-indigo-600' : isCompleted ? 'text-slate-800' : 'text-slate-400'
+                                                                            <h4 className={`text-[11px] font-bold leading-none mb-1 uppercase tracking-tight ${isActive ? 'text-green-600' : isCompleted ? 'text-slate-800' : 'text-slate-400'
                                                                                 }`}>
                                                                                 {state.label}
                                                                             </h4>
@@ -938,7 +942,7 @@ export default function RTVWorkflow() {
                                                                                 {state.desc}
                                                                             </p>
                                                                             {isActive && (
-                                                                                <div className="mt-2 inline-flex items-center gap-1.5 text-[8px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase border border-indigo-100">
+                                                                                <div className="mt-2 inline-flex items-center gap-1.5 text-[8px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase border border-green-100">
                                                                                     Current Phase
                                                                                 </div>
                                                                             )}
@@ -962,7 +966,7 @@ export default function RTVWorkflow() {
                                                                     {selectedRtvForTracking.status === 'DEBIT_NOTE_RAISED' && (
                                                                         <button
                                                                             onClick={() => handleUpdateStatus('VENDOR_NOTIFIED')}
-                                                                            className="px-2 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all rounded-lg text-[9px] font-bold uppercase border border-indigo-100"
+                                                                            className="px-2 py-2 bg-green-50 text-green-600 hover:bg-green-100 transition-all rounded-lg text-[9px] font-bold uppercase border border-green-100"
                                                                         >
                                                                             Acknowledge SLA
                                                                         </button>
@@ -1034,7 +1038,7 @@ export default function RTVWorkflow() {
             <div className="max-w-[1600px] mx-auto px-6 lg:px-10 mt-10">
                 <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+                        <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 shadow-inner">
                             <ShieldCheck size={24} />
                         </div>
                         <div>
@@ -1106,7 +1110,7 @@ export default function RTVWorkflow() {
                             <div>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Vendor Partner</span>
                                 <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                    <div className="w-4 h-4 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-[8px] font-black">
+                                    <div className="w-4 h-4 rounded-full bg-green-50 border border-green-100 flex items-center justify-center text-green-600 text-[8px] font-black">
                                         {selectedRtvForDetails.vendorName ? selectedRtvForDetails.vendorName.charAt(0).toUpperCase() : 'V'}
                                     </div>
                                     {selectedRtvForDetails.vendorName || 'General Supplier'}
@@ -1172,7 +1176,7 @@ export default function RTVWorkflow() {
                         {/* Returned items detail registry from matching GRN */}
                         <div className="space-y-3">
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                <Package size={14} className="text-indigo-500" /> Linked GRN Returned Line Items
+                                <Package size={14} className="text-green-500" /> Linked GRN Returned Line Items
                             </h4>
 
                             {(() => {
@@ -1280,7 +1284,7 @@ export default function RTVWorkflow() {
                                                         </td>
                                                         <td className="p-3 text-xs font-semibold text-slate-500">{item.reason || 'General Return'}</td>
                                                         <td className="p-3 text-xs font-bold text-slate-800 text-right">₹{item.price.toLocaleString()}</td>
-                                                        <td className="p-3 text-xs font-bold text-indigo-700 text-right">₹{(item.totalValue || (item.qty * item.price)).toLocaleString()}</td>
+                                                        <td className="p-3 text-xs font-bold text-green-700 text-right">₹{(item.totalValue || (item.qty * item.price)).toLocaleString()}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1298,7 +1302,7 @@ export default function RTVWorkflow() {
                         {['DEBIT_NOTE_RAISED', 'VENDOR_NOTIFIED', 'ACTIVE', 'active'].includes(selectedRtvForDetails.status) && (
                             <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50/40 rounded-3xl p-5 border border-slate-100">
                                 <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <ShieldCheck size={14} className="text-indigo-500" /> Vendor Portal Decision Desk
+                                    <ShieldCheck size={14} className="text-green-500" /> Vendor Portal Decision Desk
                                 </h4>
                                 <p className="text-[10px] font-bold text-slate-500 mb-5 uppercase tracking-tight">
                                     Please choose to accept the return debit note value (resolved) or deny the claim with an audit dispute explanation.
@@ -1306,7 +1310,9 @@ export default function RTVWorkflow() {
 
                                 {!showDisputeInput ? (
                                     <div className="flex gap-3">
-                                        <button
+                                        <PrimaryBtn
+                                            className="flex-1 !py-3"
+                                            icon={<CheckCircle size={16} />}
                                             onClick={async () => {
                                                 const res = await updateRTVStatus(selectedRtvForDetails.id, 'RESOLVED');
                                                 const updated = res.data || res;
@@ -1314,13 +1320,12 @@ export default function RTVWorkflow() {
                                                 await loadDynamicData();
                                                 toast.success('Debit note accepted! Return claim successfully resolved.');
                                             }}
-                                            className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100/50"
                                         >
-                                            <CheckCircle size={16} /> Accept Return & Debit
-                                        </button>
+                                            Accept Return & Debit
+                                        </PrimaryBtn>
                                         <button
                                             onClick={() => setShowDisputeInput(true)}
-                                            className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-100/50"
+                                            className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-rose-100"
                                         >
                                             <XCircle size={16} /> Deny & Dispute Claim
                                         </button>
@@ -1376,7 +1381,7 @@ export default function RTVWorkflow() {
                                         await loadDynamicData();
                                         toast.success('Goods marked as Shipped Back to vendor!');
                                     }}
-                                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all"
+                                    className="px-4 py-2 bg-green-50 hover:bg-green-100 text-green-600 border border-green-100 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all"
                                 >
                                     Mark as Shipped Back
                                 </button>
