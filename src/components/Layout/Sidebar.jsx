@@ -6,7 +6,7 @@ import {
     Tag, UploadCloud, ChevronDown, Truck, CreditCard, ClipboardList,
     ScanLine, Receipt, TrendingUp, Bot, Globe, ArrowLeftRight,
     Activity, MessageCircle, Bell, CheckSquare, Building2, Gavel, Sparkles,
-    Map as MapIcon, ClipboardCheck, RefreshCw, Zap, DollarSign, Smartphone, SlidersHorizontal
+    Map as MapIcon, ClipboardCheck, RefreshCw, Zap, DollarSign, Smartphone, SlidersHorizontal, Shield
 } from 'lucide-react';
 import { VENDOR_ROUTES } from '../../pages/Vendors/vendorConstants';
 import useAuthStore from '../../store/useAuthStore';
@@ -58,6 +58,7 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
         { icon: <Warehouse size={16} />, label: 'Inbound Logistics', path: VENDOR_ROUTES.inboundLogistics },
         { icon: <DollarSign size={16} />, label: 'Aggregator Payout', path: VENDOR_ROUTES.aggregatorPayout },
         // { icon: <Smartphone size={16} />, label: 'Mobile GRN', path: VENDOR_ROUTES.mobileGrn },
+        { icon: <Shield size={16} />, label: 'Role Management', path: VENDOR_ROUTES.roleManagement },
         { icon: <SlidersHorizontal size={16} />, label: 'Vendor Settings', path: VENDOR_ROUTES.settings },
     ];
 
@@ -152,17 +153,6 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
 
             {/* Bottom */}
             <div className={`p-3 border-t space-y-0.5 border-slate-100`}>
-                <NavLink to="/settings" onClick={onClose}
-                    title={isCollapsed ? 'Settings' : undefined}
-                    className={({ isActive }) =>
-                        `flex items-center ${isCollapsed ? 'justify-center mx-auto w-10 h-10' : 'gap-3 px-3 py-2.5'} rounded-xl font-medium transition-all text-sm mb-0.5 ${isActive
-                            ? 'bg-[oklch(0.96_0.04_150)] text-[oklch(0.4_0.12_150)] font-medium'
-                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                        }`
-                    }>
-                    <Settings size={20} />
-                    {!isCollapsed && <span>Settings</span>}
-                </NavLink>
                 <button onClick={handleLogout}
                     title={isCollapsed ? 'Logout' : undefined}
                     className={`flex items-center ${isCollapsed ? 'justify-center mx-auto w-10 h-10' : 'w-full gap-3 px-3 py-2.5'} rounded-xl font-medium transition-all text-left text-sm text-red-500 hover:bg-red-50`}>

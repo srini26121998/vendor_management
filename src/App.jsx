@@ -44,6 +44,7 @@ const MobileGRN = lazy(() => import('./pages/Vendors/MobileGRN'));
 const VendorSettings = lazy(() => import('./pages/Vendors/VendorSettings'));
 const NotificationCenter = lazy(() => import('./pages/Vendors/NotificationCenter'));
 const ApprovalQueue = lazy(() => import('./pages/Vendors/ApprovalQueue'));
+const RoleManagement = lazy(() => import('./pages/Vendors/RoleManagement'));
 
 // ── Stock & Inventory Management ──
 const WarehouseMap = lazy(() => import('./pages/StockManagement/WarehouseMap'));
@@ -116,6 +117,7 @@ function App() {
           <Route path="vendors/settings" element={<Suspense fallback={VFallback}><VendorSettings /></Suspense>} />
           <Route path="vendors/notifications" element={<Suspense fallback={VFallback}><NotificationCenter /></Suspense>} />
           <Route path="vendors/approvals" element={<Suspense fallback={VFallback}><ApprovalQueue /></Suspense>} />
+          <Route path="vendors/roles" element={<Suspense fallback={VFallback}><RoleManagement /></Suspense>} />
 
           {/* ── Procurement ── */}
           <Route path="vendors/procurement/smart-po" element={<Suspense fallback={VFallback}><SmartPOCreation /></Suspense>} />

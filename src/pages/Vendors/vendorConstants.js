@@ -153,5 +153,6 @@ export const VENDOR_ROUTES = {
     stockTransferAdvanced: '/vendors/inventory/stock-transfer',
     cycleAudit: '/vendors/inventory/cycle-audit',
     predictiveExpiry: '/vendors/inventory/predictive-expiry',
+    roleManagement: '/vendors/roles',
 };
 

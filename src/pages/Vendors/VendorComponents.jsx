@@ -7,7 +7,7 @@ import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis
 } from 'recharts';
 import { getStatusStyle, formatCurrency } from './vendorConstants';
-import { Settings, Diamond, Award, Medal, Trophy, PackageOpen, BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon, PieChart as PieChartIcon, Activity } from 'lucide-react';
+import { Settings, Diamond, Award, Medal, Trophy, PackageOpen, BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon, PieChart as PieChartIcon, Activity, Search as SearchIcon } from 'lucide-react';
 
 // ─── Column Configuration ──────────────────────────────────────────────────
 export const ColumnConfig = ({ cols, onChange, advMode, setAdvMode }) => {
@@ -200,7 +200,9 @@ export const VendorBreadcrumb = ({ items }) => {
 export const SearchBar = ({ value, onChange, placeholder = 'Search...', extra }) => (
     <div className="flex items-center gap-2">
         <div className="flex-1 relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors">🔍</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors pointer-events-none">
+                <SearchIcon size={15} strokeWidth={2.2} />
+            </span>
             <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
                 className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-green-800 focus:ring-0 transition-all outline-none" />
         </div>
