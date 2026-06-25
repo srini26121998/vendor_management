@@ -266,7 +266,7 @@ function ResultsScreen({ onReset, data }) {
         {/* Tabs */}
         <div style={{ display:'flex', borderBottom:'1px solid #f1f5f9', padding:'0 20px' }}>
           {[
-            { k:'all',      l:`All (${DATA.length})` },
+            { k:'all',      l:`All (${data.length})` },
             { k:'matched',  l:`✅ Matched (${matched.length})` },
             { k:'variance', l:`⚠️ Variance (${variances.length})` },
           ].map(t=>(
@@ -389,9 +389,11 @@ export default function AggregatorPayout() {
   const [reconciledData, setReconciledData] = useState([]);
 
   const handleDone = (res) => {
-    setReconciledData(res.data || []);
+    // If the interceptor unwrapped it, res is the array. Otherwise, it's res.data.
+    const actualData = Array.isArray(res) ? res : (res.data || []);
+    setReconciledData(actualData);
     setDone(true);
-    toast.success(`${res.data?.length || 0} invoices reconciled successfully!`);
+    toast.success(`${actualData.length} invoices reconciled successfully!`);
   };
 
   return (

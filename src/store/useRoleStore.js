@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import api from '../api/axios';
+import toast from 'react-hot-toast';
 
-// ── All sidebar menu keys that can be assigned to roles ──
 export const ALL_MENU_ITEMS = [
     { key: 'dashboard', label: 'Dashboard', group: 'Core' },
     { key: 'vendorList', label: 'Vendor List', group: 'Core' },
@@ -31,145 +31,127 @@ export const ALL_MENU_ITEMS = [
 
 const MENU_GROUPS = ['Core', 'Procurement', 'Finance', 'Operations', 'Analytics', 'Admin'];
 
-// ── Default seed roles ──
-const DEFAULT_ROLES = [
-    {
-        id: 'role_admin',
-        name: 'Admin',
-        description: 'Full system access with all permissions. Can manage roles and settings.',
-        color: '#166534',
-        isSystem: true,
-        createdAt: '2026-01-01T00:00:00Z',
-        updatedAt: '2026-01-01T00:00:00Z',
-        permissions: ALL_MENU_ITEMS.map(m => m.key),
-        memberCount: 2,
-    },
-    {
-        id: 'role_manager',
-        name: 'Manager',
-        description: 'Can manage procurement, vendors, and view reports. No admin access.',
-        color: '#0284c7',
-        isSystem: false,
-        createdAt: '2026-02-15T00:00:00Z',
-        updatedAt: '2026-03-10T00:00:00Z',
-        permissions: [
-            'dashboard', 'vendorList', 'vendorProducts', 'purchaseOrders', 'grnManagement',
-            'invoices', 'payables', 'returnsClaims', 'fulfillment', 'reportsHub',
-            'vendorPortal', 'multiOutlet', 'approvalQueue', 'smartPO', 'forecasting',
-        ],
-        memberCount: 5,
-    },
-    {
-        id: 'role_cashier',
-        name: 'Cashier',
-        description: 'Limited access for billing and payment operations.',
-        color: '#d97706',
-        isSystem: false,
-        createdAt: '2026-03-01T00:00:00Z',
-        updatedAt: '2026-03-20T00:00:00Z',
-        permissions: [
-            'dashboard', 'invoices', 'payables', 'gstReconciliation',
-        ],
-        memberCount: 8,
-    },
-    {
-        id: 'role_viewer',
-        name: 'Viewer',
-        description: 'Read-only access to dashboards and reports.',
-        color: '#7c3aed',
-        isSystem: false,
-        createdAt: '2026-04-10T00:00:00Z',
-        updatedAt: '2026-04-10T00:00:00Z',
-        permissions: [
-            'dashboard', 'reportsHub', 'forecasting',
-        ],
-        memberCount: 12,
-    },
-];
+const useRoleStore = create((set, get) => ({
+    roles: [],
+    menuGroups: MENU_GROUPS,
+    loading: false,
 
-const useRoleStore = create(
-    persist(
-        (set, get) => ({
-            roles: DEFAULT_ROLES,
-            menuGroups: MENU_GROUPS,
-
-            addRole: (role) => {
-                const newRole = {
-                    ...role,
-                    id: 'role_' + Date.now(),
-                    isSystem: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    memberCount: 0,
-                };
-                set(state => ({ roles: [...state.roles, newRole] }));
-            },
-
-            updateRole: (id, updates) => {
-                set(state => ({
-                    roles: state.roles.map(r =>
-                        r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r
-                    )
-                }));
-            },
-
-            deleteRole: (id) => {
-                set(state => ({
-                    roles: state.roles.filter(r => r.id !== id)
-                }));
-            },
-
-            togglePermission: (roleId, menuKey) => {
-                set(state => ({
-                    roles: state.roles.map(r => {
-                        if (r.id !== roleId) return r;
-                        const has = r.permissions.includes(menuKey);
-                        return {
-                            ...r,
-                            permissions: has
-                                ? r.permissions.filter(p => p !== menuKey)
-                                : [...r.permissions, menuKey],
-                            updatedAt: new Date().toISOString(),
-                        };
-                    })
-                }));
-            },
-
-            toggleGroupPermissions: (roleId, group, allMenuItems) => {
-                set(state => ({
-                    roles: state.roles.map(r => {
-                        if (r.id !== roleId) return r;
-                        const groupKeys = allMenuItems.filter(m => m.group === group).map(m => m.key);
-                        const allSelected = groupKeys.every(k => r.permissions.includes(k));
-                        const newPermissions = allSelected
-                            ? r.permissions.filter(p => !groupKeys.includes(p))
-                            : [...new Set([...r.permissions, ...groupKeys])];
-                        return { ...r, permissions: newPermissions, updatedAt: new Date().toISOString() };
-                    })
-                }));
-            },
-
-            duplicateRole: (id) => {
-                const role = get().roles.find(r => r.id === id);
-                if (!role) return;
-                const newRole = {
-                    ...role,
-                    id: 'role_' + Date.now(),
-                    name: role.name + ' (Copy)',
-                    isSystem: false,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    memberCount: 0,
-                };
-                set(state => ({ roles: [...state.roles, newRole] }));
-            },
-
-            getRoleById: (id) => get().roles.find(r => r.id === id),
-        }),
-        {
-            name: 'role-storage',
+    fetchRoles: async () => {
+        set({ loading: true });
+        try {
+            const res = await api.get('/roles');
+            // If unwrapped globally by interceptor, res is the array
+            const data = Array.isArray(res) ? res : (res.data || []);
+            set({ roles: data, loading: false });
+        } catch (error) {
+            console.error("Failed to fetch roles:", error);
+            set({ loading: false });
         }
-    )
-);
+    },
+
+    addRole: async (role) => {
+        try {
+            const newRole = {
+                ...role,
+                permissions: role.permissions || [],
+                memberCount: 0
+            };
+            const res = await api.post('/roles', newRole);
+            const data = res.data || res; // handle interceptor
+            set(state => ({ roles: [...state.roles, data] }));
+            toast.success("Role created successfully!");
+        } catch (error) {
+            console.error("Failed to add role:", error);
+            toast.error("Failed to create role");
+        }
+    },
+
+    updateRole: async (id, updates) => {
+        try {
+            const res = await api.put(`/roles/${id}`, updates);
+            const data = res.data || res;
+            set(state => ({
+                roles: state.roles.map(r => r.id === id ? data : r)
+            }));
+        } catch (error) {
+            console.error("Failed to update role:", error);
+            toast.error("Failed to save changes");
+        }
+    },
+
+    deleteRole: async (id) => {
+        try {
+            await api.delete(`/roles/${id}`);
+            set(state => ({
+                roles: state.roles.filter(r => r.id !== id)
+            }));
+            toast.success("Role deleted");
+        } catch (error) {
+            console.error("Failed to delete role:", error);
+            toast.error("Cannot delete system roles");
+        }
+    },
+
+    duplicateRole: async (id) => {
+        try {
+            const res = await api.post(`/roles/${id}/duplicate`);
+            const data = res.data || res;
+            set(state => ({ roles: [...state.roles, data] }));
+            toast.success("Role duplicated successfully!");
+        } catch (error) {
+            console.error("Failed to duplicate role:", error);
+            toast.error("Failed to duplicate role");
+        }
+    },
+
+    togglePermission: async (roleId, menuKey) => {
+        const role = get().roles.find(r => r.id === roleId);
+        if (!role) return;
+
+        const has = role.permissions.includes(menuKey);
+        const newPermissions = has
+            ? role.permissions.filter(p => p !== menuKey)
+            : [...role.permissions, menuKey];
+
+        // Optimistic UI update
+        set(state => ({
+            roles: state.roles.map(r => r.id === roleId ? { ...r, permissions: newPermissions } : r)
+        }));
+
+        try {
+            await api.put(`/roles/${roleId}`, { permissions: newPermissions });
+        } catch (err) {
+            // Revert on fail
+            toast.error("Failed to save permission");
+            get().fetchRoles();
+        }
+    },
+
+    toggleGroupPermissions: async (roleId, group, allMenuItems) => {
+        const role = get().roles.find(r => r.id === roleId);
+        if (!role) return;
+
+        const groupKeys = allMenuItems.filter(m => m.group === group).map(m => m.key);
+        const allSelected = groupKeys.every(k => role.permissions.includes(k));
+        
+        const newPermissions = allSelected
+            ? role.permissions.filter(p => !groupKeys.includes(p))
+            : [...new Set([...role.permissions, ...groupKeys])];
+
+        // Optimistic UI update
+        set(state => ({
+            roles: state.roles.map(r => r.id === roleId ? { ...r, permissions: newPermissions } : r)
+        }));
+
+        try {
+            await api.put(`/roles/${roleId}`, { permissions: newPermissions });
+        } catch (err) {
+            toast.error("Failed to save permissions");
+            get().fetchRoles();
+        }
+    },
+
+    getRoleById: (id) => get().roles.find(r => r.id === id),
+}));
 
 export default useRoleStore;

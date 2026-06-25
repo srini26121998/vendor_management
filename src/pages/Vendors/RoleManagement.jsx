@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PageHeader, VCard, PrimaryBtn, SecondaryBtn, SearchBar, VModal } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -479,12 +479,22 @@ const DeleteModal = ({ open, onClose, role, onConfirm }) => (
 
 // ── Main Component ──
 export default function RoleManagement() {
-    const { roles, togglePermission, toggleGroupPermissions, duplicateRole, deleteRole } = useRoleStore();
-    const [selectedRoleId, setSelectedRoleId] = useState(() => roles.find(r => r.name === 'Admin')?.id ?? roles[0]?.id ?? null);
+    const { roles, fetchRoles, togglePermission, toggleGroupPermissions, duplicateRole, deleteRole } = useRoleStore();
+    const [selectedRoleId, setSelectedRoleId] = useState(null);
     const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [editRole, setEditRole] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+
+    useEffect(() => {
+        fetchRoles();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedRoleId && roles.length > 0) {
+            setSelectedRoleId(roles.find(r => r.name === 'Admin')?.id ?? roles[0]?.id);
+        }
+    }, [roles, selectedRoleId]);
 
     const filteredRoles = useMemo(() =>
         roles.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase())),
