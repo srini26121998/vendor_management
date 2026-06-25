@@ -2,15 +2,9 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { VModal } from './VendorComponents';
+import api from '../../api/axios';
 
-const DATA = [
-  { id:'INV-A-001', vendor:'Reliance Fresh',   date:'12 Apr 2026', our:84500, theirs:84500, match:true },
-  { id:'INV-A-002', vendor:'Metro Cash & Carry',date:'14 Apr 2026', our:38000, theirs:40000, match:false },
-  { id:'INV-A-003', vendor:'HUL India Ltd',     date:'18 Apr 2026', our:29500, theirs:29500, match:true },
-  { id:'INV-A-004', vendor:'ITC Food Division', date:'21 Apr 2026', our:67000, theirs:66500, match:false },
-  { id:'INV-A-005', vendor:'Amul Dairy',         date:'25 Apr 2026', our:52000, theirs:52000, match:true },
-  { id:'INV-A-006', vendor:'Parle Products',     date:'28 Apr 2026', our:18500, theirs:19200, match:false },
-];
+const DATA = [];
 
 const INR = n => '₹' + Number(n).toLocaleString('en-IN');
 
@@ -42,14 +36,32 @@ function UploadScreen({ onDone }) {
   const [pct, setPct]   = useState(0);
   const fileRef = useRef();
 
-  const run = () => {
-    setPhase(1); setPct(0);
-    let v = 0;
-    const iv = setInterval(() => {
-      v += Math.random() * 14 + 4;
-      if (v >= 100) { v = 100; clearInterval(iv); setTimeout(onDone, 500); }
-      setPct(Math.min(v, 100));
-    }, 130);
+  const run = async (e) => {
+    const file = e.target.files?.[0] || e.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    setPhase(1); setPct(10);
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await api.post('/aggregator/reconcile', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (e) => {
+                if (e.total) {
+                    const percent = Math.round((e.loaded * 100) / e.total);
+                    setPct(10 + (percent * 0.7)); // Up to 80%
+                }
+            }
+        });
+        
+        setPct(100);
+        setTimeout(() => onDone(response), 600);
+    } catch (err) {
+        toast.error(err?.response?.data?.message || "Failed to process statement");
+        setPhase(0); setPct(0);
+    }
   };
 
   const steps = ['Parsing file…','Extracting invoices…','Matching records…','Building report…'];
@@ -150,20 +162,20 @@ function UploadScreen({ onDone }) {
 }
 
 /* ─── Results Screen ──────────────────────────────────────────── */
-function ResultsScreen({ onReset }) {
+function ResultsScreen({ onReset, data }) {
   const [tab, setTab]   = useState('all');
   const [row, setRow]   = useState(null);
   const navigate = useNavigate();
 
-  const matched   = DATA.filter(r=>r.match);
-  const variances = DATA.filter(r=>!r.match);
+  const matched   = data.filter(r=>r.match);
+  const variances = data.filter(r=>!r.match);
   const totalVar  = variances.reduce((s,r)=>s+Math.abs(r.our-r.theirs),0);
-  const rate      = Math.round(matched.length/DATA.length*100);
+  const rate      = Math.round(matched.length/(data.length||1)*100);
 
-  const rows = tab==='matched' ? matched : tab==='variance' ? variances : DATA;
+  const rows = tab==='matched' ? matched : tab==='variance' ? variances : data;
 
   const kpis = [
-    { label:'Total Invoices', value:DATA.length,       icon:'🧾', g:'135deg,#2563eb,#1d4ed8' },
+    { label:'Total Invoices', value:data.length,       icon:'🧾', g:'135deg,#2563eb,#1d4ed8' },
     { label:'Matched',         value:matched.length,   icon:'✅', g:'135deg,#059669,#10b981' },
     { label:'Variances',       value:variances.length, icon:'⚠️', g:'135deg,#dc2626,#ef4444' },
     { label:'Unreconciled',    value:INR(totalVar),    icon:'💸', g:'135deg,#d97706,#f59e0b' },
@@ -189,7 +201,7 @@ function ResultsScreen({ onReset }) {
             }}>{rate>=80?'✓ GOOD':'⚠ REVIEW'}</span>
           </div>
           <p style={{ color:'#64748b', fontSize:13, margin:0 }}>
-            {DATA.length} invoices · {matched.length} matched · {variances.length} variances · {INR(totalVar)} unreconciled
+            {data.length} invoices · {matched.length} matched · {variances.length} variances · {INR(totalVar)} unreconciled
           </p>
         </div>
         <div style={{ display:'flex', gap:10 }}>
@@ -325,7 +337,7 @@ function ResultsScreen({ onReset }) {
           padding:'14px 22px', borderTop:'1px solid #f1f5f9', background:'#fafbff',
           display:'flex', justifyContent:'space-between', alignItems:'center',
         }}>
-          <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>Showing {rows.length} of {DATA.length} records</span>
+          <span style={{ fontSize:11, color:'#94a3b8', fontWeight:600 }}>Showing {rows.length} of {data.length} records</span>
           <span style={{ fontSize:11, fontWeight:800, color:'#d97706' }}>Total Variance: {INR(totalVar)}</span>
         </div>
       </div>
@@ -374,10 +386,12 @@ function ResultsScreen({ onReset }) {
 /* ─── Main ────────────────────────────────────────────────────── */
 export default function AggregatorPayout() {
   const [done, setDone] = useState(false);
+  const [reconciledData, setReconciledData] = useState([]);
 
-  const handleDone = () => {
+  const handleDone = (res) => {
+    setReconciledData(res.data || []);
     setDone(true);
-    toast.success('6 invoices reconciled successfully!');
+    toast.success(`${res.data?.length || 0} invoices reconciled successfully!`);
   };
 
   return (
@@ -401,7 +415,7 @@ export default function AggregatorPayout() {
           </div>
         </div>
 
-        {done ? <ResultsScreen onReset={()=>setDone(false)}/> : <UploadScreen onDone={handleDone}/>}
+        {done ? <ResultsScreen onReset={()=>setDone(false)} data={reconciledData}/> : <UploadScreen onDone={handleDone}/>}
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart as RPieChart, Pie, Cell
 } from 'recharts';
+import api from '../../api/axios';
+import { fetchWarehouseCategories, fetchProducts } from '../../api/vendorService';
 import {
     VENDOR_ROUTES
 } from '../Vendors/vendorConstants';
@@ -54,29 +56,60 @@ export default function DemandForecasting() {
         forecastAccuracy: 92.4
     });
 
+    const [apiCategories, setApiCategories] = useState([]);
+    const [apiProducts, setApiProducts] = useState([]);
+
     useEffect(() => {
+        const loadInitialData = async () => {
+            const cats = await fetchWarehouseCategories();
+            setApiCategories(cats);
+            const prods = await fetchProducts();
+            setApiProducts(prods);
+        };
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        simulateRecalculation();
+    }, [selectedStores, selectedCategories, dateRange, leadTimeOverride, safetyStockMultiplier, includeSeasonality, skuSearch]);
+
+    const simulateRecalculation = async () => {
         setIsLoading(true);
-        const timer = setTimeout(() => {
-            simulateRecalculation();
+        setLoadingMessage('Fetching latest AI forecast...');
+        try {
+            const params = new URLSearchParams({
+                storeId: selectedStores[0] || 'all',
+                categoryId: selectedCategories[0] || 'all',
+                sku: skuSearch || '',
+                dateRange: dateRange,
+                leadTime: leadTimeOverride,
+                safetyMultiplier: safetyStockMultiplier,
+                includeSeasonality: includeSeasonality
+            });
+            const response = await api.get(`/forecasting/demand?${params.toString()}`);
+            if (response && response.kpiData) {
+                setKpiData(prev => ({
+                    ...prev,
+                    daysOfCover: response.kpiData.daysOfCover || 0,
+                    safetyStock: response.kpiData.safetyStock || 0,
+                    forecastAccuracy: response.kpiData.forecastAccuracy || 0
+                }));
+            }
+            if (response && response.chartData) {
+                const mappedData = response.chartData.map(d => ({
+                    ...d,
+                    name: d.name || d.week,
+                    sales: d.sales !== undefined ? d.sales : d.actual
+                }));
+                setChartData(mappedData);
+            }
+        } catch (error) {
+            console.error("Failed to fetch forecast", error);
+            toast.error("Failed to fetch forecast from server.");
+        } finally {
             setIsLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [selectedStores, selectedCategories, safetyStockMultiplier, includeSeasonality]);
-
-    const simulateRecalculation = () => {
-        const factor = safetyStockMultiplier * (includeSeasonality ? 1.15 : 1.0);
-        setKpiData(prev => ({
-            ...prev,
-            daysOfCover: parseFloat((14.2 * factor).toFixed(1)),
-            reorderPoint: Math.round(1150 * factor),
-            safetyStock: Math.round(4280 * factor),
-            forecastAccuracy: parseFloat((92.4 - (Math.random() * 2)).toFixed(1))
-        }));
-
-        setChartData(prev => prev.map(d => ({
-            ...d,
-            forecast: Math.round((d.forecast || 0) * factor)
-        })));
+            setLastRecalibrated('Just now');
+        }
     };
 
     const handleExport = (type) => {
@@ -130,7 +163,7 @@ export default function DemandForecasting() {
                         <h2 className="text-[14px] font-bold text-slate-800 uppercase tracking-tight">Filter & Parameter Controls</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="lg:col-span-1 space-y-2">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Store <span className="text-red-500">*</span></label>
                             <div className="relative">
@@ -149,16 +182,17 @@ export default function DemandForecasting() {
                         {/* Category Selection */}
                         <div className="lg:col-span-1 space-y-2">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-                            <select
+                            <input
+                                list="category-list"
+                                placeholder="Search category..."
                                 value={selectedCategories[0]}
                                 onChange={e => setSelectedCategories([e.target.value])}
                                 className="w-full px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 h-11 focus:bg-white outline-none shadow-sm transition-all"
-                            >
+                            />
+                            <datalist id="category-list">
                                 <option value="all">All Categories</option>
-                                <option value="dairy">Dairy</option>
-                                <option value="staples">Staples</option>
-                                <option value="frozen">Frozen</option>
-                            </select>
+                                {apiCategories.map(c => <option key={c.id} value={c.name} />)}
+                            </datalist>
                         </div>
 
                         {/* SKU Search */}
@@ -167,12 +201,15 @@ export default function DemandForecasting() {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
                                 <input
-                                    type="text"
-                                    placeholder="Min 2 chars..."
+                                    list="sku-list"
+                                    placeholder="Search SKU/Product..."
                                     value={skuSearch}
                                     onChange={e => setSkuSearch(e.target.value)}
                                     className="w-full pl-11 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 h-11 focus:bg-white outline-none shadow-sm transition-all"
                                 />
+                                <datalist id="sku-list">
+                                    {apiProducts.map(p => <option key={p.id} value={p.name} />)}
+                                </datalist>
                             </div>
                         </div>
 
@@ -189,63 +226,6 @@ export default function DemandForecasting() {
                                 <option>Last 26 weeks</option>
                                 <option>Last 52 weeks</option>
                             </select>
-                        </div>
-
-                        {/* Lead Time Override */}
-                        <div className="lg:col-span-1 space-y-2">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center block">Lead Time Override</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    value={leadTimeOverride}
-                                    onChange={e => setLeadTimeOverride(e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 text-center focus:bg-white outline-none"
-                                />
-                                <span className="text-[9px] font-bold text-slate-400 uppercase">Days</span>
-                            </div>
-                        </div>
-
-                        {/* Safety Stock Multiplier */}
-                        <div className="lg:col-span-1 space-y-2">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center block">Safety Stock Mult.</label>
-                            <div className="space-y-1">
-                                <input
-                                    type="range"
-                                    min="0.5"
-                                    max="3.0"
-                                    step="0.1"
-                                    value={safetyStockMultiplier}
-                                    onChange={e => setSafetyStockMultiplier(parseFloat(e.target.value))}
-                                    className="w-full accent-blue-600 h-1.5 rounded-lg appearance-none bg-slate-100 cursor-pointer"
-                                />
-                                <div className="flex justify-between text-[9px] font-bold text-slate-400">
-                                    <span>0.5x</span>
-                                    <span className="text-blue-600">{safetyStockMultiplier.toFixed(1)}x</span>
-                                    <span>3.0x</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Toggles */}
-                        <div className="lg:col-span-2 flex items-center justify-around gap-4 pt-4">
-                            <div className="flex items-center gap-3">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Seasonal Factor</label>
-                                <button
-                                    onClick={() => setIncludeSeasonality(!includeSeasonality)}
-                                    className={`w-10 h-5 rounded-full transition-all relative ${includeSeasonality ? 'bg-emerald-500' : 'bg-slate-300'}`}
-                                >
-                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeSeasonality ? 'right-1' : 'left-1'}`} />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Show OOS Days</label>
-                                <button
-                                    onClick={() => setShowOosDays(!showOosDays)}
-                                    className={`w-10 h-5 rounded-full transition-all relative ${showOosDays ? 'bg-blue-600' : 'bg-slate-300'}`}
-                                >
-                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showOosDays ? 'right-1' : 'left-1'}`} />
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </VCard>
@@ -274,6 +254,25 @@ export default function DemandForecasting() {
                         </VCard>
                     ))}
                 </div>
+
+                {/* AI Actionable Insight Banner */}
+                <VCard className="bg-gradient-to-r from-blue-600 to-indigo-700 p-5 shadow-lg border-none flex items-center justify-between text-white">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <Zap size={24} className="text-yellow-300" />
+                        </div>
+                        <div>
+                            <h3 className="text-[15px] font-bold tracking-tight">AI Purchase Recommendation</h3>
+                            <p className="text-[12px] font-medium text-blue-100 mt-1">
+                                You will run out of stock in <strong className="text-white bg-blue-800/50 px-1.5 py-0.5 rounded">{kpiData.daysOfCover.toFixed(1)} Days</strong>.
+                                To prevent a stockout, place a purchase order of <strong className="text-white bg-blue-800/50 px-1.5 py-0.5 rounded">{kpiData.reorderPoint.toLocaleString()} units</strong> within the next {Math.max(1, Math.floor(kpiData.daysOfCover - leadTimeOverride))} days.
+                            </p>
+                        </div>
+                    </div>
+                    <button className="px-5 py-2.5 bg-white text-blue-700 font-bold text-[12px] rounded-xl hover:bg-blue-50 transition-all uppercase tracking-wider shadow-sm flex items-center gap-2">
+                        Create PO <ChevronRight size={14} />
+                    </button>
+                </VCard>
 
                 {/* 3. Main Dashboard Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -337,12 +336,6 @@ export default function DemandForecasting() {
                                 <ResponsiveContainer width="100%" height="100%">
                                     {chartType === 'area' ? (
                                         <AreaChart data={chartData}>
-                                            <defs>
-                                                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} dy={10} />
                                             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
@@ -350,8 +343,8 @@ export default function DemandForecasting() {
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '12px' }}
                                                 itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                                             />
-                                            <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
-                                            <Line type="monotone" dataKey="forecast" stroke="#cbd5e1" strokeDasharray="6 6" strokeWidth={3} dot={false} />
+                                            <Area type="monotone" dataKey="sales" stroke="#2563eb" strokeWidth={4} fill="#2563eb" fillOpacity={0.15} />
+                                            <Line type="monotone" dataKey="forecast" stroke="#64748b" strokeDasharray="6 6" strokeWidth={3} dot={false} />
                                         </AreaChart>
                                     ) : chartType === 'bar' ? (
                                         <BarChart data={chartData}>
@@ -363,8 +356,8 @@ export default function DemandForecasting() {
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '12px' }}
                                                 itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                                             />
-                                            <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                            <Bar dataKey="forecast" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="sales" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="forecast" fill="#64748b" radius={[4, 4, 0, 0]} />
                                         </BarChart>
                                     ) : chartType === 'line' ? (
                                         <LineChart data={chartData}>
@@ -375,8 +368,8 @@ export default function DemandForecasting() {
                                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '12px' }}
                                                 itemStyle={{ fontSize: '12px', fontWeight: 700 }}
                                             />
-                                            <Line type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
-                                            <Line type="monotone" dataKey="forecast" stroke="#cbd5e1" strokeDasharray="6 6" strokeWidth={3} dot={false} />
+                                            <Line type="monotone" dataKey="sales" stroke="#2563eb" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
+                                            <Line type="monotone" dataKey="forecast" stroke="#64748b" strokeDasharray="6 6" strokeWidth={3} dot={false} />
                                         </LineChart>
                                     ) : (
                                         <RPieChart>
@@ -396,8 +389,8 @@ export default function DemandForecasting() {
                                                 paddingAngle={5}
                                                 dataKey="value"
                                             >
-                                                <Cell fill="#3b82f6" />
-                                                <Cell fill="#cbd5e1" />
+                                                <Cell fill="#2563eb" />
+                                                <Cell fill="#64748b" />
                                             </Pie>
                                             <Legend verticalAlign="bottom" height={36} />
                                         </RPieChart>
