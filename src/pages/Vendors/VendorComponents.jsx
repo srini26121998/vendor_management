@@ -211,7 +211,7 @@ export const SearchBar = ({ value, onChange, placeholder = 'Search...', extra })
 // ─── Primary Button ────────────────────────────────────────────────────────
 export const PrimaryBtn = ({ children, onClick, icon, small, className = '', disabled }) => (
     <button onClick={onClick} disabled={disabled}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-green-200 bg-green-50 text-green-800 shadow-sm hover:bg-green-100 hover:border-green-300 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-[#bbf7d0] bg-[#e2f5e3] text-slate-800 shadow-sm hover:bg-[#d1f0d3] active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:scale-100 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
         {children}
     </button>
@@ -219,7 +219,7 @@ export const PrimaryBtn = ({ children, onClick, icon, small, className = '', dis
 
 export const SecondaryBtn = ({ children, onClick, icon, small, className = '' }) => (
     <button onClick={onClick}
-        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-green-200 bg-green-50 text-green-800 shadow-sm hover:bg-green-100 hover:border-green-300 active:scale-95 transition-all duration-300 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
+        className={`group flex items-center justify-center gap-2 ${small ? 'px-4 py-2 text-[10px]' : 'px-6 py-2.5 text-[11px]'} font-bold rounded-full border border-[#bbf7d0] bg-[#e2f5e3] text-slate-800 shadow-sm hover:bg-[#d1f0d3] active:scale-95 transition-all duration-300 whitespace-nowrap ${className.replace(/!bg-\S+/g, '').replace(/bg-\S+/g, '')} uppercase tracking-wider`}>
         {icon && <span className="group-hover:scale-110 transition-transform duration-300">{icon}</span>}
         {children}
     </button>
@@ -289,11 +289,11 @@ export const VTable = ({ cols, rows, onRowClick, emptyMsg = 'No records found' }
 );
 
 // ─── Tier Badge ────────────────────────────────────────────────────────────
-const TIER_COLORS = { 
-    Platinum: { bg: '#e0e7ff', text: '#4338ca', icon: <Diamond size={12} /> }, 
-    Gold: { bg: '#fef3c7', text: '#92400e', icon: <Award size={12} /> }, 
-    Silver: { bg: '#f1f5f9', text: '#475569', icon: <Medal size={12} /> }, 
-    Bronze: { bg: '#ffedd5', text: '#9a3412', icon: <Trophy size={12} /> } 
+const TIER_COLORS = {
+    Platinum: { bg: '#e0e7ff', text: '#4338ca', icon: <Diamond size={12} /> },
+    Gold: { bg: '#fef3c7', text: '#92400e', icon: <Award size={12} /> },
+    Silver: { bg: '#f1f5f9', text: '#475569', icon: <Medal size={12} /> },
+    Bronze: { bg: '#ffedd5', text: '#9a3412', icon: <Trophy size={12} /> }
 };
 export const TierBadge = ({ tier }) => {
     if (!tier) return null;

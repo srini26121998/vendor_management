@@ -61,10 +61,7 @@ const TruckLoader = ({ message = "Delivering Excellence...", overlay = false }) 
   const [msgIndex, setMsgIndex] = useState(0);
   const [currentMsg, setCurrentMsg] = useState(messages[0]);
   const [fadeState, setFadeState] = useState('fade-in');
-  const [speed, setSpeed] = useState(62);
-  const [progress, setProgress] = useState(12);
-  const [latitude, setLatitude] = useState(13.0827);
-  const [longitude, setLongitude] = useState(80.2707);
+
 
   // Cycle messages
   useEffect(() => {
@@ -86,38 +83,7 @@ const TruckLoader = ({ message = "Delivering Excellence...", overlay = false }) 
     return () => clearInterval(interval);
   }, [message]);
 
-  // Fluctuating Speedometer & Coordinates Simulation
-  useEffect(() => {
-    const telemetryInterval = setInterval(() => {
-      // Simulate real truck deceleration/acceleration
-      setSpeed((prev) => {
-        const change = Math.floor(Math.random() * 9) - 4; // -4 to +4
-        const newSpeed = prev + change;
-        return Math.max(45, Math.min(78, newSpeed));
-      });
 
-      // Shift coordinates slightly to show a moving route
-      setLatitude((prev) => prev + (Math.random() * 0.0006 - 0.0003));
-      setLongitude((prev) => prev + (Math.random() * 0.0006 - 0.0003));
-    }, 1200);
-
-    return () => clearInterval(telemetryInterval);
-  }, []);
-
-  // Progress bar logic
-  useEffect(() => {
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 98) {
-          return 5; // Reset back to a low number to loop smoothly
-        }
-        const step = Math.floor(Math.random() * 8) + 3;
-        return Math.min(98, prev + step);
-      });
-    }, 900);
-
-    return () => clearInterval(progressInterval);
-  }, []);
 
   return (
     <div className={`truck-loader-container ${overlay ? 'loader-overlay' : ''}`}>
@@ -156,27 +122,9 @@ const TruckLoader = ({ message = "Delivering Excellence...", overlay = false }) 
         </div>
       </div>
 
-      {/* Advanced, Attractive Telemetry HUD */}
-      <div className="truck-hud-panel">
-        <div className="hud-header">
-          <span className="hud-badge">IN TRANSIT</span>
-          <span className="hud-speed">⚡ {speed} km/h</span>
-        </div>
-
-        <div className={`truck-loader-text ${fadeState}`}>
-          {currentMsg}
-        </div>
-
-        <div className="hud-progress-container">
-          <div className="hud-progress-bar" style={{ width: `${progress}%` }}></div>
-        </div>
-
-        <div className="hud-footer">
-          <span className="hud-coordinates">
-            GPS: {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E
-          </span>
-          <span className="hud-percentage">{progress}%</span>
-        </div>
+      {/* Dynamic Loader Text */}
+      <div className={`truck-loader-text ${fadeState}`}>
+        {currentMsg}
       </div>
     </div>
   );

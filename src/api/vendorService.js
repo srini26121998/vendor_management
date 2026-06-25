@@ -280,13 +280,13 @@ export const markAllRead = () =>
 
 
 export const searchGlobalInventory = async (query) => {
-    try {
-        const response = await api.get(`/inventory/global-search?query=${encodeURIComponent(query)}`);
-        return response.data;
-    } catch (error) {
-        console.error('Error searching global inventory:', error);
-        throw error;
-    }
+  try {
+    const response = await api.get(`/inventory/global-search?query=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error searching global inventory:', error);
+    throw error;
+  }
 };
 
 // Aggregates pending POs + under-review invoices into an approval queue.
@@ -306,9 +306,9 @@ export const fetchApprovals = async () => {
       : [];
     const stos = stoRes.status === 'fulfilled'
       ? (Array.isArray(stoRes.value?.data ?? stoRes.value) ? (stoRes.value?.data ?? stoRes.value) : []).filter(s => {
-          const st = (s.status || '').toUpperCase();
-          return st === 'PENDING' || st === 'DRAFT';
-        })
+        const st = (s.status || '').toUpperCase();
+        return st === 'PENDING' || st === 'DRAFT';
+      })
       : [];
     const poApprovals = pos.map(p => ({
       id: p.id, type: 'Purchase Order',
@@ -388,7 +388,6 @@ export const createRTVRequest = (payload, userId = null) => {
 export const updateRTVStatus = (id, status, disputeNote = null) =>
   api.patch(`/rtv/${id}/status`, null, { params: { status, disputeNote } });
 
-// â”€â”€â”€ Reverse Auction (REST Integration) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const fetchAuctions = () =>
   api.get('/auctions').catch(() => []);
 
@@ -401,9 +400,11 @@ export const fetchAuctionBids = (id) =>
 export const createAuction = (payload, userId) =>
   api.post('/auctions', payload, { headers: { 'X-User-Id': userId } });
 
+export const updateAuctionStatus = (id, status) =>
+  api.put(`/auctions/${id}/status`, null, { params: { status } });
 
 
-// â”€â”€â”€ Warehouse Slotting & Stock Transfer (STO) APIs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 export const fetchBinLocations = () =>
   api.get('/inventory/bins').catch(() => []);
 
@@ -500,7 +501,7 @@ export const recordIotTelemetry = (payload) =>
 
 export const fetchProducts = () => api.get('/products').catch(() => []);
 export const fetchWarehouseProducts = () => api.get('/vendor-products/in-stock').catch(() => []);
-export const fetchWarehouseCategories = async () => { try { const res = await api.get('/vendor-categories'); return res || []; } catch(e) { return [{ id: 'CAT1', name: 'Dairy', color: '#3b82f6' }]; } };
+export const fetchWarehouseCategories = async () => { try { const res = await api.get('/vendor-categories'); return res || []; } catch (e) { return [{ id: 'CAT1', name: 'Dairy', color: '#10b981' }]; } };
 export const fetchWarehouseRacks = async () => { return [{ id: 'R-01', categoryId: 'CAT1' }, { id: 'R-02', categoryId: 'CAT2' }]; };
 export const fetchWarehouseStock = async () => { return []; };
 export const fetchWarehouseMovements = async () => { return []; };

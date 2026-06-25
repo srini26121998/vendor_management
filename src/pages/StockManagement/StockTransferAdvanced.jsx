@@ -58,16 +58,16 @@ const styles = `
    Constants
 ───────────────────────────────────────────────────────────────────────────── */
 const OUTLETS = [
-    { id: 'HQ', name: 'HQ Warehouse',  sub: 'Central Store',     icon: Warehouse,  color: '#6366f1', light: '#eef2ff', ring: '#c7d2fe' },
-    { id: 'O1', name: 'Main Branch',   sub: 'Andheri, Mumbai',   icon: Building2,  color: '#0ea5e9', light: '#f0f9ff', ring: '#bae6fd' },
+    { id: 'HQ', name: 'HQ Warehouse',  sub: 'Central Store',     icon: Warehouse,  color: '#16a34a', light: '#f0fdf4', ring: '#bbf7d0' },
+    { id: 'O1', name: 'Main Branch',   sub: 'Andheri, Mumbai',   icon: Building2,  color: '#15803d', light: '#f0fdf4', ring: '#bbf7d0' },
     { id: 'O2', name: 'Bandra West',   sub: 'Mumbai',            icon: Store,      color: '#10b981', light: '#f0fdf4', ring: '#a7f3d0' },
     { id: 'O3', name: 'Powai Branch',  sub: 'Mumbai',            icon: Store,      color: '#f59e0b', light: '#fffbeb', ring: '#fde68a' },
-    { id: 'O4', name: 'Thane Branch',  sub: 'Thane',             icon: Store,      color: '#8b5cf6', light: '#f5f3ff', ring: '#ddd6fe' },
+    { id: 'O4', name: 'Thane Branch',  sub: 'Thane',             icon: Store,      color: '#22c55e', light: '#f0fdf4', ring: '#bbf7d0' },
 ];
 
 const STATUS_CFG = {
     DRAFT:      { label: 'Draft',      color: '#64748b', bg: '#f1f5f9', dot: '#94a3b8' },
-    IN_TRANSIT: { label: 'In Transit', color: '#0ea5e9', bg: '#e0f2fe', dot: '#0ea5e9' },
+    IN_TRANSIT: { label: 'In Transit', color: '#0d9488', bg: '#ccfbf1', dot: '#0d9488' },
     RECEIVED:   { label: 'Received',   color: '#10b981', bg: '#d1fae5', dot: '#10b981' },
     CANCELLED:  { label: 'Cancelled',  color: '#ef4444', bg: '#fee2e2', dot: '#ef4444' },
 };
@@ -91,7 +91,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
             table{width:100%;border-collapse:collapse;margin:20px 0}
             th,td{border:1px solid #e2e8f0;padding:10px 14px;text-align:left}
             th{background:#f8fafc;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#64748b}
-            .hdr{border-bottom:3px solid #6366f1;margin-bottom:24px;padding-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
+            .hdr{border-bottom:3px solid #16a34a;margin-bottom:24px;padding-bottom:18px;display:flex;justify-content:space-between;align-items:flex-start}
             .title{font-size:26px;font-weight:900;color:#1e293b;letter-spacing:-0.5px}
             .sub{color:#94a3b8;font-size:11px;margin-top:4px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
             .route{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
@@ -102,7 +102,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
             .total-row td{font-weight:800;background:#f8fafc}
             .footer{margin-top:48px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px}
             .sig{border-top:2px solid #cbd5e1;padding-top:10px;margin-top:32px;font-size:10px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
-            .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe}
+            .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:800;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
         </style>
         </head><body>${content}</body></html>`);
         win.document.close();
@@ -132,7 +132,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #f1f5f9' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#16a34a,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FileText size={20} color="#fff" />
                         </div>
                         <div>
@@ -147,7 +147,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
 
                 {/* Body */}
                 <div ref={printRef} style={{ flex: 1, overflowY: 'auto', padding: 28 }} className="sta-scroll">
-                    <div className="hdr" style={{ borderBottom: '3px solid #6366f1', paddingBottom: 18, marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div className="hdr" style={{ borderBottom: '3px solid #16a34a', paddingBottom: 18, marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <div className="title" style={{ fontSize: 24, fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>DELIVERY CHALLAN</div>
                             <div className="sub" style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: 4 }}>Internal Stock Transfer Document</div>
@@ -166,7 +166,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
                             <div className="rb-name" style={{ fontSize: 16, fontWeight: 900, color: '#0f172a' }}>{fromOutlet?.name}</div>
                             <div className="rb-sub" style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 2 }}>{fromOutlet?.sub}</div>
                         </div>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#16a34a,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <ArrowRight size={16} color="#fff" />
                         </div>
                         <div className="rb" style={{ padding: '14px 18px', borderRadius: 12, background: toOutlet?.light, border: `1.5px solid ${toOutlet?.ring}` }}>
@@ -191,7 +191,7 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
                                     <td style={{ padding: '10px 14px', fontWeight: 700, color: '#94a3b8', fontSize: 12 }}>{i + 1}</td>
                                     <td style={{ padding: '10px 14px', fontWeight: 700, color: '#1e293b', fontSize: 13 }}>{item.name}</td>
                                     <td style={{ padding: '10px 14px', color: '#64748b', fontFamily: 'monospace', fontSize: 12 }}>{item.sku || '—'}</td>
-                                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#6366f1', fontSize: 15, textAlign: 'right' }}>{item.qty}</td>
+                                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#16a34a', fontSize: 15, textAlign: 'right' }}>{item.qty}</td>
                                     <td style={{ padding: '10px 14px', color: '#64748b', fontSize: 12 }}>Units</td>
                                 </tr>
                             ))}
@@ -220,16 +220,16 @@ function ChallanModal({ isOpen, onClose, cart, fromOutlet, toOutlet }) {
                 <div style={{ display: 'flex', gap: 12, padding: '16px 28px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
                     <button onClick={handlePrint} style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        padding: '12px 0', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                        padding: '12px 0', background: 'linear-gradient(135deg,#16a34a,#22c55e)',
                         color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer',
-                        boxShadow: '0 4px 14px rgba(99,102,241,0.35)', transition: 'all 0.2s'
+                        boxShadow: '0 4px 14px rgba(22,163,74,0.35)', transition: 'all 0.2s'
                     }}>
                         <Printer size={16} /> Print Challan
                     </button>
                     <button onClick={onClose} style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '12px 0', background: '#fff', border: '2px solid #e2e8f0',
-                        color: '#64748b', fontSize: 13, fontWeight: 700, borderRadius: 12, cursor: 'pointer'
+                        padding: '12px 0', background: '#fff', border: '2px solid #bbf7d0',
+                        color: '#16a34a', fontSize: 13, fontWeight: 700, borderRadius: 12, cursor: 'pointer'
                     }}>
                         Close
                     </button>
@@ -424,7 +424,7 @@ export default function StockTransferAdvanced() {
                         <ChevronRight size={12} />
                         <span style={{ color: '#64748b' }}>Stock Management</span>
                         <ChevronRight size={12} />
-                        <span style={{ color: '#6366f1' }}>Stock Transfer</span>
+                        <span style={{ color: '#16a34a' }}>Stock Transfer</span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
@@ -432,9 +432,9 @@ export default function StockTransferAdvanced() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
                                 <div style={{
                                     width: 44, height: 44, borderRadius: 14,
-                                    background: 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)',
+                                    background: 'linear-gradient(135deg,#16a34a 0%,#22c55e 100%)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 6px 18px rgba(99,102,241,0.35)'
+                                    boxShadow: '0 6px 18px rgba(22,163,74,0.35)'
                                 }}>
                                     <ArrowRightLeft size={20} color="#fff" />
                                 </div>
@@ -460,7 +460,7 @@ export default function StockTransferAdvanced() {
                             {/* Refresh */}
                             <button onClick={loadSTOs} style={{
                                 width: 38, height: 38, borderRadius: 10, background: '#fff',
-                                border: '1.5px solid #e2e8f0', cursor: 'pointer', display: 'flex',
+                                border: '1.5px solid #bbf7d0', cursor: 'pointer', display: 'flex',
                                 alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
                             }}>
                                 <RefreshCw size={15} color="#64748b" />
@@ -480,19 +480,19 @@ export default function StockTransferAdvanced() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap', flexShrink: 0 }}>
                                     <div style={{
                                         width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        background: s.done ? '#6366f1' : '#f1f5f9',
+                                        background: s.done ? '#16a34a' : '#f1f5f9',
                                         color: s.done ? '#fff' : '#94a3b8',
                                         fontWeight: 800, fontSize: 13, flexShrink: 0
                                     }}>
                                         {s.done ? <CheckCircle2 size={16} color="#fff" /> : s.step}
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: s.done ? '#6366f1' : '#475569' }}>{s.label}</div>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: s.done ? '#16a34a' : '#475569' }}>{s.label}</div>
                                         <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{s.sub}</div>
                                     </div>
                                 </div>
                                 {idx < 3 && (
-                                    <div style={{ flex: 1, minWidth: 24, height: 2, background: idx < 2 && s.done ? 'linear-gradient(90deg,#6366f1,#8b5cf6)' : '#e2e8f0', margin: '0 12px', borderRadius: 2 }} />
+                                    <div style={{ flex: 1, minWidth: 24, height: 2, background: idx < 2 && s.done ? 'linear-gradient(90deg,#16a34a,#22c55e)' : '#e2e8f0', margin: '0 12px', borderRadius: 2 }} />
                                 )}
                             </React.Fragment>
                         ))}
@@ -508,8 +508,8 @@ export default function StockTransferAdvanced() {
                         {/* FROM panel */}
                         <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
                             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <MapPin size={14} color="#6366f1" />
+                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <MapPin size={14} color="#16a34a" />
                                 </div>
                                 <div>
                                     <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>From</div>
@@ -531,23 +531,23 @@ export default function StockTransferAdvanced() {
 
                         {/* Arrow bridge */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,transparent,#c7d2fe)' }} />
+                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,transparent,#bbf7d0)' }} />
                             <div style={{
                                 width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                background: 'linear-gradient(135deg,#16a34a,#22c55e)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 4px 14px rgba(99,102,241,0.35)'
+                                boxShadow: '0 4px 14px rgba(22,163,74,0.35)'
                             }}>
                                 <ArrowRight size={17} color="#fff" />
                             </div>
-                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(270deg,transparent,#ddd6fe)' }} />
+                            <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(270deg,transparent,#bbf7d0)' }} />
                         </div>
 
                         {/* TO panel */}
                         <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
                             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Truck size={14} color="#8b5cf6" />
+                                <div style={{ width: 28, height: 28, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Truck size={14} color="#22c55e" />
                                 </div>
                                 <div>
                                     <div style={{ fontSize: 12, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>To</div>
@@ -600,11 +600,11 @@ export default function StockTransferAdvanced() {
                                     onChange={e => setSearchQuery(e.target.value)}
                                     style={{
                                         width: '100%', paddingLeft: 42, paddingRight: 14, paddingTop: 10, paddingBottom: 10,
-                                        background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 12,
+                                        background: '#f8fafc', border: '1.5px solid #bbf7d0', borderRadius: 12,
                                         fontSize: 13, fontWeight: 500, color: '#1e293b', outline: 'none',
                                         fontFamily: 'inherit', transition: 'all 0.18s'
                                     }}
-                                    onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.background = '#fff'; }}
+                                    onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff'; }}
                                     onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; }}
                                 />
                             </div>
@@ -614,7 +614,7 @@ export default function StockTransferAdvanced() {
                         <div className="sta-scroll" style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {loadingProducts ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 14 }}>
-                                    <div className="sta-spin" style={{ width: 34, height: 34, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#6366f1' }} />
+                                    <div className="sta-spin" style={{ width: 34, height: 34, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#16a34a' }} />
                                     <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading products…</span>
                                 </div>
                             ) : filteredProducts.length === 0 ? (
@@ -640,19 +640,19 @@ export default function StockTransferAdvanced() {
                                             style={{
                                                 display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
                                                 borderRadius: 12, cursor: stockStatus === 'out' ? 'not-allowed' : 'pointer',
-                                                border: inCart ? '2px solid #c7d2fe' : '2px solid #f1f5f9',
-                                                background: inCart ? '#eef2ff' : '#fff',
+                                                border: inCart ? '2px solid #bbf7d0' : '2px solid #f1f5f9',
+                                                background: inCart ? '#f0fdf4' : '#fff',
                                                 opacity: stockStatus === 'out' ? 0.5 : 1,
-                                                boxShadow: inCart ? '0 2px 10px rgba(99,102,241,0.12)' : 'none',
+                                                boxShadow: inCart ? '0 2px 10px rgba(22,163,74,0.12)' : 'none',
                                             }}
                                             onMouseEnter={e => { if (!inCart && stockStatus !== 'out') e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.borderColor = inCart ? '#c7d2fe' : '#f1f5f9'; e.currentTarget.style.boxShadow = inCart ? '0 2px 10px rgba(99,102,241,0.12)' : 'none'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.borderColor = inCart ? '#bbf7d0' : '#f1f5f9'; e.currentTarget.style.boxShadow = inCart ? '0 2px 10px rgba(22,163,74,0.12)' : 'none'; }}
                                         >
                                             {/* Icon */}
                                             <div style={{
                                                 width: 40, height: 40, borderRadius: 12, flexShrink: 0,
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                background: inCart ? '#6366f1' : '#f8fafc',
+                                                background: inCart ? '#16a34a' : '#f8fafc',
                                             }}>
                                                 <Package size={18} color={inCart ? '#fff' : '#94a3b8'} />
                                             </div>
@@ -675,9 +675,9 @@ export default function StockTransferAdvanced() {
                                             <div style={{
                                                 width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                background: inCart ? '#6366f1' : stockStatus === 'out' ? '#f1f5f9' : '#f1f5f9',
+                                                background: inCart ? '#16a34a' : stockStatus === 'out' ? '#f1f5f9' : '#f1f5f9',
                                             }}>
-                                                {inCart ? <CheckCircle2 size={16} color="#fff" /> : <Plus size={16} color={stockStatus === 'out' ? '#cbd5e1' : '#6366f1'} />}
+                                                {inCart ? <CheckCircle2 size={16} color="#fff" /> : <Plus size={16} color={stockStatus === 'out' ? '#cbd5e1' : '#16a34a'} />}
                                             </div>
                                         </div>
                                     );
@@ -693,11 +693,11 @@ export default function StockTransferAdvanced() {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                        <ShoppingCart size={16} color="#6366f1" />
+                                        <ShoppingCart size={16} color="#16a34a" />
                                         {cart.length > 0 && (
                                             <span style={{
                                                 position: 'absolute', top: -5, right: -5, width: 17, height: 17,
-                                                borderRadius: '50%', background: '#6366f1', color: '#fff',
+                                                borderRadius: '50%', background: '#16a34a', color: '#fff',
                                                 fontSize: 9, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 border: '2px solid #fff'
                                             }}>{cart.length}</span>
@@ -711,7 +711,7 @@ export default function StockTransferAdvanced() {
                                     </div>
                                 </div>
                                 {cart.length > 0 && (
-                                    <button onClick={() => setCart([])} style={{ background: '#fff8f8', border: '1.5px solid #fecaca', color: '#ef4444', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 8, cursor: 'pointer' }}>
+                                    <button onClick={() => setCart([])} style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', color: '#16a34a', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 8, cursor: 'pointer' }}>
                                         Clear all
                                     </button>
                                 )}
@@ -721,13 +721,13 @@ export default function StockTransferAdvanced() {
                             {routeOk ? (
                                 <div style={{
                                     marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                                    borderRadius: 12, background: 'linear-gradient(135deg,#eef2ff,#f5f3ff)',
-                                    border: '1.5px solid #c7d2fe'
+                                    borderRadius: 12, background: 'linear-gradient(135deg,#f0fdf4,#f0fdf4)',
+                                    border: '1.5px solid #bbf7d0'
                                 }}>
                                     <span style={{ fontSize: 12, fontWeight: 700, color: fromOutlet?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '40%' }}>{fromOutlet?.name}</span>
-                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#a5b4fc,#c4b5fd)', borderRadius: 2 }} />
-                                    <ArrowRight size={13} color="#8b5cf6" style={{ flexShrink: 0 }} />
-                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#c4b5fd,#a5b4fc)', borderRadius: 2 }} />
+                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#bbf7d0,#86efac)', borderRadius: 2 }} />
+                                    <ArrowRight size={13} color="#22c55e" style={{ flexShrink: 0 }} />
+                                    <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,#86efac,#bbf7d0)', borderRadius: 2 }} />
                                     <span style={{ fontSize: 12, fontWeight: 700, color: toOutlet?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '40%' }}>{toOutlet?.name}</span>
                                 </div>
                             ) : (
@@ -764,7 +764,7 @@ export default function StockTransferAdvanced() {
                                         style={{
                                             padding: '14px 14px 12px',
                                             borderRadius: 14,
-                                            border: '1.5px solid #e2e8f0',
+                                            border: '1.5px solid #bbf7d0',
                                             background: '#fafbfc'
                                         }}
                                     >
@@ -777,7 +777,7 @@ export default function StockTransferAdvanced() {
                                                 onClick={() => removeFromCart(item.id)}
                                                 style={{
                                                     width: 26, height: 26, borderRadius: 8, background: '#fff',
-                                                    border: '1.5px solid #e2e8f0', cursor: 'pointer',
+                                                    border: '1.5px solid #bbf7d0', cursor: 'pointer',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     flexShrink: 0
                                                 }}
@@ -789,7 +789,7 @@ export default function StockTransferAdvanced() {
                                         </div>
 
                                         {/* Quantity stepper */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, border: '1.5px solid #e2e8f0', padding: '4px 6px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, border: '1.5px solid #bbf7d0', padding: '4px 6px' }}>
                                             <button
                                                 onClick={() => updateCartQty(item.id, -1)}
                                                 style={{
@@ -818,10 +818,10 @@ export default function StockTransferAdvanced() {
                                                     width: 30, height: 30, borderRadius: 8, background: '#f8fafc',
                                                     border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}
-                                                onMouseEnter={e => { e.currentTarget.style.background = '#eef2ff'; }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf4'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; }}
                                             >
-                                                <Plus size={13} color="#6366f1" />
+                                                <Plus size={13} color="#16a34a" />
                                             </button>
                                         </div>
                                         <div style={{ fontSize: 10, color: '#cbd5e1', fontWeight: 600, textAlign: 'center', marginTop: 6 }}>
@@ -838,7 +838,7 @@ export default function StockTransferAdvanced() {
                             {cart.length > 0 && (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 10, background: '#fff', border: '1.5px solid #e2e8f0' }}>
                                     <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Total units to transfer</span>
-                                    <span style={{ fontSize: 16, fontWeight: 900, color: '#6366f1' }}>{totalCartQty}</span>
+                                    <span style={{ fontSize: 16, fontWeight: 900, color: '#16a34a' }}>{totalCartQty}</span>
                                 </div>
                             )}
 
@@ -849,9 +849,9 @@ export default function StockTransferAdvanced() {
                                 style={{
                                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                     padding: '11px 0', borderRadius: 12,
-                                    border: cart.length > 0 ? '2px solid #c7d2fe' : '2px solid #e2e8f0',
-                                    background: cart.length > 0 ? '#eef2ff' : '#f8fafc',
-                                    color: cart.length > 0 ? '#6366f1' : '#cbd5e1',
+                                    border: cart.length > 0 ? '2px solid #bbf7d0' : '2px solid #e2e8f0',
+                                    background: cart.length > 0 ? '#f0fdf4' : '#f8fafc',
+                                    color: cart.length > 0 ? '#16a34a' : '#cbd5e1',
                                     fontSize: 13, fontWeight: 700, cursor: cart.length > 0 ? 'pointer' : 'not-allowed',
                                     transition: 'all 0.18s', fontFamily: 'inherit'
                                 }}
@@ -867,11 +867,11 @@ export default function StockTransferAdvanced() {
                                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                     padding: '13px 0', borderRadius: 12, border: 'none',
                                     background: (cart.length > 0 && routeOk && !submitting)
-                                        ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+                                        ? 'linear-gradient(135deg,#16a34a,#22c55e)'
                                         : '#e2e8f0',
                                     color: (cart.length > 0 && routeOk && !submitting) ? '#fff' : '#94a3b8',
                                     fontSize: 14, fontWeight: 800, cursor: (cart.length > 0 && routeOk && !submitting) ? 'pointer' : 'not-allowed',
-                                    boxShadow: (cart.length > 0 && routeOk && !submitting) ? '0 6px 20px rgba(99,102,241,0.4)' : 'none',
+                                    boxShadow: (cart.length > 0 && routeOk && !submitting) ? '0 6px 20px rgba(22,163,74,0.4)' : 'none',
                                     transition: 'all 0.2s', fontFamily: 'inherit'
                                 }}
                             >
@@ -897,8 +897,8 @@ export default function StockTransferAdvanced() {
                     {/* Table header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 38, height: 38, borderRadius: 11, background: '#f8fafc', border: '1.5px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <TrendingUp size={17} color="#6366f1" />
+                            <div style={{ width: 38, height: 38, borderRadius: 11, background: '#f8fafc', border: '1.5px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <TrendingUp size={17} color="#16a34a" />
                             </div>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Transfer Order Log</h3>
@@ -918,10 +918,10 @@ export default function StockTransferAdvanced() {
                                 onChange={e => setStoSearch(e.target.value)}
                                 style={{
                                     width: 240, paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
-                                    background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 10,
+                                    background: '#f8fafc', border: '1.5px solid #bbf7d0', borderRadius: 10,
                                     fontSize: 13, fontWeight: 500, color: '#1e293b', outline: 'none', fontFamily: 'inherit'
                                 }}
-                                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                onFocus={e => e.target.style.borderColor = '#16a34a'}
                                 onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                             />
                         </div>
@@ -941,7 +941,7 @@ export default function StockTransferAdvanced() {
                                 {loadingSTOs ? (
                                     <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                                            <div className="sta-spin" style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%' }} />
+                                            <div className="sta-spin" style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#16a34a', borderRadius: '50%' }} />
                                             <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading orders…</span>
                                         </div>
                                     </td></tr>
@@ -966,7 +966,7 @@ export default function StockTransferAdvanced() {
                                         <tr key={sto.id} className="sta-tr" style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.12s' }}>
                                             {/* STO Number */}
                                             <td style={{ padding: '14px 18px' }}>
-                                                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#6366f1', background: '#eef2ff', padding: '3px 8px', borderRadius: 7 }}>
+                                                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#16a34a', background: '#f0fdf4', padding: '3px 8px', borderRadius: 7 }}>
                                                     {sto.stoNumber || `STO-${(sto.id || '').toString().slice(0, 8).toUpperCase()}`}
                                                 </span>
                                             </td>
@@ -1020,7 +1020,7 @@ export default function StockTransferAdvanced() {
                                                         style={{
                                                             display: 'flex', alignItems: 'center', gap: 5,
                                                             padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                                                            background: '#6366f1', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
+                                                            background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
                                                         }}
                                                     >
                                                         <Truck size={12} /> Dispatch

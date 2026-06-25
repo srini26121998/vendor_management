@@ -11,11 +11,11 @@ export default function StockTransfer() {
     const [step, setStep] = useState(1);
     const [source, setSource] = useState('HQ');
     const [dest, setDest] = useState('Powai Branch');
-    
+
     const [searchQuery, setSearchQuery] = useState('');
     const [availableItems, setAvailableItems] = useState([]);
     const [loadingItems, setLoadingItems] = useState(false);
-    
+
     const [selectedItems, setSelectedItems] = useState([]);
 
     // Fetch real inventory for the selected source branch
@@ -29,7 +29,7 @@ export default function StockTransfer() {
                 .then(products => {
                     if (Array.isArray(products)) {
                         // Filter products that have stock in the selected source outlet
-                        const sourceProducts = products.filter(p => 
+                        const sourceProducts = products.filter(p =>
                             p.outlets && p.outlets.some(o => o.outletId === source && o.quantity > 0)
                         ).map(p => {
                             const stockInSource = p.outlets.find(o => o.outletId === source).quantity;
@@ -68,7 +68,7 @@ export default function StockTransfer() {
     };
 
     const updateQty = (id, v) => {
-        setSelectedItems(prev => prev.map(item => 
+        setSelectedItems(prev => prev.map(item =>
             item.id === id ? { ...item, transferQty: v } : item
         ));
     };
@@ -102,10 +102,10 @@ export default function StockTransfer() {
                 priority: "HIGH",
                 capitalSaved: 0
             };
-            
+
             await createSTO(payload, "123e4567-e89b-12d3-a456-426614174000"); // using a dummy UUID for userId
             toast.success('Stock Transfer Order created successfully! 🚛');
-            
+
             // Reset
             setStep(1);
             setSelectedItems([]);
@@ -119,8 +119,8 @@ export default function StockTransfer() {
     return (
         <div className="w-full bg-[#F3F5F9] min-h-screen p-4 sm:p-8" style={{ fontFamily: '"Inter", sans-serif' }}>
             <div className="max-w-[1200px] mx-auto">
-                <PageHeader 
-                    title="Intelligent Stock Transfer" 
+                <PageHeader
+                    title="Intelligent Stock Transfer"
                     subtitle="Seamlessly move physical stock between your warehouses and branch outlets."
                 />
 
@@ -145,7 +145,7 @@ export default function StockTransfer() {
 
                 <AnimatePresence mode="wait">
                     {step === 1 && (
-                        <motion.div 
+                        <motion.div
                             key="step1"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -153,7 +153,7 @@ export default function StockTransfer() {
                         >
                             <VCard className="relative overflow-hidden border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 p-4">
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-3 text-blue-600 mb-6">
@@ -162,8 +162,8 @@ export default function StockTransfer() {
                                         </div>
                                         <div className="grid grid-cols-1 gap-3">
                                             {OUTLETS.map(o => (
-                                                <div 
-                                                    key={`src-${o}`} 
+                                                <div
+                                                    key={`src-${o}`}
                                                     onClick={() => setSource(o)}
                                                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${source === o ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'}`}
                                                 >
@@ -174,16 +174,16 @@ export default function StockTransfer() {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-3 text-purple-600 mb-6">
-                                            <div className="p-2.5 bg-purple-50 rounded-xl"><Truck size={20} /></div>
+                                        <div className="flex items-center gap-3 text-green-600 mb-6">
+                                            <div className="p-2.5 bg-green-50 rounded-xl"><Truck size={20} /></div>
                                             <h3 className="text-[18px] font-bold text-gray-800">Select Destination</h3>
                                         </div>
                                         <div className="grid grid-cols-1 gap-3">
                                             {OUTLETS.map(o => (
-                                                <div 
-                                                    key={`dest-${o}`} 
+                                                <div
+                                                    key={`dest-${o}`}
                                                     onClick={() => setDest(o)}
-                                                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${dest === o ? 'border-purple-500 bg-purple-50/50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'} ${source === o ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                                                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${dest === o ? 'border-green-500 bg-green-50/50 shadow-sm' : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'} ${source === o ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                                                 >
                                                     <span className="text-[14px] font-bold text-gray-800">{o}</span>
                                                 </div>
@@ -202,7 +202,7 @@ export default function StockTransfer() {
                     )}
 
                     {step === 2 && (
-                        <motion.div 
+                        <motion.div
                             key="step2"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -210,7 +210,7 @@ export default function StockTransfer() {
                         >
                             <VCard className="border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                                 {/* Route Summary */}
-                                <div className="flex items-center gap-4 py-4 px-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl mb-8 border border-white shadow-sm">
+                                <div className="flex items-center gap-4 py-4 px-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl mb-8 border border-white shadow-sm">
                                     <div className="flex-1">
                                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">From</div>
                                         <div className="text-[15px] font-bold text-blue-900">{source}</div>
@@ -218,7 +218,7 @@ export default function StockTransfer() {
                                     <div className="w-10 h-10 rounded-full bg-white text-blue-500 flex items-center justify-center shadow-sm"><ArrowRight size={18} /></div>
                                     <div className="flex-1 text-right">
                                         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">To</div>
-                                        <div className="text-[15px] font-bold text-purple-900">{dest}</div>
+                                        <div className="text-[15px] font-bold text-green-900">{dest}</div>
                                     </div>
                                 </div>
 
@@ -228,8 +228,8 @@ export default function StockTransfer() {
                                         <SectionTitle>Inventory at {source}</SectionTitle>
                                         <div className="relative">
                                             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 placeholder="Search by SKU or Name..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -269,7 +269,7 @@ export default function StockTransfer() {
                                     {/* Cart Panel */}
                                     <div className="bg-gray-50/50 rounded-3xl p-6 border border-gray-100">
                                         <SectionTitle>Transfer List</SectionTitle>
-                                        
+
                                         {selectedItems.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center h-64 text-gray-400 opacity-60">
                                                 <Box size={48} className="mb-4" />
@@ -278,10 +278,10 @@ export default function StockTransfer() {
                                         ) : (
                                             <div className="mt-6 space-y-4">
                                                 {selectedItems.map((item, idx) => (
-                                                    <motion.div 
+                                                    <motion.div
                                                         initial={{ opacity: 0, x: 20 }}
                                                         animate={{ opacity: 1, x: 0 }}
-                                                        key={item.id} 
+                                                        key={item.id}
                                                         className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden"
                                                     >
                                                         {item.transferQty > item.available && (
@@ -296,11 +296,11 @@ export default function StockTransfer() {
                                                         </div>
                                                         <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-xl">
                                                             <button onClick={() => updateQty(item.id, Math.max(1, item.transferQty - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm hover:text-blue-600 font-bold">－</button>
-                                                            <input 
-                                                                type="number" 
-                                                                value={item.transferQty} 
+                                                            <input
+                                                                type="number"
+                                                                value={item.transferQty}
                                                                 onChange={(e) => updateQty(item.id, parseInt(e.target.value) || 1)}
-                                                                className="flex-1 bg-transparent text-center font-bold text-[14px] outline-none text-blue-900" 
+                                                                className="flex-1 bg-transparent text-center font-bold text-[14px] outline-none text-blue-900"
                                                             />
                                                             <button onClick={() => updateQty(item.id, Math.min(item.available, item.transferQty + 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg border border-gray-200 shadow-sm hover:text-blue-600 font-bold">＋</button>
                                                         </div>

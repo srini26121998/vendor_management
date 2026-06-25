@@ -15,7 +15,8 @@ import {
     Camera,
     Minus,
     Plus,
-    Activity
+    Activity,
+    PackageOpen
 } from 'lucide-react';
 import {
     PageHeader,
@@ -55,6 +56,12 @@ export default function CycleAudit() {
     const [recountFlag, setRecountFlag] = useState(false);
     const [countNotes, setCountNotes] = useState('');
 
+    const [recentScans, setRecentScans] = useState([
+        { id: 'UPC-849201', time: '10:42 AM', qty: 12 },
+        { id: 'UPC-773829', time: '10:38 AM', qty: 5 },
+        { id: 'UPC-119284', time: '10:31 AM', qty: 24 }
+    ]);
+
     const handleAssignAudit = () => {
         if (!auditName || !auditDate || !selectedZone || !selectedStaff) {
             toast.error('Please fill in all mandatory fields.');
@@ -85,6 +92,14 @@ export default function CycleAudit() {
             toast.error('Barcode and Count are required');
             return;
         }
+        
+        const newScan = {
+            id: itemBarcode,
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            qty: parseInt(physicalCount)
+        };
+        setRecentScans(prev => [newScan, ...prev]);
+
         toast.success('Physical count submitted for verification.');
         // Reset form for next scan
         setItemBarcode('');
@@ -104,13 +119,13 @@ export default function CycleAudit() {
                 <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
                     <button
                         onClick={() => setActiveRole('Manager')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Manager' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Manager' ? 'bg-[#e2f5e3] text-slate-800 border border-[#bbf7d0] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
                         <UserCog size={16} /> MANAGER VIEW
                     </button>
                     <button
                         onClick={() => setActiveRole('Staff')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Staff' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-300 ${activeRole === 'Staff' ? 'bg-[#e2f5e3] text-slate-800 border border-[#bbf7d0] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
                         <Smartphone size={16} /> STAFF MOBILITY
                     </button>
@@ -124,7 +139,7 @@ export default function CycleAudit() {
                         <div className="lg:col-span-8">
                             <VCard className="p-8 border-none shadow-sm ring-1 ring-slate-100">
                                 <div className="flex items-center gap-3 mb-8">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                    <div className="w-10 h-10 rounded-xl bg-[#e2f5e3] flex items-center justify-center text-[#166534]">
                                         <ClipboardCheck size={20} />
                                     </div>
                                     <div>
@@ -138,11 +153,11 @@ export default function CycleAudit() {
                                     <div className="space-y-2 md:col-span-2">
                                         <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Audit Name <span className="text-rose-500">*</span></label>
                                         <div className="relative group">
-                                            <FileEdit size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <FileEdit size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
                                             <input
                                                 type="text"
                                                 placeholder="e.g. Q1 Annual Stock Count..."
-                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                                                 value={auditName}
                                                 onChange={e => setAuditName(e.target.value)}
                                             />
@@ -157,7 +172,7 @@ export default function CycleAudit() {
                                                 <div 
                                                     key={t}
                                                     onClick={() => setAuditType(t)}
-                                                    className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${auditType === t ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'}`}
+                                                    className={`cursor-pointer border rounded-xl p-3 text-center transition-all ${auditType === t ? 'border-[#bbf7d0] bg-[#e2f5e3] text-slate-800 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600'}`}
                                                 >
                                                     <span className="text-[12px] font-bold leading-tight block">{t}</span>
                                                 </div>
@@ -169,10 +184,10 @@ export default function CycleAudit() {
                                     <div className="space-y-2">
                                         <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Audit Date <span className="text-rose-500">*</span></label>
                                         <div className="relative group">
-                                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
                                             <input
                                                 type="date"
-                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700"
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
                                                 value={auditDate}
                                                 onChange={e => setAuditDate(e.target.value)}
                                             />
@@ -183,9 +198,9 @@ export default function CycleAudit() {
                                     <div className="space-y-2">
                                         <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Assign Zone <span className="text-rose-500">*</span></label>
                                         <div className="relative group">
-                                            <Layers size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <Layers size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
                                             <select 
-                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none text-slate-700"
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none text-slate-700"
                                                 value={selectedZone}
                                                 onChange={(e) => setSelectedZone(e.target.value)}
                                             >
@@ -199,9 +214,9 @@ export default function CycleAudit() {
                                     <div className="space-y-2">
                                         <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wider block">Assign Staff <span className="text-rose-500">*</span></label>
                                         <div className="relative group">
-                                            <Users size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                            <Users size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
                                             <select 
-                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none text-slate-700"
+                                                className="w-full pl-11 pr-4 py-3.5 text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 focus:bg-white outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none text-slate-700"
                                                 value={selectedStaff}
                                                 onChange={(e) => setSelectedStaff(e.target.value)}
                                             >
@@ -231,7 +246,7 @@ export default function CycleAudit() {
                                     <div className="space-y-2 md:col-span-2">
                                         <div className="flex items-center justify-between p-5 bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-xl">
                                             <div className="flex items-center gap-4">
-                                                <div className={`p-2.5 rounded-lg ${blindCount ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'} transition-colors`}>
+                                                <div className={`p-2.5 rounded-lg ${blindCount ? 'bg-[#e2f5e3] text-[#166534]' : 'bg-slate-100 text-slate-400'} transition-colors`}>
                                                     <EyeOff size={18} />
                                                 </div>
                                                 <div>
@@ -241,7 +256,7 @@ export default function CycleAudit() {
                                             </div>
                                             <div
                                                 onClick={() => setBlindCount(!blindCount)}
-                                                className={`w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 ${blindCount ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                                className={`w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 ${blindCount ? 'bg-[#166534]' : 'bg-slate-300'}`}
                                             >
                                                 <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${blindCount ? 'translate-x-7' : 'translate-x-0'}`} />
                                             </div>
@@ -250,7 +265,7 @@ export default function CycleAudit() {
                                 </div>
 
                                 <div className="mt-10 pt-6 border-t border-slate-100 flex justify-end">
-                                    <PrimaryBtn onClick={handleAssignAudit} className="px-10 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[14px]" icon={<CheckCircle2 size={18} />}>
+                                    <PrimaryBtn onClick={handleAssignAudit} className="px-10 py-3.5 rounded-xl text-[14px]" icon={<CheckCircle2 size={18} />}>
                                         Launch Audit Session
                                     </PrimaryBtn>
                                 </div>
@@ -259,23 +274,23 @@ export default function CycleAudit() {
 
                         {/* MANAGER: RECENT AUDITS / ANALYTICS */}
                         <div className="lg:col-span-4 space-y-6">
-                            <VCard className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-none shadow-lg">
+                            <VCard className="bg-white border-none shadow-sm ring-1 ring-slate-100">
                                 <div className="flex items-center gap-2 mb-6">
                                     <Activity size={18} className="text-emerald-400" />
-                                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">Live Audit Health</h3>
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Live Audit Health</h3>
                                 </div>
                                 <div className="space-y-6">
-                                    <div className="p-5 bg-white/10 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                                         <div className="flex justify-between items-end mb-4">
-                                            <div className="text-[12px] font-bold text-indigo-300 uppercase tracking-wider">Active Coverage</div>
-                                            <div className="text-3xl font-black text-white">84<span className="text-lg text-slate-400">%</span></div>
+                                            <div className="text-[12px] font-bold text-emerald-600 uppercase tracking-wider">Active Coverage</div>
+                                            <div className="text-3xl font-black text-slate-800">84<span className="text-lg text-slate-500">%</span></div>
                                         </div>
-                                        <div className="h-2.5 w-full bg-slate-900/50 rounded-full overflow-hidden border border-white/5">
-                                            <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 w-[84%] rounded-full relative">
+                                        <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                                            <div className="h-full bg-emerald-500 w-[84%] rounded-full relative">
                                                 <div className="absolute top-0 right-0 bottom-0 left-0 bg-[linear-gradient(45deg,rgba(255,255,255,.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.15)_50%,rgba(255,255,255,.15)_75%,transparent_75%,transparent)] bg-[length:1rem_1rem] animate-[progress_1s_linear_infinite]" />
                                             </div>
                                         </div>
-                                        <p className="text-[11px] text-slate-400 mt-3 font-medium">16 out of 19 Zones counted</p>
+                                        <p className="text-[11px] text-slate-500 mt-3 font-medium">16 out of 19 Zones counted</p>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
@@ -297,16 +312,16 @@ export default function CycleAudit() {
                                 </h3>
                                 <div className="space-y-3">
                                     {recentSessions.map((a, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3.5 rounded-xl hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition-all cursor-pointer group">
+                                        <div key={i} className="flex items-center justify-between p-3.5 rounded-xl hover:bg-emerald-50 border border-transparent hover:border-emerald-100 transition-all cursor-pointer group">
                                             <div>
-                                                <div className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-700 transition-colors">{a.name}</div>
+                                                <div className="text-[13px] font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">{a.name}</div>
                                                 <div className="text-[11px] font-medium text-slate-500 mt-0.5">{a.date}</div>
                                             </div>
                                             <StatusBadge status={a.status} size="xs" />
                                         </div>
                                     ))}
                                 </div>
-                                <button className="w-full mt-4 py-2.5 text-[12px] font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                <button className="w-full mt-4 py-2.5 text-[12px] font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors">
                                     View Full History →
                                 </button>
                             </VCard>
@@ -314,118 +329,159 @@ export default function CycleAudit() {
                     </>
                 ) : (
                     <>
-                        {/* STAFF: MOBILE COUNT ENTRY */}
-                        <div className="col-span-1 lg:col-span-12 flex justify-center w-full">
-                            {/* Mobile Phone Mockup Container */}
-                            <div className="w-full max-w-[420px] bg-white border border-slate-200 shadow-2xl rounded-[2.5rem] overflow-hidden flex flex-col relative" style={{ minHeight: '800px' }}>
-                                {/* Notch Area (Aesthetic) */}
-                                <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-20">
-                                    <div className="w-32 h-6 bg-slate-900 rounded-b-2xl"></div>
-                                </div>
-
-                                {/* Header Area */}
-                                <div className="bg-slate-900 pt-10 pb-6 px-6 text-center rounded-b-3xl relative z-10 shadow-md">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 text-[10px] font-extrabold uppercase tracking-widest mb-4">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live Session
-                                    </div>
-                                    <h3 className="text-xl font-extrabold text-white leading-tight">Zone A1:<br />Cold Storage</h3>
-                                    <p className="text-[12px] text-slate-400 mt-2 font-medium bg-slate-800/50 inline-block px-3 py-1 rounded-full">User: John Doe · Shift: AM</p>
-                                </div>
-
-                                {/* Main Scanning Form */}
-                                <div className="flex-1 p-6 space-y-7 bg-slate-50/50 flex flex-col justify-center">
-                                    {/* Item Barcode Scan */}
-                                    <div className="space-y-2.5">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Item Barcode <span className="text-rose-500">*</span></label>
-                                        <div className="relative group">
-                                            <ScanLine size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                                            <input
-                                                type="text"
-                                                placeholder="Scan or type UPC..."
-                                                className="w-full pl-12 pr-14 py-4 text-[16px] font-bold border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300 placeholder:font-normal shadow-sm"
-                                                value={itemBarcode}
-                                                onChange={e => setItemBarcode(e.target.value)}
-                                            />
-                                            <button className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-100 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl flex items-center justify-center transition-all active:scale-95">
-                                                <Camera size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Physical Count */}
-                                    <div className="space-y-2.5">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Physical Count <span className="text-rose-500">*</span></label>
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => setPhysicalCount(prev => Math.max(0, (parseInt(prev) || 0) - 1).toString())}
-                                                className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-rose-600 active:bg-rose-50 active:border-rose-200 transition-all flex items-center justify-center shadow-sm shrink-0"
-                                            >
-                                                <Minus size={24} strokeWidth={3} />
-                                            </button>
-                                            <input
-                                                type="number"
-                                                placeholder="0"
-                                                className="w-full h-16 text-center text-4xl font-black border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-800 shadow-inner"
-                                                value={physicalCount}
-                                                onChange={e => setPhysicalCount(e.target.value)}
-                                            />
-                                            <button
-                                                onClick={() => setPhysicalCount(prev => ((parseInt(prev) || 0) + 1).toString())}
-                                                className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-emerald-600 active:bg-emerald-50 active:border-emerald-200 transition-all flex items-center justify-center shadow-sm shrink-0"
-                                            >
-                                                <Plus size={24} strokeWidth={3} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Recount Flag */}
-                                    <label className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2 ${recountFlag ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
-                                        <div className="pt-0.5">
-                                            <input
-                                                type="checkbox"
-                                                className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                                                checked={recountFlag}
-                                                onChange={e => setRecountFlag(e.target.checked)}
-                                            />
-                                        </div>
+                        {/* STAFF: DESKTOP/TABLET COUNT ENTRY (FULL WIDTH) */}
+                        <div className="col-span-1 lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+                            
+                            {/* Left Column: Data Entry */}
+                            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+                                <VCard className="p-8 border-none shadow-sm ring-1 ring-slate-100 flex-1">
+                                    <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
                                         <div>
-                                            <div className={`text-[14px] font-bold ${recountFlag ? 'text-amber-900' : 'text-slate-700'}`}>Flag for Recount</div>
-                                            <div className={`text-[12px] mt-0.5 ${recountFlag ? 'text-amber-700' : 'text-slate-500'}`}>Request supervisor review if you are unsure about this quantity.</div>
+                                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#e2f5e3] text-slate-800 rounded-full border border-[#bbf7d0] text-[10px] font-extrabold uppercase tracking-widest mb-3">
+                                                <span className="w-2 h-2 rounded-full bg-[#166534] animate-pulse" /> Live Session
+                                            </div>
+                                            <h3 className="text-2xl font-extrabold text-slate-800 leading-tight">Zone A1: Cold Storage</h3>
+                                            <p className="text-[13px] text-slate-500 mt-2 font-medium">User: John Doe · Shift: AM</p>
                                         </div>
-                                    </label>
-
-                                    {/* Count Notes */}
-                                    <div className="space-y-2.5">
-                                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Observations</label>
-                                        <textarea
-                                            placeholder="E.g., Packaging damaged, wrong bin..."
-                                            rows={2}
-                                            className="w-full p-4 text-[14px] font-medium border-2 border-slate-200 rounded-2xl bg-white outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300"
-                                            value={countNotes}
-                                            onChange={e => setCountNotes(e.target.value)}
-                                        />
+                                        <div className="text-right">
+                                            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Zone Progress</div>
+                                            <div className="text-3xl font-black text-slate-800">24<span className="text-lg text-slate-400 font-bold"> / 85</span></div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Footer Sticky Submit */}
-                                <div className="bg-white p-5 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
-                                    <button 
-                                        onClick={handleSubmitCount} 
-                                        className="w-full py-4 rounded-[1rem] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[15px] shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-                                    >
-                                        <CheckCircle2 size={20} />
-                                        Record Count
-                                    </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Item Barcode Scan */}
+                                        <div className="space-y-3 md:col-span-2">
+                                            <label className="block text-[12px] font-bold text-slate-600 uppercase tracking-widest">Item Barcode <span className="text-rose-500">*</span></label>
+                                            <div className="relative group">
+                                                <ScanLine size={24} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#166534] transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Scan or type UPC..."
+                                                    className="w-full pl-14 pr-16 py-5 text-[18px] font-bold border-2 border-slate-200 rounded-2xl bg-slate-50 focus:bg-white outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3] transition-all placeholder:text-slate-300 placeholder:font-normal"
+                                                    value={itemBarcode}
+                                                    onChange={e => setItemBarcode(e.target.value)}
+                                                />
+                                                <button className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-white border border-slate-200 hover:border-[#bbf7d0] hover:bg-[#e2f5e3] text-slate-500 hover:text-[#166534] rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-sm">
+                                                    <Camera size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Physical Count */}
+                                        <div className="space-y-3">
+                                            <label className="block text-[12px] font-bold text-slate-600 uppercase tracking-widest">Physical Count <span className="text-rose-500">*</span></label>
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    onClick={() => setPhysicalCount(prev => Math.max(0, (parseInt(prev) || 0) - 1).toString())}
+                                                    className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-white hover:border-rose-300 text-slate-500 hover:text-rose-600 active:bg-rose-50 transition-all flex items-center justify-center shrink-0"
+                                                >
+                                                    <Minus size={24} strokeWidth={3} />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="w-full h-16 text-center text-4xl font-black border-2 border-slate-200 rounded-2xl bg-slate-50 focus:bg-white outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3] transition-all text-slate-800"
+                                                    value={physicalCount}
+                                                    onChange={e => setPhysicalCount(e.target.value)}
+                                                />
+                                                <button
+                                                    onClick={() => setPhysicalCount(prev => ((parseInt(prev) || 0) + 1).toString())}
+                                                    className="w-16 h-16 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-white hover:border-[#bbf7d0] text-slate-500 hover:text-[#166534] active:bg-[#e2f5e3] transition-all flex items-center justify-center shrink-0"
+                                                >
+                                                    <Plus size={24} strokeWidth={3} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Recount Flag */}
+                                        <div className="space-y-3">
+                                            <label className="block text-[12px] font-bold text-slate-600 uppercase tracking-widest opacity-0 hidden md:block">Flag</label>
+                                            <label className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2 h-16 ${recountFlag ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-white'}`}>
+                                                <div className="pt-0.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                                                        checked={recountFlag}
+                                                        onChange={e => setRecountFlag(e.target.checked)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div className={`text-[14px] font-bold ${recountFlag ? 'text-amber-900' : 'text-slate-700'}`}>Flag for Recount</div>
+                                                    <div className={`text-[11px] mt-0.5 ${recountFlag ? 'text-amber-700' : 'text-slate-500'}`}>Request supervisor review</div>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        {/* Count Notes */}
+                                        <div className="space-y-3 md:col-span-2">
+                                            <label className="block text-[12px] font-bold text-slate-600 uppercase tracking-widest">Observations</label>
+                                            <textarea
+                                                placeholder="E.g., Packaging damaged, wrong bin..."
+                                                rows={3}
+                                                className="w-full p-5 text-[15px] font-medium border-2 border-slate-200 rounded-2xl bg-slate-50 focus:bg-white outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3] transition-all resize-none placeholder:text-slate-300"
+                                                value={countNotes}
+                                                onChange={e => setCountNotes(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 pt-8 border-t border-slate-100 flex justify-end">
+                                        <button 
+                                            onClick={handleSubmitCount} 
+                                            className="w-full md:w-auto px-12 py-4 rounded-2xl bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 border border-[#bbf7d0] font-bold text-[16px] shadow-sm flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
+                                        >
+                                            <CheckCircle2 size={24} />
+                                            Record Count
+                                        </button>
+                                    </div>
+                                </VCard>
+                            </div>
+
+                            {/* Right Column: Scan History & Stats */}
+                            <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+                                <VCard className="p-6 border-none shadow-sm ring-1 ring-slate-100 bg-white flex flex-col h-full">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <History size={18} className="text-[#166534]" />
+                                        <h3 className="text-[13px] font-bold text-slate-800 uppercase tracking-wider">Recent Scans</h3>
+                                    </div>
                                     
-                                    {/* Mini Progress Bar */}
-                                    <div className="mt-4 flex items-center justify-between px-2">
-                                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Progress</span>
-                                        <span className="text-[12px] font-black text-slate-700">24 / 85 Items</span>
+                                    <div className="space-y-3 flex-1 overflow-y-auto">
+                                        {recentScans.length === 0 ? (
+                                            <div className="text-center py-10 text-slate-400 text-sm font-medium">No items scanned yet.</div>
+                                        ) : (
+                                            recentScans.map((scan, i) => (
+                                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-[#bbf7d0] transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                                            <PackageOpen size={18} className="text-slate-400" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[14px] font-bold text-slate-800">{scan.id}</div>
+                                                            <div className="text-[11px] font-semibold text-slate-400 mt-0.5">{scan.time}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Qty</div>
+                                                        <div className="text-[16px] font-black text-[#166534]">{scan.qty}</div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
-                                    <div className="mx-2 mt-1.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-500 w-[28%] rounded-full"></div>
+
+                                    <div className="mt-6 pt-6 border-t border-slate-100">
+                                        <div className="flex justify-between items-center bg-[#e2f5e3] border border-[#bbf7d0] p-4 rounded-2xl">
+                                            <div>
+                                                <div className="text-[11px] font-bold text-[#166534] uppercase tracking-wider">Session Total</div>
+                                                <div className="text-2xl font-black text-slate-800 mt-1">{recentScans.reduce((acc, scan) => acc + scan.qty, 0)}</div>
+                                            </div>
+                                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                                <CheckCircle2 size={24} className="text-[#166534]" />
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                </VCard>
                             </div>
                         </div>
                     </>

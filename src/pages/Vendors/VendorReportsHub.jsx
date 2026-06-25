@@ -204,9 +204,6 @@ export default function VendorReportsHub() {
                                 <button onClick={() => toast.success('Link copied to clipboard!')} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
                                     <Share2 size={14} className="text-green-800" /> Copy Link
                                 </button>
-                                <button onClick={() => navigate(VENDOR_ROUTES.whatsapp)} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-emerald-50 rounded-xl font-bold text-emerald-600 flex items-center gap-2 transition-all">
-                                    <MessageSquare size={14} className="text-emerald-500" /> Share on WhatsApp
-                                </button>
                                 <button onClick={() => toast.success('Emailing report...')} className="w-full text-left px-4 py-2.5 text-[12px] hover:bg-slate-50 rounded-xl font-bold text-slate-600 flex items-center gap-2 transition-all">
                                     <FileText size={14} className="text-slate-400" /> Email as PDF
                                 </button>
@@ -258,16 +255,21 @@ export default function VendorReportsHub() {
                                             </VCard>
                                         ))
                                     ) : (
-                                        kpis.map((stat, i) => (
-                                            <VCard key={i}>
-                                                <label className={labelCls}>{stat.label}</label>
-                                                <div className="text-[24px] font-bold text-slate-800 tracking-tight">{stat.value}</div>
-                                                <div className="w-full h-1 mt-3 rounded-full bg-slate-100 overflow-hidden">
-                                                    <motion.div initial={{ width: 0 }} animate={{ width: '70%' }}
-                                                        className={`h-full rounded-full bg-${stat.accent || 'green'}-800`} />
-                                                </div>
-                                            </VCard>
-                                        ))
+                                        kpis.map((stat, i) => {
+                                            const numValue = parseInt(String(stat.value).replace(/[^0-9.]/g, '')) || 0;
+                                            return (
+                                                <VCard key={i} noPad className="relative overflow-hidden flex flex-col justify-center">
+                                                    <div className="px-4 py-3 flex items-center justify-between gap-2">
+                                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{stat.label}</label>
+                                                        <div className="text-[20px] font-bold text-slate-800 tracking-tight leading-none">{stat.value}</div>
+                                                    </div>
+                                                    <div className="w-full h-1 bg-slate-100 absolute bottom-0 left-0">
+                                                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, numValue)}%` }}
+                                                            className="h-full bg-green-500" />
+                                                    </div>
+                                                </VCard>
+                                            );
+                                        })
                                     )}
                                 </div>
 

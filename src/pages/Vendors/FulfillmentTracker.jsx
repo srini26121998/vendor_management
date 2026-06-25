@@ -16,7 +16,7 @@ const PIPELINE_STAGES = [
 
 export default function FulfillmentTracker() {
     const navigate = useNavigate();
-    const [view, setView] = useState('pipeline');
+    const [view, setView] = useState('table');
     const [currentPage, setCurrentPage] = useState(1);
     const [advMode, setAdvMode] = useState(false);
     const [sortConfig, setSortConfig] = useState({ key: 'id', dir: 'asc' });

@@ -20,6 +20,7 @@ export default function VendorPortal() {
     const [payments, setPayments] = useState([]);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentVendorId, setCurrentVendorId] = useState(null);
+    const [poPage, setPoPage] = useState(1);
     const [disputeForm, setDisputeForm] = useState({
         relatedInstrument: '',
         category: 'Payment not received',
@@ -33,7 +34,7 @@ export default function VendorPortal() {
             const data = d.data || d;
             setPayments(Array.isArray(data) ? data : []);
         });
-        
+
         // Fetch the first available vendor to act as the "Logged In" vendor for disputes
         fetchVendors().then(res => {
             const data = res.data || res;
@@ -99,148 +100,186 @@ export default function VendorPortal() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div><h1 className="text-[20px] font-bold text-slate-800 tracking-tight">Vendor Portal (Self-Service)</h1>
                     </div>
-                    <button onClick={() => setSettingsOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-[12px] font-bold bg-white text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm">
+                    <SecondaryBtn onClick={() => setSettingsOpen(true)}>
                         <Settings size={14} /> Portal Settings
-                    </button>
+                    </SecondaryBtn>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-
-                    {/* ── Sidebar Navigation ── */}
-                    <div className="space-y-6">
-                        <VCard noPad className="overflow-hidden border-slate-200">
-                            <div className="p-2 space-y-1">
-                                {TABS.map(t => (
-                                    <button key={t.key} onClick={() => setTab(t.key)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-[13px] font-bold transition-all ${tab === t.key ? 'bg-green-50 text-green-800 border-green-200 shadow-sm' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-                                        {t.icon}
-                                        {t.label}
-                                        {tab === t.key && <motion.div layoutId="tab-dot" className="ml-auto w-1.5 h-1.5 rounded-full bg-green-800" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </VCard>
-
-                        <VCard className="!bg-white !border-blue-100 shadow-sm">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Info size={16} className="text-blue-600" />
-                                <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Portal Guide</h4>
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
-                                This portal allows your vendors to acknowledge POs, upload invoices, and track payments in real-time.
-                            </p>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                                <ShieldCheck size={12} />
-                                <span>SECURE ACCESS ACTIVE</span>
-                            </div>
-                        </VCard>
+                <div>
+                    {/* ── Horizontal Navigation ── */}
+                    <div className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                        {TABS.map(t => {
+                            const isActive = tab === t.key;
+                            return (
+                                <button key={t.key} onClick={() => setTab(t.key)}
+                                    className={`px-5 py-2.5 ${isActive ? 'bg-[#e2f5e3] border-[#bbf7d0]' : 'bg-white hover:bg-slate-50 border-slate-200'} border text-slate-800 text-[11px] font-bold uppercase tracking-wider rounded-full transition-all flex items-center gap-2 shadow-sm whitespace-nowrap`}>
+                                    {t.icon}
+                                    {t.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* ── Main Content Area ── */}
-                    <div className="lg:col-span-3">
+                    <div className="w-full">
                         <AnimatePresence mode="wait">
                             <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                                 {tab === 'po' && (
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between px-2 mb-2">
                                             <h3 className="text-[14px] font-bold text-slate-800 uppercase tracking-tight">Purchase Order Inbox</h3>
-                                            <span className="text-[10px] font-bold text-blue-500 uppercase  flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" /> Live Sync
+                                            <span className="text-[10px] font-bold text-emerald-500 uppercase  flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Sync
                                             </span>
                                         </div>
-                                        {pos.slice(0, 4).map((po, i) => (
-                                            <VCard key={i} className="group hover:border-blue-200 transition-all">
-                                                <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                                                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-blue-600 border border-slate-100 transition-all shadow-sm shrink-0">
-                                                        <Layout size={20} />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex flex-wrap items-center gap-3 mb-1.5">
-                                            <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{po.id}</span>
-                                            <h3 className="text-[16px] font-bold text-slate-800">{formatCurrency(po.grandTotal || po.amount || 0)} · {po.items?.length || 0} Items</h3>
+                                        {pos.slice((poPage - 1) * 10, poPage * 10).map((po, i) => (
+                                            <motion.div
+                                                key={po.id || i}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: i * 0.05 }}
+                                            >
+                                                <VCard className="group hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-white border border-slate-200 shadow-sm">
+                                                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10">
+                                                        <div className="w-14 h-14 bg-[#e2f5e3] rounded-2xl flex items-center justify-center text-emerald-600 border border-[#bbf7d0] transition-all shadow-inner group-hover:scale-110 shrink-0">
+                                                            <Layout size={22} className="opacity-80 group-hover:opacity-100" />
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                                <span>Expected: {po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toLocaleDateString('en-IN') : 'TBD'}</span>
-                                                            <StatusBadge status={po.status} size="xs" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-3 mb-1.5">
+                                                                <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50/80 px-2.5 py-1 rounded-md border border-emerald-200/50 shadow-sm">{po.id}</span>
+                                                                <h3 className="text-[17px] font-extrabold text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors">{formatCurrency(po.grandTotal || po.amount || 0)} <span className="text-slate-300 font-normal mx-1">|</span> <span className="text-[13px] font-semibold text-slate-500">{po.items?.length || 0} Items</span></h3>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Expected: {po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toLocaleDateString('en-IN') : 'TBD'}</span>
+                                                                <StatusBadge status={po.status} size="xs" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-3 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                                                            <SecondaryBtn onClick={() => toast.success(`PO PDF downloaded`)} className="flex-1 md:flex-none">
+                                                                <Download size={14} /> PDF
+                                                            </SecondaryBtn>
+                                                            {((po.status || '').toUpperCase() === 'ACTIVE') ? (
+                                                                <button onClick={() => handleAcknowledge(po.id)}
+                                                                    className="flex-1 px-5 py-2 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[11px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-[#bbf7d0] shadow-sm">
+                                                                    <CheckCircle size={14} /> Acknowledge
+                                                                </button>
+                                                            ) : (
+                                                                <div className="flex-1 flex items-center justify-center gap-1.5 px-5 py-2 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-bold uppercase tracking-wider border border-emerald-100">
+                                                                    <CheckCircle size={14} /> Acknowledged
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <div className="flex gap-3 w-full md:w-auto shrink-0">
-                                                        <SecondaryBtn icon={<Download size={14} />} onClick={() => toast.success(`PO PDF downloaded`)} className="flex-1 md:flex-none !py-1.5 !px-4 !text-[11px]">
-                                                            PDF
-                                                        </SecondaryBtn>
-                                                        {((po.status || '').toUpperCase() === 'ACTIVE') ? (
-                                                            <PrimaryBtn icon={<CheckCircle size={14} />} onClick={() => handleAcknowledge(po.id)} className="flex-1 !py-1.5 !px-4 !text-[11px]">
-                                                                Acknowledge
-                                                            </PrimaryBtn>
-                                                        ) : (
-                                                            <PrimaryBtn className="flex-1 !py-1.5 !px-4 !text-[11px] opacity-50 cursor-not-allowed">
-                                                                Acknowledged
-                                                            </PrimaryBtn>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </VCard>
+                                                </VCard>
+                                            </motion.div>
                                         ))}
+                                        {pos.length > 10 && (
+                                            <div className="flex items-center justify-between bg-white px-4 py-3 border border-slate-200 rounded-xl shadow-sm mt-4">
+                                                <span className="text-[12px] font-medium text-slate-500">
+                                                    Showing <span className="font-bold text-slate-800">{(poPage - 1) * 10 + 1}</span> to <span className="font-bold text-slate-800">{Math.min(poPage * 10, pos.length)}</span> of <span className="font-bold text-slate-800">{pos.length}</span> entries
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        disabled={poPage === 1}
+                                                        onClick={() => setPoPage(p => p - 1)}
+                                                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                        Prev
+                                                    </button>
+                                                    <span className="text-[12px] font-bold text-slate-800 px-2">{poPage}</span>
+                                                    <button
+                                                        disabled={poPage * 10 >= pos.length}
+                                                        onClick={() => setPoPage(p => p + 1)}
+                                                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
                                 {tab === 'docs' && (
                                     <VCard className="py-16 text-center border-dashed border-slate-200 bg-white shadow-sm">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-blue-600 mb-4 border border-slate-100 mx-auto">
+                                        <div className="w-16 h-16 bg-[#e2f5e3] rounded-full flex items-center justify-center text-emerald-600 mb-4 border border-[#bbf7d0] mx-auto shadow-sm">
                                             <FileText size={28} />
                                         </div>
                                         <h3 className="text-[16px] font-bold text-slate-800">Secure Document Upload</h3>
                                         <p className="text-[12px] text-slate-400 font-medium max-w-sm mx-auto mt-2 leading-relaxed mb-8">
                                             Upload Invoices, GST Certificates, or Legal Agreements for immediate processing.
                                         </p>
-                                        <PrimaryBtn onClick={() => toast.success('Document uploaded!')} className="mx-auto">
-                                            Select Files to Upload
-                                        </PrimaryBtn>
+                                        <button onClick={() => toast.success('Document uploaded!')}
+                                            className="mx-auto px-8 py-3.5 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[13px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 flex items-center justify-center gap-2 border border-[#bbf7d0] shadow-sm">
+                                            <FileText size={16} /> Select Files to Upload
+                                        </button>
                                         <p className="text-[9px] text-slate-300 font-bold uppercase mt-4 tracking-[0.2em]">PDF, JPG, PNG (Max 10MB)</p>
                                     </VCard>
                                 )}
 
                                 {tab === 'dispute' && (
-                                    <VCard className="max-w-3xl">
-                                        <SectionTitle>Raise Compliance Dispute</SectionTitle>
-                                        <div className="space-y-6 mt-6">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={labelCls}>Related Instrument</label>
-                                                    <select 
-                                                        value={disputeForm.relatedInstrument}
-                                                        onChange={e => setDisputeForm({ ...disputeForm, relatedInstrument: e.target.value })}
-                                                        className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
-                                                        <option value="">Select an Invoice...</option>
-                                                        {invoices.map(i => <option key={i.id} value={i.id}>{i.id} — {formatCurrency(i.totalAmount || i.invoiceAmount || 0)}</option>)}
-                                                    </select>
+                                    <div className="max-w-4xl mx-auto">
+                                        <VCard className="relative overflow-hidden bg-white shadow-lg border border-slate-200">
+                                            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-orange-400 to-amber-400"></div>
+
+                                            <div className="flex items-start gap-5 mb-8">
+                                                <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100 shadow-inner">
+                                                    <Scale size={24} />
                                                 </div>
                                                 <div>
-                                                    <label className={labelCls}>Dispute Category</label>
-                                                    <select 
-                                                        value={disputeForm.category}
-                                                        onChange={e => setDisputeForm({ ...disputeForm, category: e.target.value })}
-                                                        className="w-full text-[13px] font-bold border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none">
-                                                        <option value="Payment not received">Payment not received</option>
-                                                        <option value="Wrong quantity">Wrong quantity</option>
-                                                        <option value="Pricing mismatch">Pricing mismatch</option>
-                                                        <option value="Damaged goods">Damaged goods</option>
-                                                    </select>
+                                                    <h2 className="text-[22px] font-black text-slate-800 tracking-tight leading-tight">Formal Compliance Dispute</h2>
+                                                    <p className="text-[13px] font-medium text-slate-500 mt-1">Log a discrepancy regarding payments, quantities, or pricing. This will be routed to the central compliance team for immediate review.</p>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className={labelCls}>Detailed Narrative</label>
-                                                <textarea rows={4} placeholder="Describe the discrepancy in detail..."
-                                                    value={disputeForm.narrative}
-                                                    onChange={e => setDisputeForm({ ...disputeForm, narrative: e.target.value })}
-                                                    className="w-full text-[13px] font-medium border border-slate-200 rounded-lg px-4 py-2.5 bg-slate-50/50 focus:border-blue-500 transition-all outline-none resize-none leading-relaxed" />
+
+                                            <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6 space-y-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                            <FileText size={12} className="text-slate-400" /> Related Instrument
+                                                        </label>
+                                                        <select
+                                                            value={disputeForm.relatedInstrument}
+                                                            onChange={e => setDisputeForm({ ...disputeForm, relatedInstrument: e.target.value })}
+                                                            className="w-full text-[14px] font-bold border-2 border-slate-200 rounded-xl px-4 py-3 bg-white focus:border-red-400 focus:ring-4 focus:ring-red-50 transition-all outline-none text-slate-800 cursor-pointer shadow-sm hover:border-slate-300">
+                                                            <option value="">Select an Invoice...</option>
+                                                            {invoices.map(i => <option key={i.id} value={i.id}>{i.id} — {formatCurrency(i.totalAmount || i.invoiceAmount || 0)}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                            <Info size={12} className="text-slate-400" /> Dispute Category
+                                                        </label>
+                                                        <select
+                                                            value={disputeForm.category}
+                                                            onChange={e => setDisputeForm({ ...disputeForm, category: e.target.value })}
+                                                            className="w-full text-[14px] font-bold border-2 border-slate-200 rounded-xl px-4 py-3 bg-white focus:border-red-400 focus:ring-4 focus:ring-red-50 transition-all outline-none text-slate-800 cursor-pointer shadow-sm hover:border-slate-300">
+                                                            <option value="Payment not received">Payment Not Received</option>
+                                                            <option value="Wrong quantity">Wrong Quantity</option>
+                                                            <option value="Pricing mismatch">Pricing Mismatch</option>
+                                                            <option value="Damaged goods">Damaged Goods</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <FileText size={12} className="text-slate-400" /> Detailed Narrative
+                                                    </label>
+                                                    <textarea rows={5} placeholder="Provide a comprehensive description of the discrepancy..."
+                                                        value={disputeForm.narrative}
+                                                        onChange={e => setDisputeForm({ ...disputeForm, narrative: e.target.value })}
+                                                        className="w-full text-[14px] font-medium border-2 border-slate-200 rounded-xl px-4 py-3 bg-white focus:border-red-400 focus:ring-4 focus:ring-red-50 transition-all outline-none resize-none leading-relaxed text-slate-800 shadow-sm hover:border-slate-300" />
+                                                </div>
                                             </div>
-                                            <PrimaryBtn onClick={handleDisputeSubmit} className="w-full justify-center !py-3.5 shadow-blue-100 shadow-lg">
-                                                Submit Formal Dispute
-                                            </PrimaryBtn>
-                                        </div>
-                                    </VCard>
+
+                                            <div className="mt-8 flex justify-end">
+                                                <button onClick={handleDisputeSubmit}
+                                                    className="px-8 py-3.5 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[13px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 flex items-center gap-2 border border-[#bbf7d0] shadow-sm">
+                                                    <ShieldCheck size={16} />
+                                                    Submit Formal Dispute
+                                                </button>
+                                            </div>
+                                        </VCard>
+                                    </div>
                                 )}
 
                                 {tab === 'payments' && (
@@ -265,21 +304,21 @@ export default function VendorPortal() {
                                                 const isPayment = item.type === 'payment';
                                                 const payment = isPayment ? item.data : null;
                                                 const inv = isPayment ? null : item.data;
-                                                
+
                                                 const isPaid = isPayment || (inv && inv.submissionStatus === 'PAID');
                                                 const status = isPaid ? 'SUCCESS' : (inv?.submissionStatus === 'APPROVED' ? 'PENDING' : inv?.submissionStatus);
-                                                
+
                                                 const displayPrefix = isPaid ? 'BATCH:' : 'INV:';
                                                 const displayId = isPayment
                                                     ? (payment.bankReference || payment.paymentNumber || payment.id.split('-')[0])
                                                     : (inv.invoiceNumber || inv.id.split('-')[0]);
-                                                    
-                                                const amount = isPayment 
-                                                    ? (payment.netPayment || payment.paymentAmount || 0) 
+
+                                                const amount = isPayment
+                                                    ? (payment.netPayment || payment.paymentAmount || 0)
                                                     : (inv.totalAmount || inv.invoiceAmount || 0);
 
                                                 return (
-                                                    <VCard key={i} className="group hover:border-emerald-200 transition-all shadow-sm">
+                                                    <VCard key={i} className="group bg-white hover:border-emerald-200 transition-all shadow-sm">
                                                         <div className="flex items-center justify-between gap-4">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 border border-emerald-100 transition-all shrink-0">
@@ -293,7 +332,7 @@ export default function VendorPortal() {
                                                                         <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">{formatCurrency(amount)}</h3>
                                                                     </div>
                                                                     <div className="text-[10px] font-bold text-slate-400 uppercase italic">
-                                                                        {isPaid 
+                                                                        {isPaid
                                                                             ? `Invoice: ${isPayment ? payment.invoiceNumber || 'N/A' : inv?.invoiceNumber || 'N/A'}`
                                                                             : `Due: ${inv?.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-IN') : 'N/A'}`
                                                                         }
@@ -324,7 +363,7 @@ export default function VendorPortal() {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-blue-600 uppercase  mb-3 flex items-center gap-2">
+                            <h4 className="text-[10px] font-bold text-emerald-600 uppercase  mb-3 flex items-center gap-2">
                                 <ShieldCheck size={14} /> Self-Service Permissions
                             </h4>
                             {[
@@ -332,13 +371,13 @@ export default function VendorPortal() {
                                 { key: 'allowDisputes', label: 'Allow Dispute Raising', desc: 'Compliance dispute portal' },
                                 { key: 'allowInvoices', label: 'Allow Invoice Upload', desc: 'Direct document sync' },
                             ].map(p => (
-                                <div key={p.key} className="flex items-start justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group hover:border-blue-200 transition-all">
+                                <div key={p.key} className="flex items-start justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
                                     <div>
                                         <p className="text-[12px] font-bold text-slate-700">{p.label}</p>
                                         <p className="text-[9px] text-slate-400 font-medium">{p.desc}</p>
                                     </div>
                                     <button onClick={() => toggleSetting(p.key)}
-                                        className={`w-9 h-4.5 rounded-full relative transition-colors mt-1 ${settings[p.key] ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                                        className={`w-9 h-4.5 rounded-full relative transition-colors mt-1 ${settings[p.key] ? 'bg-[#16a34a]' : 'bg-slate-300'}`}>
                                         <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-transform ${settings[p.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
                                     </button>
                                 </div>
@@ -350,7 +389,6 @@ export default function VendorPortal() {
                                 <CheckCircle size={14} /> Communication Prefs
                             </h4>
                             {[
-                                { key: 'notifyWhatsApp', label: 'WhatsApp Alerts', desc: 'Real-time PO pings' },
                                 { key: 'notifyEmail', label: 'Email Digest', desc: 'Daily settlement logs' },
                             ].map(p => (
                                 <div key={p.key} className="flex items-start justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group hover:border-emerald-200 transition-all">
@@ -374,7 +412,7 @@ export default function VendorPortal() {
                                 <div className="flex gap-2">
                                     {['active', 'maintenance'].map(s => (
                                         <button key={s} onClick={() => setSettings(prev => ({ ...prev, portalStatus: s }))}
-                                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${settings.portalStatus === s ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100' : 'bg-white text-slate-400 border-slate-200 hover:border-blue-200'}`}>
+                                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${settings.portalStatus === s ? 'bg-[#16a34a] text-white border-[#16a34a] shadow-md shadow-emerald-100' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200'}`}>
                                             {s}
                                         </button>
                                     ))}
@@ -383,7 +421,7 @@ export default function VendorPortal() {
                             <div>
                                 <label className={labelCls}>Session Expiry</label>
                                 <select value={settings.sessionExpiry} onChange={e => setSettings(s => ({ ...s, sessionExpiry: e.target.value }))}
-                                    className="w-full text-[12px] font-bold border border-slate-200 rounded-lg px-4 py-2 bg-slate-50 focus:border-blue-500 outline-none">
+                                    className="w-full text-[12px] font-bold border border-slate-200 rounded-lg px-4 py-2 bg-slate-50 focus:border-emerald-500 outline-none">
                                     <option value="1h">1 Hour</option>
                                     <option value="4h">4 Hours</option>
                                     <option value="12h">12 Hours</option>
@@ -393,8 +431,13 @@ export default function VendorPortal() {
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">
-                        <SecondaryBtn onClick={() => setSettingsOpen(false)}>Cancel</SecondaryBtn>
-                        <PrimaryBtn onClick={saveSettings} className="px-6 shadow-blue-100 shadow-lg">Apply Config</PrimaryBtn>
+                        <SecondaryBtn onClick={() => setSettingsOpen(false)}>
+                            Cancel
+                        </SecondaryBtn>
+                        <button onClick={saveSettings}
+                            className="px-6 py-2.5 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[12px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 border border-[#bbf7d0] shadow-sm">
+                            Apply Config
+                        </button>
                     </div>
                 </div>
             </VModal>

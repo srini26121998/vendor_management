@@ -9,6 +9,34 @@ import toast from 'react-hot-toast';
 import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge } from '../Vendors/VendorComponents';
 
 // Removed Mocks
+const DEFAULT_CATEGORIES = [
+    { id: 'CAT1', name: 'Dairy', color: '#10b981' },
+    { id: 'CAT2', name: 'Beverages', color: '#f59e0b' },
+    { id: 'CAT3', name: 'Frozen Foods', color: '#84cc16' },
+    { id: 'CAT4', name: 'Packaged Foods', color: '#14b8a6' },
+    { id: 'CAT5', name: 'Fresh Produce', color: '#f97316' },
+];
+
+const sanitizeCategories = (cats) => {
+    const loaded = cats && cats.length > 0 ? cats : DEFAULT_CATEGORIES;
+    return loaded.map((cat, idx) => {
+        const isLegacyColor = !cat.color || 
+            ['#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a',
+             '#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#312e81',
+             '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95',
+             '#0ea5e9', '#0284c7', '#0369a1', '#075985', '#0c4a6e'
+            ].includes(cat.color.toLowerCase());
+        
+        if (isLegacyColor) {
+            const beautifulColors = ['#10b981', '#f59e0b', '#84cc16', '#14b8a6', '#f97316', '#0d9488', '#22c55e', '#eab308'];
+            return {
+                ...cat,
+                color: beautifulColors[idx % beautifulColors.length]
+            };
+        }
+        return cat;
+    });
+};
 
 export default function WarehouseMap() {
     const [activeTab, setActiveTab] = useState('MAPPING');
@@ -32,7 +60,7 @@ export default function WarehouseMap() {
                     import('../../api/vendorService').then(m => m.fetchWarehouseStock()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseMovements())
                 ]);
-                setCategories(cats || []);
+                setCategories(sanitizeCategories(cats));
                 setRacks(rks || []);
                 setProducts(prods || []);
                 setStock(stk || []);
@@ -163,13 +191,13 @@ export default function WarehouseMap() {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`px-5 py-3 rounded-2xl text-[13px] font-bold transition-all flex items-center whitespace-nowrap ${
+                        className={`px-5 py-3 rounded-2xl text-[13px] font-bold transition-all flex items-center whitespace-nowrap border ${
                             activeTab === tab.id 
-                            ? 'bg-[#0f172a] text-white shadow-xl shadow-slate-200' 
-                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                            ? 'bg-[#e2f5e3] text-slate-800 border-[#bbf7d0] shadow-sm' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                         }`}
                     >
-                        <tab.icon size={16} className={`mr-2 ${activeTab === tab.id ? 'text-blue-400' : 'text-slate-400'}`} /> 
+                        <tab.icon size={16} className={`mr-2 ${activeTab === tab.id ? 'text-[#166534]' : 'text-slate-400'}`} /> 
                         {tab.label}
                     </button>
                 ))}
@@ -191,11 +219,11 @@ export default function WarehouseMap() {
                                 onClick={() => setIs3D(!is3D)}
                                 className={`px-4 py-2 border rounded-xl text-[12px] font-bold flex items-center gap-2 transition-all shadow-sm ${
                                     is3D 
-                                    ? 'bg-blue-50 border-blue-200 text-blue-600' 
+                                    ? 'bg-[#e2f5e3] border-[#bbf7d0] text-[#166534]' 
                                     : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                                 }`}
                             >
-                                <Box size={16} className={is3D ? 'text-blue-600' : 'text-slate-400'} />
+                                <Box size={16} className={is3D ? 'text-[#166534]' : 'text-slate-400'} />
                                 {is3D ? '3D View Active' : '2D View Active'}
                             </button>
                             {/* Legend preview */}
@@ -248,16 +276,51 @@ export default function WarehouseMap() {
                                         onClick={() => setSelectedRack(isSelected ? null : rack.id)}
                                         className={`group relative aspect-square rounded-xl transition-colors duration-300 cursor-pointer flex flex-col items-center justify-center border-2
                                             ${isSelected ? 'border-green-300 z-50 ring-4 ring-green-500 ring-offset-2 shadow-[0_0_20px_rgba(34,197,94,0.5)]' : 'border-white/20 hover:z-50 hover:shadow-2xl'}
-                                            ${isHighlighted && !isSelected ? 'ring-4 ring-blue-500 ring-offset-2 animate-pulse' : ''}
+                                            ${isHighlighted && !isSelected ? 'ring-4 ring-[#166534] ring-offset-2 animate-pulse' : ''}
                                             ${is3D && !isSelected ? 'shadow-[3px_3px_6px_rgba(0,0,0,0.2)]' : 'shadow-sm'}`}
                                         style={{ 
-                                            backgroundColor: isSelected ? '#22c55e' : (cat ? cat.color : '#e2e8f0'),
+                                            backgroundColor: isSelected ? '#22c55e' : (cat ? cat.color : ['#10b981', '#f59e0b', '#84cc16', '#14b8a6', '#f97316'][idx % 5]),
                                             transformStyle: 'preserve-3d'
                                         }}
                                     >
-                                        <div className="text-white font-extrabold text-[12px] drop-shadow-md z-10">{rack.id}</div>
-                                        {rackStock.length > 0 && (
-                                            <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white z-10 shadow-sm" title="Contains Stock"></div>
+                                        {/* Top face content floating on Z-axis in 3D */}
+                                        <div 
+                                            className="flex flex-col items-center justify-center w-full h-full relative"
+                                            style={{ 
+                                                transform: is3D ? 'translateZ(20px)' : 'none', 
+                                                transformStyle: 'preserve-3d' 
+                                            }}
+                                        >
+                                            <div className="text-white font-extrabold text-[12px] drop-shadow-md z-10">{rack.id}</div>
+                                            {rackStock.length > 0 && (
+                                                <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white z-10 shadow-sm" title="Contains Stock"></div>
+                                            )}
+                                        </div>
+
+                                        {/* 3D Side Shadows */}
+                                        {is3D && (
+                                            <>
+                                                {/* Left Side Face */}
+                                                <div 
+                                                    className="absolute bottom-0 left-0 right-0 h-[20px] origin-bottom transition-colors duration-300"
+                                                    style={{
+                                                        backgroundColor: 'rgba(0,0,0,0.15)',
+                                                        transform: 'rotateX(-90deg)',
+                                                        transformOrigin: 'bottom',
+                                                        borderRadius: '0 0 8px 8px'
+                                                    }}
+                                                />
+                                                {/* Right Side Face */}
+                                                <div 
+                                                    className="absolute top-0 bottom-0 right-0 w-[20px] origin-right transition-colors duration-300"
+                                                    style={{
+                                                        backgroundColor: 'rgba(0,0,0,0.25)',
+                                                        transform: 'rotateY(90deg)',
+                                                        transformOrigin: 'right',
+                                                        borderRadius: '0 8px 8px 0'
+                                                    }}
+                                                />
+                                            </>
                                         )}
                                         
                                         {/* Hover Tooltip */}
@@ -279,7 +342,7 @@ export default function WarehouseMap() {
                                                         return (
                                                             <div key={s.productId} className="flex justify-between text-[11px]">
                                                                 <span className="text-slate-300 truncate max-w-[100px]">{p?.productName}</span>
-                                                                <span className="font-bold text-blue-400">{s.quantity} {p?.unitOfMeasure}</span>
+                                                                <span className="font-bold text-[#166534]">{s.quantity} {p?.unitOfMeasure}</span>
                                                             </div>
                                                         );
                                                     }) : (
@@ -336,7 +399,7 @@ export default function WarehouseMap() {
                         <input 
                             type="text" 
                             placeholder="Search Racks..." 
-                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-[13px] outline-none focus:border-blue-500 w-64"
+                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-[13px] outline-none focus:border-[#bbf7d0] w-64"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -354,10 +417,10 @@ export default function WarehouseMap() {
                             {racks.filter(r => r.id.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 20).map(rack => {
                                 const cat = getCategoryById(rack.categoryId);
                                 return (
-                                    <tr key={rack.id} className="border-b border-slate-100 hover:bg-blue-50/40 transition-colors group">
+                                    <tr key={rack.id} className="border-b border-slate-100 hover:bg-[#e2f5e3]/30 transition-colors group">
                                         <td className="p-5 font-extrabold text-slate-800">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200 group-hover:bg-blue-100 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors">
+                                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200 group-hover:bg-[#e2f5e3] group-hover:text-[#166534] group-hover:border-[#bbf7d0] transition-colors">
                                                     <GridIcon size={16} />
                                                 </div>
                                                 {rack.id}
@@ -367,11 +430,11 @@ export default function WarehouseMap() {
                                             <div className="relative w-[220px]">
                                                 <button 
                                                     onClick={() => setActiveDropdownRackId(activeDropdownRackId === rack.id ? null : rack.id)}
-                                                    className={`flex items-center w-full bg-white border ${activeDropdownRackId === rack.id ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-blue-400'} rounded-xl px-3 py-2 shadow-sm transition-all text-left outline-none`}
+                                                    className={`flex items-center w-full bg-white border ${activeDropdownRackId === rack.id ? 'border-[#bbf7d0] ring-4 ring-[#e2f5e3]/20' : 'border-slate-200 hover:border-[#bbf7d0]'} rounded-xl px-3 py-2 shadow-sm transition-all text-left outline-none`}
                                                 >
                                                     <div className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm mr-2.5" style={{ backgroundColor: cat?.color }}></div>
                                                     <span className="font-bold text-slate-700 text-[13px] flex-1 truncate">{cat?.name || 'Select Category'}</span>
-                                                    <div className={`text-slate-400 transition-transform duration-200 ${activeDropdownRackId === rack.id ? 'rotate-180 text-blue-500' : ''}`}>
+                                                    <div className={`text-slate-400 transition-transform duration-200 ${activeDropdownRackId === rack.id ? 'rotate-180 text-[#166534]' : ''}`}>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                                     </div>
                                                 </button>
@@ -393,12 +456,12 @@ export default function WarehouseMap() {
                                                                             handleRackCategoryChange(rack.id, c.id);
                                                                             setActiveDropdownRackId(null);
                                                                         }}
-                                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-left transition-colors ${cat?.id === c.id ? 'bg-blue-50/80' : 'hover:bg-slate-50'}`}
+                                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-left transition-colors ${cat?.id === c.id ? 'bg-[#e2f5e3]' : 'hover:bg-slate-50'}`}
                                                                     >
                                                                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm mr-3" style={{ backgroundColor: c.color }}></div>
-                                                                        <span className={`text-[13px] flex-1 truncate ${cat?.id === c.id ? 'font-bold text-blue-700' : 'font-medium text-slate-600'}`}>{c.name}</span>
+                                                                        <span className={`text-[13px] flex-1 truncate ${cat?.id === c.id ? 'font-bold text-[#166534]' : 'font-medium text-slate-600'}`}>{c.name}</span>
                                                                         {cat?.id === c.id && (
-                                                                            <CheckCircle2 size={14} className="ml-1 text-blue-500 flex-shrink-0" />
+                                                                            <CheckCircle2 size={14} className="ml-1 text-[#166534] flex-shrink-0" />
                                                                         )}
                                                                     </button>
                                                                 ))}
@@ -428,7 +491,7 @@ export default function WarehouseMap() {
         return (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <VCard className="relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-bl-full opacity-50 pointer-events-none -z-10"></div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#e2f5e3] rounded-bl-full opacity-50 pointer-events-none -z-10"></div>
                     
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                         <div>
@@ -437,7 +500,7 @@ export default function WarehouseMap() {
                         </div>
                         <div className="relative">
                             <select 
-                                className="pl-4 pr-10 py-2.5 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 bg-white shadow-sm appearance-none min-w-[200px]"
+                                className="pl-4 pr-10 py-2.5 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3]/20 bg-white shadow-sm appearance-none min-w-[200px]"
                                 value={selectedCategoryFilter}
                                 onChange={(e) => { setSelectedCategoryFilter(e.target.value); setProductPage(1); }}
                             >
@@ -460,11 +523,11 @@ export default function WarehouseMap() {
                                     animate={{ opacity: 1, scale: 1 }} 
                                     transition={{ delay: idx * 0.05 }}
                                     key={product.id} 
-                                    className="p-5 rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all bg-white group hover:-translate-y-1 relative overflow-hidden flex flex-col"
+                                    className="p-5 rounded-2xl border border-slate-200 hover:border-[#bbf7d0] hover:shadow-xl hover:shadow-[#e2f5e3]/5 transition-all bg-white group hover:-translate-y-1 relative overflow-hidden flex flex-col"
                                 >
                                     <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full pointer-events-none transition-colors opacity-10" style={{ backgroundColor: cat?.color }}></div>
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-500 group-hover:border-blue-200 transition-colors shadow-sm relative z-10">
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-[#e2f5e3] group-hover:text-[#166534] group-hover:border-[#bbf7d0] transition-colors shadow-sm relative z-10">
                                             <Package size={22} className="group-hover:scale-110 transition-transform" />
                                         </div>
                                         <div className="flex flex-col items-end gap-1 relative z-10">
@@ -474,7 +537,7 @@ export default function WarehouseMap() {
                                             </span>
                                         </div>
                                     </div>
-                                    <h4 className="font-extrabold text-[16px] text-slate-800 leading-tight mb-2 group-hover:text-blue-700 transition-colors relative z-10">{product.productName}</h4>
+                                    <h4 className="font-extrabold text-[16px] text-slate-800 leading-tight mb-2 group-hover:text-[#166534] transition-colors relative z-10">{product.productName}</h4>
                                     <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-50 relative z-10">
                                         <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: cat?.color }}></div>
                                         <span className="text-[12px] font-bold text-slate-500">{cat?.name}</span>
@@ -503,7 +566,7 @@ export default function WarehouseMap() {
                                         <button
                                             key={i}
                                             onClick={() => setProductPage(i + 1)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${productPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-100'}`}
+                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${productPage === i + 1 ? 'bg-[#e2f5e3] text-slate-800 border border-[#bbf7d0] shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
                                         >
                                             {i + 1}
                                         </button>
@@ -536,12 +599,12 @@ export default function WarehouseMap() {
                             <button 
                                 type="button"
                                 onClick={() => setIsRackDropdownOpen(!isRackDropdownOpen)}
-                                className={`w-full px-4 py-3 border ${isRackDropdownOpen ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-200 hover:border-blue-400'} rounded-xl text-[13px] font-bold bg-slate-50 flex items-center justify-between transition-all outline-none`}
+                                className={`w-full px-4 py-3 border ${isRackDropdownOpen ? 'border-[#bbf7d0]' : 'border-slate-200 hover:border-[#bbf7d0]'} rounded-xl text-[13px] font-bold bg-slate-50 flex items-center justify-between transition-all outline-none`}
                             >
                                 <span className={stockUpdateForm.rackId ? 'text-slate-800' : 'text-slate-400'}>
                                     {stockUpdateForm.rackId ? `${stockUpdateForm.rackId} (${getCategoryById(getRackById(stockUpdateForm.rackId)?.categoryId)?.name})` : 'Search and choose a rack...'}
                                 </span>
-                                <div className={`text-slate-400 transition-transform duration-200 ${isRackDropdownOpen ? 'rotate-180 text-blue-500' : ''}`}>
+                                <div className={`text-slate-400 transition-transform duration-200 ${isRackDropdownOpen ? 'rotate-180 text-[#166534]' : ''}`}>
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                 </div>
                             </button>
@@ -561,7 +624,7 @@ export default function WarehouseMap() {
                                                 <input 
                                                     type="text" 
                                                     placeholder="Search by Rack ID or Category..."
-                                                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] outline-none focus:border-[#bbf7d0] focus:ring-2 focus:ring-[#e2f5e3]/20 transition-all"
                                                     value={rackSearchQuery}
                                                     onChange={(e) => setRackSearchQuery(e.target.value)}
                                                     onClick={(e) => e.stopPropagation()}
@@ -588,7 +651,7 @@ export default function WarehouseMap() {
                                                                 setIsRackDropdownOpen(false);
                                                                 setRackSearchQuery('');
                                                             }}
-                                                            className={`w-full flex items-center p-3 rounded-lg text-left transition-colors mb-1 last:mb-0 ${stockUpdateForm.rackId === r.id ? 'bg-blue-50 border border-blue-100' : 'hover:bg-slate-50 border border-transparent'}`}
+                                                            className={`w-full flex items-center p-3 rounded-lg text-left transition-colors mb-1 last:mb-0 ${stockUpdateForm.rackId === r.id ? 'bg-[#e2f5e3] border border-[#bbf7d0]' : 'hover:bg-slate-50 border border-transparent'}`}
                                                         >
                                                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center mr-3 flex-shrink-0">
                                                                 <GridIcon size={14} className="text-slate-400" />
@@ -600,7 +663,7 @@ export default function WarehouseMap() {
                                                                     <span className="text-[11px] font-bold text-slate-500">{cat?.name}</span>
                                                                 </div>
                                                             </div>
-                                                            {stockUpdateForm.rackId === r.id && <CheckCircle2 size={16} className="text-blue-500" />}
+                                                            {stockUpdateForm.rackId === r.id && <CheckCircle2 size={16} className="text-[#166534]" />}
                                                         </button>
                                                     );
                                                 })
@@ -618,7 +681,7 @@ export default function WarehouseMap() {
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Select Product <span className="text-rose-500">*</span></label>
                                 <div className="relative">
                                     <select 
-                                        className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-slate-50 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none transition-all shadow-sm cursor-pointer"
+                                        className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-slate-50 outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3]/20 appearance-none transition-all shadow-sm cursor-pointer"
                                         value={stockUpdateForm.productId}
                                         onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, productId: e.target.value })}
                                         required
@@ -634,7 +697,7 @@ export default function WarehouseMap() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-2 px-1">
-                                    <Info size={12} className="text-blue-500" />
+                                    <Info size={12} className="text-[#166534]" />
                                     <p className="text-[10px] text-slate-500 font-medium">Filtered by category: <span className="font-bold text-slate-700">{getCategoryById(getRackById(stockUpdateForm.rackId)?.categoryId)?.name}</span></p>
                                 </div>
                             </motion.div>
@@ -662,7 +725,7 @@ export default function WarehouseMap() {
                                     <input 
                                         type="number" 
                                         min="1"
-                                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-white outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm"
+                                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-[13px] font-bold bg-white outline-none focus:border-[#bbf7d0] focus:ring-4 focus:ring-[#e2f5e3]/20 transition-all shadow-sm"
                                         value={stockUpdateForm.quantity}
                                         onChange={(e) => setStockUpdateForm({ ...stockUpdateForm, quantity: e.target.value })}
                                         required
@@ -675,7 +738,7 @@ export default function WarehouseMap() {
 
                         <button 
                             type="submit" 
-                            className="w-full py-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-[13px] transition-colors shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+                            className="w-full py-4 mt-2 bg-[#e2f5e3] hover:bg-[#d1f0d3] border border-[#bbf7d0] text-slate-800 font-bold rounded-xl text-[13px] transition-colors shadow-sm flex items-center justify-center gap-2"
                         >
                             <ArrowRightLeft size={16} />
                             Commit Stock Movement
@@ -826,7 +889,7 @@ export default function WarehouseMap() {
                                 </div>
                                 <button 
                                     onClick={handleAddWarehouse}
-                                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[12px] font-bold transition-all shadow-md shadow-indigo-500/30"
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-[#e2f5e3] hover:bg-[#d1f0d3] border border-[#bbf7d0] text-slate-800 rounded-xl text-[12px] font-bold transition-all shadow-sm"
                                 >
                                     <Plus size={16} /> New
                                 </button>
@@ -839,15 +902,15 @@ export default function WarehouseMap() {
                                         <div 
                                             key={wh.id}
                                             onClick={() => setSelectedMappingWarehouseId(wh.id)}
-                                            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden group ${isSelected ? 'bg-white border-indigo-400 shadow-[0_8px_30px_rgb(0,0,0,0.06)] ring-1 ring-indigo-400' : 'bg-slate-50 border-slate-200 hover:border-indigo-300 hover:bg-white hover:shadow-md'}`}
+                                            className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer relative overflow-hidden group ${isSelected ? 'bg-white border-[#bbf7d0] shadow-[0_8px_30px_rgb(0,0,0,0.06)] ring-1 ring-[#bbf7d0]' : 'bg-slate-50 border-slate-200 hover:border-[#bbf7d0] hover:bg-white hover:shadow-md'}`}
                                         >
-                                            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-indigo-500 to-blue-500"></div>}
+                                            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#166534]"></div>}
                                             
                                             <div className="flex justify-between items-start mb-3 pl-1">
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className={`font-extrabold text-[15px] ${isSelected ? 'text-indigo-900' : 'text-slate-800 group-hover:text-indigo-600'} transition-colors`}>{wh.name}</h4>
-                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${wh.type === 'Common' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{wh.type}</span>
+                                                        <h4 className={`font-extrabold text-[15px] ${isSelected ? 'text-[#166534]' : 'text-slate-800 group-hover:text-[#166534]'} transition-colors`}>{wh.name}</h4>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${wh.type === 'Common' ? 'bg-[#e2f5e3] text-[#166534]' : 'bg-amber-100 text-amber-700'}`}>{wh.type}</span>
                                                     </div>
                                                     <p className="text-[11px] font-bold text-slate-400 mt-0.5">{wh.id}</p>
                                                 </div>
@@ -867,7 +930,7 @@ export default function WarehouseMap() {
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-[12px] font-bold pl-1">
                                                 <span className="text-slate-500">Linked Supermarkets:</span>
-                                                <span className="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">{linkedCount} Stores</span>
+                                                <span className="text-[#166534] bg-[#e2f5e3] px-3 py-1 rounded-lg border border-[#bbf7d0]">{linkedCount} Stores</span>
                                             </div>
                                         </div>
                                     )
@@ -881,42 +944,42 @@ export default function WarehouseMap() {
                         <VCard className="h-full border-0 shadow-xl shadow-slate-200/40 bg-white/80 backdrop-blur-xl">
                             <div className="mb-6 border-b border-slate-100 pb-4">
                                 <h3 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Mapping Configuration</h3>
-                                <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assign supermarkets to <span className="font-bold text-indigo-600">{selectedWH?.name}</span>.</p>
-                            </div>
-                            
-                            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
-                                {supermarkets.map(sm => {
-                                    const isMapped = mappedSMs.includes(sm.id);
-                                    return (
-                                        <div 
-                                            key={sm.id}
-                                            onClick={() => handleToggleSupermarket(selectedWH.id, sm.id)}
-                                            className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer group ${isMapped ? 'bg-indigo-50 border-indigo-200 shadow-[0_4px_12px_rgba(99,102,241,0.08)]' : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md'}`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                {/* Sophisticated Toggle Switch */}
-                                                <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner flex items-center ${isMapped ? 'bg-indigo-500' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                                                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isMapped ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                                                </div>
-                                                <div>
-                                                    <h5 className={`font-extrabold text-[14px] transition-colors ${isMapped ? 'text-indigo-900' : 'text-slate-700 group-hover:text-indigo-600'}`}>{sm.name}</h5>
-                                                    <p className="text-[11px] font-bold text-slate-400 mt-0.5">{sm.id}</p>
-                                                </div>
-                                            </div>
-                                            {isMapped && <span className="text-[10px] font-extrabold text-indigo-600 bg-white px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm border border-indigo-100">Assigned</span>}
-                                        </div>
-                                    )
-                                })}
-                            </div>
+                                                        <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assign supermarkets to <span className="font-bold text-[#166534]">{selectedWH?.name}</span>.</p>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-3 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
+                                                        {supermarkets.map(sm => {
+                                                            const isMapped = mappedSMs.includes(sm.id);
+                                                            return (
+                                                                <div 
+                                                                    key={sm.id}
+                                                                    onClick={() => handleToggleSupermarket(selectedWH.id, sm.id)}
+                                                                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer group ${isMapped ? 'bg-[#e2f5e3] border-[#bbf7d0] shadow-sm' : 'bg-white border-slate-200 hover:border-[#bbf7d0] hover:shadow-md'}`}
+                                                                >
+                                                                    <div className="flex items-center gap-4">
+                                                                        {/* Sophisticated Toggle Switch */}
+                                                                        <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner flex items-center ${isMapped ? 'bg-[#166534]' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
+                                                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isMapped ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5 className={`font-extrabold text-[14px] transition-colors ${isMapped ? 'text-[#166534]' : 'text-slate-700 group-hover:text-[#166534]'}`}>{sm.name}</h5>
+                                                                            <p className="text-[11px] font-bold text-slate-400 mt-0.5">{sm.id}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    {isMapped && <span className="text-[10px] font-extrabold text-[#166534] bg-white px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm border border-[#bbf7d0]">Assigned</span>}
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
 
-                            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 flex items-start gap-3 shadow-sm">
-                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                    <Info size={18} />
-                                </div>
-                                <p className="text-[12px] font-medium text-slate-700 leading-relaxed">
-                                    Supports both a single common warehouse and individual warehouses per supermarket. Common warehouses can serve all stores simultaneously.
-                                </p>
-                            </div>
+                                                    <div className="mt-6 p-4 bg-[#e2f5e3]/30 rounded-2xl border border-[#bbf7d0] flex items-start gap-3 shadow-sm">
+                                                        <div className="p-2 bg-[#e2f5e3] text-[#166534] rounded-lg">
+                                                            <Info size={18} />
+                                                        </div>
+                                                        <p className="text-[12px] font-medium text-slate-700 leading-relaxed">
+                                                            Supports both a single common warehouse and individual warehouses per supermarket. Common warehouses can serve all stores simultaneously.
+                                                        </p>
+                                                    </div>
                         </VCard>
                     </div>
 
@@ -924,11 +987,11 @@ export default function WarehouseMap() {
                     <div className="lg:col-span-4 space-y-6">
                         <div className="h-full rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col border border-slate-200">
                             {/* Decorative background glow */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-[80px] opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 rounded-full blur-[80px] opacity-60 -ml-20 -mb-20 pointer-events-none"></div>
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-[#e2f5e3]/40 rounded-full blur-[80px] opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#e2f5e3]/30 rounded-full blur-[80px] opacity-60 -ml-20 -mb-20 pointer-events-none"></div>
                             
                             {/* Glass border top */}
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500"></div>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#bbf7d0] via-emerald-500 to-[#166534]"></div>
                             
                             <div className="p-8 relative z-10 flex-1 flex flex-col">
                                 <div className="mb-8 border-b border-slate-100 pb-6">
@@ -941,7 +1004,7 @@ export default function WarehouseMap() {
                                         <div className="space-y-6">
                                             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
                                                 <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-2">
-                                                    <MapIcon size={12} className="text-indigo-500"/> Location Address
+                                                    <MapIcon size={12} className="text-[#166534]"/> Location Address
                                                 </p>
                                                 <p className="text-[14px] font-bold text-slate-800">{selectedWH.address} Logistics Park, Phase 2</p>
                                             </div>
@@ -965,8 +1028,8 @@ export default function WarehouseMap() {
                                                     {mappedSMs.map(smId => {
                                                         const sm = supermarkets.find(s => s.id === smId);
                                                         return (
-                                                            <div key={smId} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[12px] font-bold rounded-xl border border-indigo-200 flex items-center gap-2">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                                            <div key={smId} className="px-3 py-1.5 bg-[#e2f5e3] text-[#166534] text-[12px] font-bold rounded-xl border border-[#bbf7d0] flex items-center gap-2">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#166534]"></div>
                                                                 {sm?.name.split(' (')[0]}
                                                             </div>
                                                         )
@@ -980,10 +1043,10 @@ export default function WarehouseMap() {
                                         <div className="mt-auto">
                                             <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-3">Live Pending Operations</p>
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-center relative overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer shadow-sm hover:shadow-md">
-                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-xl group-hover:bg-blue-100 transition-all opacity-50"></div>
-                                                    <p className="text-[28px] font-black text-blue-600 mb-0.5 relative z-10">12</p>
-                                                    <p className="text-[11px] font-bold text-blue-800 uppercase tracking-widest relative z-10">Inbound</p>
+                                                <div className="bg-[#e2f5e3]/50 p-4 rounded-2xl border border-[#bbf7d0] text-center relative overflow-hidden group hover:border-[#166534] transition-colors cursor-pointer shadow-sm hover:shadow-md">
+                                                    <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-xl group-hover:bg-[#d1f0d3] transition-all opacity-50"></div>
+                                                    <p className="text-[28px] font-black text-[#166534] mb-0.5 relative z-10">12</p>
+                                                    <p className="text-[11px] font-bold text-[#166534] uppercase tracking-widest relative z-10">Inbound</p>
                                                 </div>
                                                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center relative overflow-hidden group hover:border-amber-400 transition-colors cursor-pointer shadow-sm hover:shadow-md">
                                                     <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-xl group-hover:bg-amber-100 transition-all opacity-50"></div>
