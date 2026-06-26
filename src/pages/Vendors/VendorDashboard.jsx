@@ -19,7 +19,7 @@ import { fetchPurchaseOrders, fetchGRNs, fetchInvoices } from '../../api/vendorS
 
 export default function VendorDashboard() {
     const navigate = useNavigate();
-    const { vendors, loadVendors } = useVendorStore();
+    const { vendors, loadVendors, _hasHydrated } = useVendorStore();
     const { products, fetchProducts } = useMasterStore();
     const [selectedPeriod, setSelectedPeriod] = useState('month');
 
@@ -33,8 +33,8 @@ export default function VendorDashboard() {
         const loadDashboardStats = async () => {
             setIsFetching(true);
             try {
-                // Ensure vendors are loaded from Spring Boot backend
-                if (vendors.length === 0) {
+                // Wait for IndexedDB hydration before fetching to prevent race condition
+                if (_hasHydrated && vendors.length === 0) {
                     await loadVendors();
                 }
                 // Ensure store products are loaded
@@ -58,8 +58,11 @@ export default function VendorDashboard() {
                 setIsFetching(false);
             }
         };
-        loadDashboardStats();
-    }, [loadVendors, fetchProducts]);
+        // Only run if hydration has completed
+        if (_hasHydrated !== false) {
+            loadDashboardStats();
+        }
+    }, [loadVendors, fetchProducts, _hasHydrated]);
 
     const KPI_DATA = useMemo(() => {
         // Fallback or merge mock data if backend has no active records

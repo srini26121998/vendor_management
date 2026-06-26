@@ -29,7 +29,25 @@ export const ALL_MENU_ITEMS = [
     { key: 'roleManagement', label: 'Role Management', group: 'Admin' },
 ];
 
-const MENU_GROUPS = ['Core', 'Procurement', 'Finance', 'Operations', 'Analytics', 'Admin'];
+export const MENU_GROUPS = ['Core', 'Procurement', 'Finance', 'Operations', 'Analytics', 'Admin'];
+
+// ── Pre-computed lookups (computed ONCE at module load, not per render) ──
+export const MENU_ITEMS_BY_GROUP = Object.freeze(
+    MENU_GROUPS.reduce((acc, group) => {
+        acc[group] = ALL_MENU_ITEMS.filter(m => m.group === group);
+        return acc;
+    }, {})
+);
+
+export const MENU_KEYS_BY_GROUP = Object.freeze(
+    MENU_GROUPS.reduce((acc, group) => {
+        acc[group] = MENU_ITEMS_BY_GROUP[group].map(m => m.key);
+        return acc;
+    }, {})
+);
+
+// ── All menu keys as a frozen Set for O(1) lookups ──
+export const ALL_MENU_KEYS_SET = Object.freeze(new Set(ALL_MENU_ITEMS.map(m => m.key)));
 
 const useRoleStore = create((set, get) => ({
     roles: [],
@@ -108,10 +126,12 @@ const useRoleStore = create((set, get) => ({
         const role = get().roles.find(r => r.id === roleId);
         if (!role) return;
 
-        const has = role.permissions.includes(menuKey);
-        const newPermissions = has
-            ? role.permissions.filter(p => p !== menuKey)
-            : [...role.permissions, menuKey];
+        // Use Set for O(1) lookup instead of O(n) .includes()
+        const permSet = new Set(role.permissions);
+        const has = permSet.has(menuKey);
+        if (has) permSet.delete(menuKey);
+        else permSet.add(menuKey);
+        const newPermissions = Array.from(permSet);
 
         // Optimistic UI update
         set(state => ({
@@ -127,16 +147,22 @@ const useRoleStore = create((set, get) => ({
         }
     },
 
-    toggleGroupPermissions: async (roleId, group, allMenuItems) => {
+    toggleGroupPermissions: async (roleId, group) => {
         const role = get().roles.find(r => r.id === roleId);
         if (!role) return;
 
-        const groupKeys = allMenuItems.filter(m => m.group === group).map(m => m.key);
-        const allSelected = groupKeys.every(k => role.permissions.includes(k));
-        
-        const newPermissions = allSelected
-            ? role.permissions.filter(p => !groupKeys.includes(p))
-            : [...new Set([...role.permissions, ...groupKeys])];
+        const groupKeys = MENU_KEYS_BY_GROUP[group];
+        const permSet = new Set(role.permissions);
+        const allSelected = groupKeys.every(k => permSet.has(k));
+
+        let newPermissions;
+        if (allSelected) {
+            groupKeys.forEach(k => permSet.delete(k));
+            newPermissions = Array.from(permSet);
+        } else {
+            groupKeys.forEach(k => permSet.add(k));
+            newPermissions = Array.from(permSet);
+        }
 
         // Optimistic UI update
         set(state => ({

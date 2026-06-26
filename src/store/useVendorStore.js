@@ -18,9 +18,12 @@ const useVendorStore = create(
       vendors:   [],
       isLoading: false,
       error:     null,
+      _hasHydrated: false,
 
       // ─── Read: fetch all vendors from backend ────────────────────────────────
       loadVendors: async (params = {}) => {
+        // Prevent duplicate calls if already loading
+        if (get().isLoading) return;
         set({ isLoading: true, error: null });
         try {
           const data = await fetchVendors(params);
@@ -98,15 +101,18 @@ const useVendorStore = create(
         const results = await Promise.allSettled(
           ids.map(id => blockVendor(id, reason))
         );
-        // Update store for each successfully blocked vendor
+        // Batch all successful updates into a SINGLE set() call
+        const updates = new Map();
         results.forEach((result, idx) => {
           if (result.status === 'fulfilled') {
-            const adapted = adaptVendor(result.value);
-            set((state) => ({
-              vendors: state.vendors.map(v => v.id === ids[idx] ? adapted : v),
-            }));
+            updates.set(ids[idx], adaptVendor(result.value));
           }
         });
+        if (updates.size > 0) {
+          set((state) => ({
+            vendors: state.vendors.map(v => updates.get(v.id) || v),
+          }));
+        }
         const failed = results.filter(r => r.status === 'rejected').length;
         return { success: ids.length - failed, failed };
       },
@@ -126,14 +132,18 @@ const useVendorStore = create(
         const results = await Promise.allSettled(
           ids.map(id => unblockVendor(id))
         );
+        // Batch all successful updates into a SINGLE set() call
+        const updates = new Map();
         results.forEach((result, idx) => {
           if (result.status === 'fulfilled') {
-            const adapted = adaptVendor(result.value);
-            set((state) => ({
-              vendors: state.vendors.map(v => v.id === ids[idx] ? adapted : v),
-            }));
+            updates.set(ids[idx], adaptVendor(result.value));
           }
         });
+        if (updates.size > 0) {
+          set((state) => ({
+            vendors: state.vendors.map(v => updates.get(v.id) || v),
+          }));
+        }
         const failed = results.filter(r => r.status === 'rejected').length;
         return { success: ids.length - failed, failed };
       },
@@ -166,6 +176,9 @@ const useVendorStore = create(
       storage: createJSONStorage(() => zustandStorage(STORES.MASTERS)),
       // Only persist the vendors list — not loading/error state
       partialize: (state) => ({ vendors: state.vendors }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state._hasHydrated = true;
+      },
     }
   )
 );

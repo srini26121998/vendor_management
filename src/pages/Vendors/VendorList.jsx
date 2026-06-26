@@ -19,14 +19,16 @@ import VendorBulkImportModal from './VendorBulkImportModal';
 
 export default function VendorList() {
     const navigate = useNavigate();
-    const { vendors, isLoading, loadVendors, removeVendor, blockVendorsApi, blockVendors, assignManager } = useVendorStore();
+    const { vendors, isLoading, loadVendors, removeVendor, blockVendorsApi, blockVendors, assignManager, _hasHydrated } = useVendorStore();
 
     // ── Load vendors from API on mount ──
     useEffect(() => {
-        loadVendors().catch(() => {
-            toast.error('Failed to load vendors from server.');
-        });
-    }, []);
+        if (_hasHydrated && vendors.length === 0) {
+            loadVendors().catch(() => {
+                toast.error('Failed to load vendors from server.');
+            });
+        }
+    }, [loadVendors, _hasHydrated]);
 
 
     const [selected, setSelected] = useState([]);

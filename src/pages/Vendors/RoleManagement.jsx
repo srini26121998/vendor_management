@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { PageHeader, VCard, PrimaryBtn, SecondaryBtn, SearchBar, VModal } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import useRoleStore, { ALL_MENU_ITEMS } from '../../store/useRoleStore';
+import useRoleStore, { ALL_MENU_ITEMS, MENU_ITEMS_BY_GROUP, MENU_KEYS_BY_GROUP, MENU_GROUPS } from '../../store/useRoleStore';
 import {
     Shield, Plus, Edit3, Trash2, Copy, Users, Lock, Unlock,
     ChevronRight, Check, X, Eye, EyeOff, Search, ShieldCheck,
@@ -10,10 +10,14 @@ import {
 } from 'lucide-react';
 
 const ROLE_COLORS = ['#166534', '#0284c7', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#be185d', '#059669'];
-const GROUPS = ['Core', 'Procurement', 'Finance', 'Operations', 'Analytics', 'Admin'];
+const GROUPS = MENU_GROUPS;
+
+// ── Hoisted constants (allocated ONCE, not per render) ──
+const TOAST_STYLE = { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' };
+const DEFAULT_EXPANDED = Object.freeze(GROUPS.reduce((a, g) => ({ ...a, [g]: true }), {}));
 
 // ── Role Card ──
-const RoleCard = ({ role, isSelected, onSelect, onEdit, onDuplicate, onDelete }) => {
+const RoleCard = memo(({ role, isSelected, onSelect, onEdit, onDuplicate, onDelete }) => {
     const permCount = role.permissions.length;
     const totalCount = ALL_MENU_ITEMS.length;
     const pct = Math.round((permCount / totalCount) * 100);
@@ -74,11 +78,11 @@ const RoleCard = ({ role, isSelected, onSelect, onEdit, onDuplicate, onDelete })
             </div>
         </motion.div>
     );
-};
+});
 
 // ── Permission Matrix Panel ──
-const PermissionPanel = ({ role, onToggle, onToggleGroup }) => {
-    const [expandedGroups, setExpandedGroups] = useState(GROUPS.reduce((a, g) => ({ ...a, [g]: true }), {}));
+const PermissionPanel = memo(({ role, onToggle, onToggleGroup }) => {
+    const [expandedGroups, setExpandedGroups] = useState(() => ({ ...DEFAULT_EXPANDED }));
 
     if (!role) return (
         <div className="flex flex-col items-center justify-center h-full py-20 text-center">
@@ -110,23 +114,24 @@ const PermissionPanel = ({ role, onToggle, onToggleGroup }) => {
             </div>
 
             {GROUPS.map(group => {
-                const items = ALL_MENU_ITEMS.filter(m => m.group === group);
-                const selectedCount = items.filter(m => role.permissions.includes(m.key)).length;
+                const items = MENU_ITEMS_BY_GROUP[group];
+                const permSet = new Set(role.permissions);
+                const selectedCount = items.filter(m => permSet.has(m.key)).length;
                 const allSelected = selectedCount === items.length;
                 const isExpanded = expandedGroups[group];
                 const isAdmin = role.isSystem && role.name === 'Admin';
 
                 return (
                     <div key={group} className="rounded-xl border border-slate-100 overflow-hidden bg-white">
-                        <button onClick={() => toggleGroup(group)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <div onClick={() => toggleGroup(group)}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer">
                             <div className="flex items-center gap-2">
                                 <span className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">{group}</span>
                                 <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-slate-100 text-slate-500">{selectedCount}/{items.length}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 {!isAdmin && (
-                                    <button onClick={e => { e.stopPropagation(); onToggleGroup(role.id, group); }}
+                                    <button onClick={e => { e.stopPropagation(); onToggleGroup(role.id, group); }} type="button"
                                         className={`px-2 py-0.5 text-[9px] font-bold rounded-md transition-all ${allSelected
                                             ? 'bg-red-50 text-red-500 hover:bg-red-100'
                                             : 'bg-green-50 text-green-600 hover:bg-green-100'}`}>
@@ -135,14 +140,14 @@ const PermissionPanel = ({ role, onToggle, onToggleGroup }) => {
                                 )}
                                 {isExpanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
                             </div>
-                        </button>
+                        </div>
                         <AnimatePresence>
                             {isExpanded && (
                                 <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
                                     className="overflow-hidden">
                                     <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                         {items.map(item => {
-                                            const isEnabled = role.permissions.includes(item.key);
+                                            const isEnabled = permSet.has(item.key);
                                             return (
                                                 <button key={item.key} disabled={isAdmin}
                                                     onClick={() => onToggle(role.id, item.key)}
@@ -172,10 +177,10 @@ const PermissionPanel = ({ role, onToggle, onToggleGroup }) => {
             })}
         </div>
     );
-};
+});
 
 // ── Toggle Switch Component ──
-const ToggleSwitch = ({ enabled, onChange, color = '#166534', disabled = false }) => (
+const ToggleSwitch = memo(({ enabled, onChange, color = '#166534', disabled = false }) => (
     <button
         type="button"
         disabled={disabled}
@@ -193,29 +198,29 @@ const ToggleSwitch = ({ enabled, onChange, color = '#166534', disabled = false }
             style={{ marginTop: '2px' }}
         />
     </button>
-);
+));
 
 // ── Create/Edit Role Modal ──
 const RoleFormModal = ({ open, onClose, editRole }) => {
     const { addRole, updateRole } = useRoleStore();
     const [form, setForm] = useState(editRole || { name: '', description: '', color: ROLE_COLORS[0], permissions: [] });
     const [menuSearch, setMenuSearch] = useState('');
-    const [expandedGroups, setExpandedGroups] = useState(GROUPS.reduce((a, g) => ({ ...a, [g]: true }), {}));
+    const [expandedGroups, setExpandedGroups] = useState(() => ({ ...DEFAULT_EXPANDED }));
 
     React.useEffect(() => {
         setForm(editRole || { name: '', description: '', color: ROLE_COLORS[0], permissions: [] });
         setMenuSearch('');
-        setExpandedGroups(GROUPS.reduce((a, g) => ({ ...a, [g]: true }), {}));
+        setExpandedGroups({ ...DEFAULT_EXPANDED });
     }, [editRole, open]);
 
     const handleSave = () => {
         if (!form.name.trim()) return toast.error('Role name is required');
         if (editRole?.id) {
             updateRole(editRole.id, { name: form.name, description: form.description, color: form.color, permissions: form.permissions });
-            toast.success('Role updated successfully ✓', { style: { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' } });
+            toast.success('Role updated successfully ✓', { style: TOAST_STYLE });
         } else {
             addRole(form);
-            toast.success('Role created successfully ✓', { style: { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' } });
+            toast.success('Role created successfully ✓', { style: TOAST_STYLE });
         }
         onClose();
     };
@@ -230,8 +235,9 @@ const RoleFormModal = ({ open, onClose, editRole }) => {
     };
 
     const toggleGroupAll = (group) => {
-        const groupKeys = ALL_MENU_ITEMS.filter(m => m.group === group).map(m => m.key);
-        const allSelected = groupKeys.every(k => form.permissions.includes(k));
+        const groupKeys = MENU_KEYS_BY_GROUP[group];
+        const permSet = new Set(form.permissions);
+        const allSelected = groupKeys.every(k => permSet.has(k));
         setForm(f => ({
             ...f,
             permissions: allSelected
@@ -353,9 +359,11 @@ const RoleFormModal = ({ open, onClose, editRole }) => {
                     {/* Grouped menu items */}
                     <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
                         {GROUPS.map(group => {
-                            const items = filteredMenuItems.filter(m => m.group === group);
+                            const allGroupItems = MENU_ITEMS_BY_GROUP[group];
+                            const items = menuSearch ? allGroupItems.filter(m => m.label.toLowerCase().includes(menuSearch.toLowerCase())) : allGroupItems;
                             if (items.length === 0) return null;
-                            const selectedCount = items.filter(m => form.permissions.includes(m.key)).length;
+                            const formPermSet = new Set(form.permissions);
+                            const selectedCount = items.filter(m => formPermSet.has(m.key)).length;
                             const allSelected = selectedCount === items.length;
                             const isExpanded = expandedGroups[group];
 
@@ -368,8 +376,8 @@ const RoleFormModal = ({ open, onClose, editRole }) => {
 
                             return (
                                 <div key={group} className="rounded-xl border border-slate-100 overflow-hidden bg-white">
-                                    <button onClick={() => toggleGroup(group)}
-                                        className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                                    <div onClick={() => toggleGroup(group)}
+                                        className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50/60 hover:bg-slate-50 transition-colors cursor-pointer">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full" style={{ background: gc }} />
                                             <span className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">{group}</span>
@@ -388,14 +396,14 @@ const RoleFormModal = ({ open, onClose, editRole }) => {
                                                 ? <ChevronUp size={13} className="text-slate-400" />
                                                 : <ChevronDown size={13} className="text-slate-400" />}
                                         </div>
-                                    </button>
+                                    </div>
                                     <AnimatePresence>
                                         {isExpanded && (
                                             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
                                                 className="overflow-hidden">
                                                 <div className="p-2 space-y-1">
                                                     {items.map(item => {
-                                                        const isEnabled = form.permissions.includes(item.key);
+                                                        const isEnabled = formPermSet.has(item.key);
                                                         return (
                                                             <div key={item.key}
                                                                 onClick={() => togglePerm(item.key)}
@@ -479,7 +487,13 @@ const DeleteModal = ({ open, onClose, role, onConfirm }) => (
 
 // ── Main Component ──
 export default function RoleManagement() {
-    const { roles, fetchRoles, togglePermission, toggleGroupPermissions, duplicateRole, deleteRole } = useRoleStore();
+    // Granular selectors to avoid over-subscription
+    const roles = useRoleStore(s => s.roles);
+    const fetchRoles = useRoleStore(s => s.fetchRoles);
+    const togglePermission = useRoleStore(s => s.togglePermission);
+    const toggleGroupPermissions = useRoleStore(s => s.toggleGroupPermissions);
+    const duplicateRole = useRoleStore(s => s.duplicateRole);
+    const deleteRole = useRoleStore(s => s.deleteRole);
     const [selectedRoleId, setSelectedRoleId] = useState(null);
     const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
@@ -501,22 +515,22 @@ export default function RoleManagement() {
         [roles, search]
     );
 
-    const selectedRole = roles.find(r => r.id === selectedRoleId);
+    const selectedRole = useMemo(() => roles.find(r => r.id === selectedRoleId), [roles, selectedRoleId]);
 
-    const handleEdit = (role) => { setEditRole(role); setFormOpen(true); };
-    const handleCreate = () => { setEditRole(null); setFormOpen(true); };
-    const handleDelete = () => {
+    const handleEdit = useCallback((role) => { setEditRole(role); setFormOpen(true); }, []);
+    const handleCreate = useCallback(() => { setEditRole(null); setFormOpen(true); }, []);
+    const handleDelete = useCallback(() => {
         if (deleteTarget) {
             deleteRole(deleteTarget.id);
             if (selectedRoleId === deleteTarget.id) setSelectedRoleId(null);
-            toast.success('Role deleted', { icon: '🗑️', style: { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' } });
+            toast.success('Role deleted', { icon: '🗑️', style: TOAST_STYLE });
         }
         setDeleteTarget(null);
-    };
-    const handleDuplicate = (role) => {
+    }, [deleteTarget, deleteRole, selectedRoleId]);
+    const handleDuplicate = useCallback((role) => {
         duplicateRole(role.id);
-        toast.success('Role duplicated', { icon: '📋', style: { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' } });
-    };
+        toast.success('Role duplicated', { icon: '📋', style: TOAST_STYLE });
+    }, [duplicateRole]);
 
     // Summary stats
     const totalMembers = roles.reduce((a, r) => a + r.memberCount, 0);
@@ -587,7 +601,7 @@ export default function RoleManagement() {
                     <VCard className="min-h-[400px]">
                         <PermissionPanel role={selectedRole}
                             onToggle={togglePermission}
-                            onToggleGroup={(roleId, group) => toggleGroupPermissions(roleId, group, ALL_MENU_ITEMS)} />
+                            onToggleGroup={toggleGroupPermissions} />
                     </VCard>
                 </div>
             </div>
