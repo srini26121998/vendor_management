@@ -58,6 +58,7 @@ const Sidebar = ({ isPOS, isOpen, isCollapsed, onClose }) => {
         { icon: <Warehouse size={16} />, label: 'Inbound Logistics', path: VENDOR_ROUTES.inboundLogistics },
         { icon: <DollarSign size={16} />, label: 'Aggregator Payout', path: VENDOR_ROUTES.aggregatorPayout },
         // { icon: <Smartphone size={16} />, label: 'Mobile GRN', path: VENDOR_ROUTES.mobileGrn },
+        { icon: <Building2 size={16} />, label: 'Branch Management', path: VENDOR_ROUTES.branchManagement },
         { icon: <Shield size={16} />, label: 'Role Management', path: VENDOR_ROUTES.roleManagement },
         { icon: <SlidersHorizontal size={16} />, label: 'Vendor Settings', path: VENDOR_ROUTES.settings },
     ];

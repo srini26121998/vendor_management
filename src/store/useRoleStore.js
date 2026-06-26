@@ -27,6 +27,7 @@ export const ALL_MENU_ITEMS = [
     { key: 'aggregatorPayout', label: 'Aggregator Payout', group: 'Finance' },
     { key: 'vendorSettings', label: 'Vendor Settings', group: 'Admin' },
     { key: 'roleManagement', label: 'Role Management', group: 'Admin' },
+    { key: 'branchManagement', label: 'Branch Management', group: 'Admin' },
 ];
 
 export const MENU_GROUPS = ['Core', 'Procurement', 'Finance', 'Operations', 'Analytics', 'Admin'];
