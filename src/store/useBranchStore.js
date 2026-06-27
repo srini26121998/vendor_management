@@ -2,104 +2,7 @@ import { create } from 'zustand';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
-// ── Mock data for initial development ──
-const MOCK_BRANCHES = [
-    {
-        id: 'BR001',
-        branchName: 'Pallikarnai',
-        branchCode: 'PLK001',
-        supermarket: 'Crazy Supermarkets',
-        addressLine1: '12, Old Pallavaram Road',
-        addressLine2: 'Near Bus Stand',
-        city: 'Pallikarnai',
-        branchManager: 'Rajesh Kumar',
-        branchManagerId: 'USR001',
-        contactNumber: '+91 98765 43210',
-        warehouseLinked: 'Warehouse A — Pallikarnai Central',
-        warehouseId: 'WH001',
-        status: 'active',
-        createdOn: '2025-03-15T10:30:00Z',
-        vendorCount: 24,
-        totalStock: 14520,
-        monthlyRevenue: 1850000,
-    },
-    {
-        id: 'BR002',
-        branchName: 'Red Hills',
-        branchCode: 'RH001',
-        supermarket: 'Crazy Supermarkets',
-        addressLine1: '45, Red Hills Main Road',
-        addressLine2: '',
-        city: 'Red Hills',
-        branchManager: 'Priya Sharma',
-        branchManagerId: 'USR002',
-        contactNumber: '+91 87654 32109',
-        warehouseLinked: 'Warehouse B — Red Hills North',
-        warehouseId: 'WH002',
-        status: 'active',
-        createdOn: '2025-05-22T14:15:00Z',
-        vendorCount: 18,
-        totalStock: 11230,
-        monthlyRevenue: 1420000,
-    },
-    {
-        id: 'BR003',
-        branchName: 'Tambaram',
-        branchCode: 'TBM001',
-        supermarket: 'Crazy Supermarkets',
-        addressLine1: '78, Tambaram Sanatorium',
-        addressLine2: 'GST Road',
-        city: 'Tambaram',
-        branchManager: 'Arjun Nair',
-        branchManagerId: 'USR003',
-        contactNumber: '+91 76543 21098',
-        warehouseLinked: 'Warehouse C — Tambaram West',
-        warehouseId: 'WH003',
-        status: 'active',
-        createdOn: '2025-08-10T09:00:00Z',
-        vendorCount: 21,
-        totalStock: 13050,
-        monthlyRevenue: 1650000,
-    },
-    {
-        id: 'BR004',
-        branchName: 'Velachery',
-        branchCode: 'VLC001',
-        supermarket: 'Crazy Supermarkets',
-        addressLine1: '100 Feet Road',
-        addressLine2: 'Near Phoenix Mall',
-        city: 'Velachery',
-        branchManager: 'Deepa Venkat',
-        branchManagerId: 'USR004',
-        contactNumber: '+91 65432 10987',
-        warehouseLinked: '',
-        warehouseId: '',
-        status: 'inactive',
-        createdOn: '2026-01-05T11:45:00Z',
-        vendorCount: 0,
-        totalStock: 0,
-        monthlyRevenue: 0,
-    },
-    {
-        id: 'BR005',
-        branchName: 'Anna Nagar',
-        branchCode: 'AN001',
-        supermarket: 'Crazy Supermarkets',
-        addressLine1: '2nd Avenue, Anna Nagar',
-        addressLine2: 'Block W',
-        city: 'Anna Nagar',
-        branchManager: 'Suresh Babu',
-        branchManagerId: 'USR005',
-        contactNumber: '+91 54321 09876',
-        warehouseLinked: 'Warehouse D — Anna Nagar Hub',
-        warehouseId: 'WH004',
-        status: 'active',
-        createdOn: '2025-11-20T16:30:00Z',
-        vendorCount: 30,
-        totalStock: 18200,
-        monthlyRevenue: 2100000,
-    },
-];
+// "??"?"? Mock data removed "??"?"?
 
 // ── Mock registered users for Branch Manager dropdown ──
 export const REGISTERED_USERS = [
@@ -135,38 +38,20 @@ const useBranchStore = create((set, get) => ({
             const data = Array.isArray(res) ? res : (res.data || []);
             set({ branches: data, loading: false });
         } catch (error) {
-            // Fallback to mock data during development
-            console.warn('API unavailable, using mock data:', error.message);
-            set({ branches: MOCK_BRANCHES, loading: false });
+            console.error('Failed to fetch branches:', error.message);
+            set({ loading: false });
         }
     },
 
     addBranch: async (branch) => {
         try {
-            const newBranch = {
-                ...branch,
-                id: `BR${String(get().branches.length + 1).padStart(3, '0')}`,
-                createdOn: new Date().toISOString(),
-                vendorCount: 0,
-                totalStock: 0,
-                monthlyRevenue: 0,
-            };
-            const res = await api.post('/branches', newBranch);
+            const res = await api.post('/branches', branch);
             const data = res.data || res;
             set(state => ({ branches: [...state.branches, data] }));
             toast.success('Branch created successfully ✓', { style: TOAST_STYLE });
         } catch (error) {
-            // Fallback: add locally
-            const newBranch = {
-                ...branch,
-                id: `BR${String(get().branches.length + 1).padStart(3, '0')}`,
-                createdOn: new Date().toISOString(),
-                vendorCount: 0,
-                totalStock: 0,
-                monthlyRevenue: 0,
-            };
-            set(state => ({ branches: [...state.branches, newBranch] }));
-            toast.success('Branch created (offline) ✓', { style: TOAST_STYLE });
+            toast.error('Failed to create branch', { style: TOAST_STYLE });
+            console.error('Create branch failed', error);
         }
     },
 
@@ -179,11 +64,8 @@ const useBranchStore = create((set, get) => ({
             }));
             toast.success('Branch updated successfully ✓', { style: TOAST_STYLE });
         } catch (error) {
-            // Fallback: update locally
-            set(state => ({
-                branches: state.branches.map(b => b.id === id ? { ...b, ...updates } : b)
-            }));
-            toast.success('Branch updated (offline) ✓', { style: TOAST_STYLE });
+            toast.error('Failed to update branch', { style: TOAST_STYLE });
+            console.error('Update branch failed', error);
         }
     },
 
@@ -195,10 +77,8 @@ const useBranchStore = create((set, get) => ({
             }));
             toast.success('Branch deleted', { icon: '🗑️', style: TOAST_STYLE });
         } catch (error) {
-            set(state => ({
-                branches: state.branches.filter(b => b.id !== id)
-            }));
-            toast.success('Branch deleted (offline)', { icon: '🗑️', style: TOAST_STYLE });
+            toast.error('Failed to delete branch', { style: TOAST_STYLE });
+            console.error('Delete branch failed', error);
         }
     },
 
@@ -216,7 +96,9 @@ const useBranchStore = create((set, get) => ({
             await api.put(`/branches/${id}`, { status: newStatus });
             toast.success(`Branch ${newStatus === 'active' ? 'activated' : 'deactivated'} ✓`, { style: TOAST_STYLE });
         } catch (error) {
-            toast.success(`Branch ${newStatus === 'active' ? 'activated' : 'deactivated'} (offline) ✓`, { style: TOAST_STYLE });
+            // Revert on fail
+            toast.error('Failed to update status', { style: TOAST_STYLE });
+            get().fetchBranches();
         }
     },
 

@@ -139,17 +139,25 @@ export default function PayablesDashboard() {
 
     const getSortedData = (data) => {
         const sortableItems = [...data];
-        if (sortConfig.key !== null) {
-            sortableItems.sort((a, b) => {
+        sortableItems.sort((a, b) => {
+            // Priority 1: Unpaid (Pay Now) before Paid (Settled)
+            const aIsPaid = a.status === 'paid';
+            const bIsPaid = b.status === 'paid';
+            if (aIsPaid !== bIsPaid) {
+                return aIsPaid ? 1 : -1;
+            }
+
+            // Priority 2: Configured sorting
+            if (sortConfig.key !== null) {
                 if (a[sortConfig.key] < b[sortConfig.key]) {
                     return sortConfig.direction === 'asc' ? -1 : 1;
                 }
                 if (a[sortConfig.key] > b[sortConfig.key]) {
                     return sortConfig.direction === 'asc' ? 1 : -1;
                 }
-                return 0;
-            });
-        }
+            }
+            return 0;
+        });
         return sortableItems;
     };
 

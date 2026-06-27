@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { PageHeader, VCard, PrimaryBtn, SecondaryBtn, SearchBar, VModal, StatusBadge, FilterBar, Pagination, EmptyState } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import useBranchStore, { REGISTERED_USERS, WAREHOUSES } from '../../store/useBranchStore';
+import useBranchStore, { WAREHOUSES } from '../../store/useBranchStore';
+import { fetchUsers } from '../../api/vendorService';
 import {
     Building2, Plus, Edit3, Trash2, Eye, MapPin, Phone, User, Warehouse,
     ChevronRight, Check, X, AlertTriangle, ToggleLeft, ToggleRight,
@@ -137,6 +138,16 @@ const BranchFormModal = ({ open, onClose, editBranch }) => {
     const currentSupermarket = useBranchStore(s => s.currentSupermarket);
     const defaultForm = { branchName: '', branchCode: '', supermarket: currentSupermarket, addressLine1: '', addressLine2: '', city: '', branchManager: '', branchManagerId: '', contactNumber: '', warehouseLinked: '', warehouseId: '', status: 'active' };
     const [form, setForm] = useState(defaultForm);
+    const [managers, setManagers] = useState([]);
+
+    useEffect(() => {
+        fetchUsers()
+            .then(res => {
+                const data = Array.isArray(res?.data ?? res) ? (res?.data ?? res) : [];
+                setManagers(data.filter(u => u.role === 'MANAGER' || u.role === 'Branch Manager' || u.role === 'Admin'));
+            })
+            .catch(() => setManagers([]));
+    }, []);
 
     useEffect(() => {
         setForm(editBranch ? { ...defaultForm, ...editBranch } : { ...defaultForm, supermarket: currentSupermarket });
@@ -153,8 +164,8 @@ const BranchFormModal = ({ open, onClose, editBranch }) => {
 
     const setField = (key, val) => setForm(f => ({ ...f, [key]: val }));
     const handleManagerChange = (userId) => {
-        const user = REGISTERED_USERS.find(u => u.id === userId);
-        setForm(f => ({ ...f, branchManagerId: userId, branchManager: user?.name || '' }));
+        const user = managers.find(u => u.id === userId);
+        setForm(f => ({ ...f, branchManagerId: userId, branchManager: user?.name || user?.fullName || '' }));
     };
     const handleWarehouseChange = (whId) => {
         const wh = WAREHOUSES.find(w => w.id === whId);
@@ -206,7 +217,7 @@ const BranchFormModal = ({ open, onClose, editBranch }) => {
                                     <select value={form.branchManagerId || ''} onChange={e => handleManagerChange(e.target.value)}
                                         className="w-full text-[13px] font-semibold text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:border-[oklch(0.45_0.12_150)] focus:ring-4 focus:ring-green-600/10 transition-all appearance-none cursor-pointer">
                                         <option value="">Select branch manager...</option>
-                                        {REGISTERED_USERS.map(u => <option key={u.id} value={u.id}>{u.name} — {u.email}</option>)}
+                                        {managers.map(u => <option key={u.id} value={u.id}>{u.name || u.fullName} — {u.email}</option>)}
                                     </select>
                                 )}
                                 {f.type === 'warehouseDropdown' && (

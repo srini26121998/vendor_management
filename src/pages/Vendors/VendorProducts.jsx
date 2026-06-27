@@ -12,11 +12,15 @@ import toast from 'react-hot-toast';
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import useVendorStore from '../../store/useVendorStore';
 import {
+    fetchVendorProducts,
+    downloadProductTemplate,
+    bulkUploadProducts,
     fetchAllVendorProducts,
     createVendorProduct,
     updateVendorProduct,
     deleteVendorProduct,
-    deactivateVendorProduct
+    deactivateVendorProduct,
+    fetchCategories
 } from '../../api/vendorService';
 import { VENDOR_CATEGORIES, TAX_CATEGORIES } from './vendorConstants';
 import VendorBulkImportModal from './VendorBulkImportModal';
@@ -172,6 +176,7 @@ export default function VendorProducts() {
     const [searchTerm, setSearchTerm] = useState('');
     const [vendorFilter, setVendorFilter] = useState('All Vendors');
     const [categoryFilter, setCategoryFilter] = useState('All Categories');
+    const [categories, setCategories] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(25);
     const [sortConfig, setSortConfig] = useState({ key: 'productName', dir: 'asc' });
@@ -233,6 +238,14 @@ export default function VendorProducts() {
             const res = await fetchAllVendorProducts();
             const fetchedList = Array.isArray(res) ? res : res?.data || [];
             
+            const catRes = await fetchCategories();
+            const catData = Array.isArray(catRes) ? catRes : catRes?.data || [];
+            if (catData.length > 0) {
+                setCategories(catData.map(c => c.name));
+            } else {
+                setCategories(VENDOR_CATEGORIES); // Fallback
+            }
+            
             const activeVendors = loadedVendors?.length > 0 ? loadedVendors : (vendors.length > 0 ? vendors : MOCK_VENDORS_FALLBACK);
             
             const mockProducts = BASE_MOCK_PRODUCTS.map((bp, index) => {
@@ -283,7 +296,7 @@ export default function VendorProducts() {
             setProducts([...mockProducts, ...decoratedRemaining]);
         } catch (err) {
             console.error("Failed to load catalog data:", err);
-            toast.error("Failed to sync vendor product catalog from database.");
+            toast.error("Error: " + err.message);
             
             const activeVendors = vendors.length > 0 ? vendors : MOCK_VENDORS_FALLBACK;
             const mockProducts = BASE_MOCK_PRODUCTS.map((bp, index) => {
@@ -724,7 +737,7 @@ export default function VendorProducts() {
                                 className="w-full appearance-none pl-4 pr-10 h-11 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-600 outline-none focus:border-green-800 focus:ring-4 focus:ring-green-50/50 transition-all cursor-pointer shadow-sm"
                             >
                                 <option value="All Categories">All Categories</option>
-                                {VENDOR_CATEGORIES.map(c => (
+                                {(categories.length > 0 ? categories : VENDOR_CATEGORIES).map(c => (
                                     <option key={c} value={c}>{c}</option>
                                 ))}
                             </select>
@@ -1120,7 +1133,7 @@ export default function VendorProducts() {
                                 onChange={(e) => setFormData(f => ({ ...f, category: e.target.value }))}
                                 className="w-full px-4 py-3 bg-[#F8FAFC] border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-700 outline-none focus:border-green-800 focus:bg-white transition-all shadow-sm cursor-pointer"
                             >
-                                {VENDOR_CATEGORIES.map(c => (
+                                {(categories.length > 0 ? categories : VENDOR_CATEGORIES).map(c => (
                                     <option key={c} value={c}>{c}</option>
                                 ))}
                             </select>

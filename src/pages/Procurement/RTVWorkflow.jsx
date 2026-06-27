@@ -245,7 +245,7 @@ export default function RTVWorkflow() {
         const payload = {
             grnId: formData.grnRef,
             totalReturnValue: calculateTotalDebit(),
-            status: 'DEBIT_NOTE_RAISED',
+            status: 'INITIATED',
             returnedProducts: formData.selectedItems.map(item => ({
                 productName: item.name,
                 productSku: item.sku,
@@ -1298,73 +1298,7 @@ export default function RTVWorkflow() {
                             })()}
                         </div>
 
-                        {/* Interactive Decision Desk for Vendor Role */}
-                        {['DEBIT_NOTE_RAISED', 'VENDOR_NOTIFIED', 'ACTIVE', 'active'].includes(selectedRtvForDetails.status) && (
-                            <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50/40 rounded-3xl p-5 border border-slate-100">
-                                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <ShieldCheck size={14} className="text-green-500" /> Vendor Portal Decision Desk
-                                </h4>
-                                <p className="text-[10px] font-bold text-slate-500 mb-5 uppercase tracking-tight">
-                                    Please choose to accept the return debit note value (resolved) or deny the claim with an audit dispute explanation.
-                                </p>
 
-                                {!showDisputeInput ? (
-                                    <div className="flex gap-3">
-                                        <PrimaryBtn
-                                            className="flex-1 !py-3"
-                                            icon={<CheckCircle size={16} />}
-                                            onClick={async () => {
-                                                const res = await updateRTVStatus(selectedRtvForDetails.id, 'RESOLVED');
-                                                const updated = res.data || res;
-                                                setSelectedRtvForDetails(updated);
-                                                await loadDynamicData();
-                                                toast.success('Debit note accepted! Return claim successfully resolved.');
-                                            }}
-                                        >
-                                            Accept Return & Debit
-                                        </PrimaryBtn>
-                                        <button
-                                            onClick={() => setShowDisputeInput(true)}
-                                            className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-rose-100"
-                                        >
-                                            <XCircle size={16} /> Deny & Dispute Claim
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 space-y-3">
-                                        <label className="text-[9px] font-bold text-slate-600 uppercase block">Provide Dispute / Denial Reason *</label>
-                                        <textarea
-                                            value={disputeReason}
-                                            onChange={(e) => setDisputeReason(e.target.value)}
-                                            placeholder="Please explain in detail why you are denying this return..."
-                                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-rose-500 min-h-[80px]"
-                                        />
-                                        <div className="flex gap-2 justify-end">
-                                            <button
-                                                onClick={() => setShowDisputeInput(false)}
-                                                className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-200 transition-all"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={async () => {
-                                                    if (!disputeReason.trim()) return toast.error('Please enter a dispute reason');
-                                                    const res = await updateRTVStatus(selectedRtvForDetails.id, 'DISPUTED', disputeReason);
-                                                    const updated = res.data || res;
-                                                    setSelectedRtvForDetails(updated);
-                                                    await loadDynamicData();
-                                                    setShowDisputeInput(false);
-                                                    toast.success('Dispute raised successfully.');
-                                                }}
-                                                className="px-4 py-2 bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-rose-700 transition-all shadow-md shadow-rose-100"
-                                            >
-                                                Submit Dispute
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </div>
-                        )}
 
                         {/* Warehouse Dispatcher override option for internal staff */}
                         {['VENDOR_NOTIFIED', 'DEBIT_NOTE_RAISED', 'ACTIVE', 'active'].includes(selectedRtvForDetails.status) && (

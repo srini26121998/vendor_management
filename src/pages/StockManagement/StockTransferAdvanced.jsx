@@ -7,7 +7,7 @@ import {
     ArrowRightLeft, RefreshCw, MapPin, Zap, Filter,
     TrendingUp, ShoppingCart, Send, Eye
 } from 'lucide-react';
-import { fetchProducts, createSTO, fetchSTOs, updateSTOStatus } from '../../api/vendorService';
+import { fetchProducts, createSTO, fetchSTOs, updateSTOStatus, fetchBranches } from '../../api/vendorService';
 import useAuthStore from '../../store/useAuthStore';
 import toast from 'react-hot-toast';
 
@@ -57,13 +57,7 @@ const styles = `
 /* ─────────────────────────────────────────────────────────────────────────────
    Constants
 ───────────────────────────────────────────────────────────────────────────── */
-const OUTLETS = [
-    { id: 'HQ', name: 'HQ Warehouse',  sub: 'Central Store',     icon: Warehouse,  color: '#16a34a', light: '#f0fdf4', ring: '#bbf7d0' },
-    { id: 'O1', name: 'Main Branch',   sub: 'Andheri, Mumbai',   icon: Building2,  color: '#15803d', light: '#f0fdf4', ring: '#bbf7d0' },
-    { id: 'O2', name: 'Bandra West',   sub: 'Mumbai',            icon: Store,      color: '#10b981', light: '#f0fdf4', ring: '#a7f3d0' },
-    { id: 'O3', name: 'Powai Branch',  sub: 'Mumbai',            icon: Store,      color: '#f59e0b', light: '#fffbeb', ring: '#fde68a' },
-    { id: 'O4', name: 'Thane Branch',  sub: 'Thane',             icon: Store,      color: '#22c55e', light: '#f0fdf4', ring: '#bbf7d0' },
-];
+// OUTLETS will now be fetched from backend branches
 
 const STATUS_CFG = {
     DRAFT:      { label: 'Draft',      color: '#64748b', bg: '#f1f5f9', dot: '#94a3b8' },
@@ -298,8 +292,9 @@ function StatusBadge({ status }) {
 export default function StockTransferAdvanced() {
     const { user } = useAuthStore();
 
-    const [fromOutletId, setFromOutletId] = useState('HQ');
-    const [toOutletId, setToOutletId]     = useState('O3');
+    const [outlets, setOutlets] = useState([]);
+    const [fromOutletId, setFromOutletId] = useState('');
+    const [toOutletId, setToOutletId]     = useState('');
 
     const [products, setProducts]             = useState([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -314,9 +309,38 @@ export default function StockTransferAdvanced() {
     const [showChallan, setShowChallan] = useState(false);
     const [submitting, setSubmitting]   = useState(false);
 
-    const fromOutlet = OUTLETS.find(o => o.id === fromOutletId);
-    const toOutlet   = OUTLETS.find(o => o.id === toOutletId);
+    const fromOutlet = outlets.find(o => o.id === fromOutletId);
+    const toOutlet   = outlets.find(o => o.id === toOutletId);
     const routeOk    = toOutletId && fromOutletId !== toOutletId;
+
+    /* ── Load branches (outlets) ── */
+    useEffect(() => {
+        fetchBranches().then(res => {
+            const data = Array.isArray(res?.data ?? res) ? (res?.data ?? res) : [];
+            const mapped = data.map((b, i) => {
+                const colors = [
+                    { color: '#16a34a', light: '#f0fdf4', ring: '#bbf7d0' },
+                    { color: '#15803d', light: '#f0fdf4', ring: '#bbf7d0' },
+                    { color: '#10b981', light: '#f0fdf4', ring: '#a7f3d0' },
+                    { color: '#f59e0b', light: '#fffbeb', ring: '#fde68a' },
+                    { color: '#22c55e', light: '#f0fdf4', ring: '#bbf7d0' }
+                ];
+                const c = colors[i % colors.length];
+                return {
+                    id: b.id,
+                    name: b.branchName || 'Unknown',
+                    sub: b.city || b.supermarket || 'Branch',
+                    icon: Store,
+                    color: c.color,
+                    light: c.light,
+                    ring: c.ring
+                };
+            });
+            setOutlets(mapped);
+            if (mapped.length > 0) setFromOutletId(mapped[0].id);
+            if (mapped.length > 1) setToOutletId(mapped[1].id);
+        }).catch(() => setOutlets([]));
+    }, []);
 
     /* ── Load products ── */
     useEffect(() => {
@@ -517,7 +541,7 @@ export default function StockTransferAdvanced() {
                                 </div>
                             </div>
                             <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                {OUTLETS.map(o => (
+                                {outlets.map(o => (
                                     <OutletCard
                                         key={`from-${o.id}`}
                                         outlet={o}
@@ -555,7 +579,7 @@ export default function StockTransferAdvanced() {
                                 </div>
                             </div>
                             <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                {OUTLETS.map(o => (
+                                {outlets.map(o => (
                                     <OutletCard
                                         key={`to-${o.id}`}
                                         outlet={o}

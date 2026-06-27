@@ -28,6 +28,7 @@ export const STATUS_COLORS = {
     // ── Purchase Order Lifecycle Statuses ──
     pending:            { bg: '#fff7ed', text: '#c2410c', dot: '#ea580c', label: 'Pending' },
     approved:           { bg: '#ecfdf5', text: '#047857', dot: '#10b981', label: 'Approved' },
+    accepted:           { bg: '#ecfdf5', text: '#047857', dot: '#10b981', label: 'Accepted' },
     received:           { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'Received' },
     partially_received: { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b', label: 'Partially Received' },
 
@@ -43,6 +44,7 @@ export const STATUS_COLORS = {
     SUCCESS:       { bg: '#ecfdf5', text: '#065f46', dot: '#059669', label: 'Success' },
 
     // ── RTV Reverse Logistics Statuses ──
+    INITIATED:          { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Initiated' },
     FLAGGED:            { bg: '#fff7ed', text: '#9a3412', dot: '#ea580c', label: 'Initiated' },
     DEBIT_NOTE_RAISED:  { bg: '#f0fdf4', text: '#166534', dot: '#15803d', label: 'Debit Note Generated' },
     VENDOR_NOTIFIED:    { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b', label: 'Awaiting Action' },

@@ -65,7 +65,7 @@ export default function GRNEntry() {
 
                     // Filter approved, sent, or partially_received POs that DO NOT have a pending/draft GRN
                     const filtered = poData.filter(p =>
-                        (p.status?.toLowerCase() === 'active' ||
+                        (p.status?.toLowerCase() === 'accepted' ||
                             p.status?.toLowerCase() === 'approved' ||
                             p.status?.toLowerCase() === 'sent' ||
                             p.status?.toLowerCase() === 'partially_received') &&

@@ -204,7 +204,7 @@ export default function CreateEditPO() {
                 outletId: outletId,
                 paymentMode: 'CREDIT', 
                 invoiceDate: new Date().toISOString().split('T')[0],
-                status: 'approved',
+                status: 'active',
                 items: items.map(it => ({
                     productId: it.storeProductId || it.productId,
                     productName: it.description,

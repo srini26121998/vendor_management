@@ -11,6 +11,12 @@ import api from './axios';
 // PUT  /api/vendors/{id}                     â†’ Update vendor (VendorRequestDTO)
 // DELETE /api/vendors/{id}                   â†’ Soft delete
 
+export const fetchBranches = () =>
+  api.get('/branches');
+
+export const fetchUsers = () =>
+  api.get('/users');
+
 export const fetchVendors = (params) =>
   api.get('/vendors', { params });
 
@@ -500,6 +506,9 @@ export const recordIotTelemetry = (payload) =>
 
 
 export const fetchProducts = () => api.get('/products').catch(() => []);
+export const fetchCategories = () => api.get('/categories').catch(() => {
+    return { data: [{ name: 'Fresh' }, { name: 'Dairy' }, { name: 'Beverages' }, { name: 'Staples' }, { name: 'FMCG' }, { name: 'Frozen' }, { name: 'Non-Food' }] };
+});
 export const fetchWarehouseProducts = () => api.get('/vendor-products/in-stock').catch(() => []);
 export const fetchWarehouseCategories = async () => { try { const res = await api.get('/vendor-categories'); return res || []; } catch (e) { return [{ id: 'CAT1', name: 'Dairy', color: '#10b981' }]; } };
 export const fetchWarehouseRacks = async () => { return [{ id: 'R-01', categoryId: 'CAT1' }, { id: 'R-02', categoryId: 'CAT2' }]; };

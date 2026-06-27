@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchPurchaseOrders, fetchInvoices, vendorRespondToPO, raiseDispute, fetchVendors, fetchPayments } from '../../api/vendorService';
+import { fetchPurchaseOrders, fetchInvoices, vendorRespondToPO, raiseDispute, fetchVendors, fetchPayments, fetchVendorReturns, fetchRTVRequests, updateRTVStatus } from '../../api/vendorService';
 import { VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, VModal, VendorBreadcrumb } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layout, FileText, Scale, CreditCard, Settings, Download, CheckCircle, Info, ShieldCheck } from 'lucide-react';
+import { Layout, FileText, Scale, CreditCard, Settings, Download, CheckCircle, Info, ShieldCheck, RotateCcw, Package, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const TABS = [
     { key: 'po', label: 'PO Inbox', icon: <Layout size={18} /> },
+    { key: 'returns', label: 'Returns Inbox', icon: <RotateCcw size={18} /> },
     { key: 'docs', label: 'Documents', icon: <FileText size={18} /> },
     { key: 'dispute', label: 'Disputes', icon: <Scale size={18} /> },
     { key: 'payments', label: 'Payments', icon: <CreditCard size={18} /> }
@@ -18,9 +19,14 @@ export default function VendorPortal() {
     const [pos, setPos] = useState([]);
     const [invoices, setInvoices] = useState([]);
     const [payments, setPayments] = useState([]);
+    const [returns, setReturns] = useState([]);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentVendorId, setCurrentVendorId] = useState(null);
     const [poPage, setPoPage] = useState(1);
+    const [returnsPage, setReturnsPage] = useState(1);
+    const [expandedReturn, setExpandedReturn] = useState(null);
+    const [disputeReason, setDisputeReason] = useState('');
+    const [showDisputeInput, setShowDisputeInput] = useState(false);
     const [disputeForm, setDisputeForm] = useState({
         relatedInstrument: '',
         category: 'Payment not received',
@@ -40,6 +46,8 @@ export default function VendorPortal() {
             const data = res.data || res;
             if (Array.isArray(data) && data.length > 0) {
                 setCurrentVendorId(data[0].id);
+                // Temporary: fetch all returns instead of just for the mocked vendor ID
+                fetchRTVRequests().then(r => setReturns(Array.isArray(r.data || r) ? (r.data || r) : []));
             }
         }).catch(err => console.error("Failed to fetch mock vendor ID", err));
     }, []);
@@ -198,6 +206,194 @@ export default function VendorPortal() {
                                         )}
                                     </div>
                                 )}
+
+                                {tab === 'returns' && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between px-2 mb-2">
+                                            <h3 className="text-[14px] font-bold text-slate-800 uppercase tracking-tight">Returns & Claims Inbox</h3>
+                                            <span className="text-[10px] font-bold text-rose-500 uppercase flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Action Required
+                                            </span>
+                                        </div>
+                                        {returns.slice((returnsPage - 1) * 10, returnsPage * 10).map((rtv, i) => (
+                                            <motion.div
+                                                key={rtv.id || i}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: i * 0.05 }}
+                                            >
+                                                <VCard className="group hover:border-rose-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-white border border-slate-200 shadow-sm">
+                                                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-rose-400 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10 cursor-pointer" onClick={() => setExpandedReturn(expandedReturn === rtv.id ? null : rtv.id)}>
+                                                        <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 border border-rose-100 transition-all shadow-inner group-hover:scale-110 shrink-0">
+                                                            <RotateCcw size={22} className="opacity-80 group-hover:opacity-100" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-3 mb-1.5">
+                                                                <span className="text-[11px] font-mono font-bold text-rose-700 bg-rose-50/80 px-2.5 py-1 rounded-md border border-rose-200/50 shadow-sm">{rtv.rtvNumber}</span>
+                                                                <h3 className="text-[17px] font-extrabold text-slate-800 tracking-tight group-hover:text-rose-700 transition-colors">{formatCurrency(rtv.totalReturnValue || 0)} <span className="text-slate-300 font-normal mx-1">|</span> <span className="text-[13px] font-semibold text-slate-500">PO: {rtv.purchaseOrderNumber || 'N/A'}</span></h3>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> GRN: {rtv.grnNumber || 'N/A'}</span>
+                                                                <StatusBadge status={rtv.status} size="xs" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-3 w-full md:w-auto shrink-0 mt-4 md:mt-0">
+                                                            {['INITIATED', 'DEBIT_NOTE_RAISED', 'FLAGGED'].includes(rtv.status?.toUpperCase()) && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); setExpandedReturn(expandedReturn === rtv.id ? null : rtv.id); }}
+                                                                    className="px-4 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[11px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-all flex items-center gap-2 shadow-sm whitespace-nowrap"
+                                                                >
+                                                                    <ShieldCheck size={14} /> Review & Decide
+                                                                </button>
+                                                            )}
+                                                            <SecondaryBtn onClick={(e) => { e.stopPropagation(); toast.success(`Return details downloaded`); }} className="flex-1 md:flex-none">
+                                                                <Download size={14} /> PDF
+                                                            </SecondaryBtn>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Expanded details and Decision Desk */}
+                                                    <AnimatePresence>
+                                                        {expandedReturn === rtv.id && (
+                                                            <motion.div 
+                                                                initial={{ opacity: 0, height: 0 }} 
+                                                                animate={{ opacity: 1, height: 'auto' }} 
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="mt-6 pt-6 border-t border-slate-100 overflow-hidden"
+                                                            >
+                                                                <div className="mb-4">
+                                                                    <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">Returned Items</h4>
+                                                                    <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                                                                        <table className="w-full text-left text-[11px]">
+                                                                            <thead>
+                                                                                <tr className="bg-slate-100 text-slate-500 font-bold uppercase border-b border-slate-200">
+                                                                                    <th className="px-4 py-2">Item</th>
+                                                                                    <th className="px-4 py-2">Qty</th>
+                                                                                    <th className="px-4 py-2">Unit Price</th>
+                                                                                    <th className="px-4 py-2">Total</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {(rtv.returnedProducts || []).map((item, idx) => (
+                                                                                    <tr key={idx} className="border-b border-slate-100 last:border-0">
+                                                                                        <td className="px-4 py-2 font-medium text-slate-700">{item.productName}</td>
+                                                                                        <td className="px-4 py-2 text-rose-600 font-bold">{item.returnedQuantity || item.quantity}</td>
+                                                                                        <td className="px-4 py-2">{formatCurrency(item.unitPrice)}</td>
+                                                                                        <td className="px-4 py-2 font-bold">{formatCurrency(item.totalValue)}</td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+
+                                                                {['INITIATED', 'DEBIT_NOTE_RAISED', 'FLAGGED'].includes(rtv.status?.toUpperCase()) && (
+                                                                    <div className="bg-rose-50/30 rounded-2xl p-5 border border-rose-100">
+                                                                        <h4 className="text-[11px] font-bold text-rose-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                                            <ShieldCheck size={14} /> Vendor Decision Required
+                                                                        </h4>
+                                                                        <p className="text-[10px] font-bold text-slate-500 mb-5 uppercase tracking-tight">
+                                                                            Please review the returned items and choose to accept the debit note or dispute the claim.
+                                                                        </p>
+
+                                                                        {!showDisputeInput ? (
+                                                                            <div className="flex gap-3">
+                                                                                <PrimaryBtn
+                                                                                    className="flex-1"
+                                                                                    icon={<CheckCircle size={16} />}
+                                                                                    onClick={async (e) => {
+                                                                                        e.stopPropagation();
+                                                                                        try {
+                                                                                            const res = await updateRTVStatus(rtv.id, 'RESOLVED');
+                                                                                            const updated = res.data || res;
+                                                                                            setReturns(prev => prev.map(r => r.id === rtv.id ? updated : r));
+                                                                                            toast.success('Return accepted & debit note resolved.');
+                                                                                        } catch (err) {
+                                                                                            toast.error('Failed to update return status');
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    Accept Return & Debit
+                                                                                </PrimaryBtn>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setShowDisputeInput(true); }}
+                                                                                    className="flex-1 py-2.5 bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm"
+                                                                                >
+                                                                                    <XCircle size={16} /> Deny & Dispute
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                                                                                <textarea
+                                                                                    value={disputeReason}
+                                                                                    onChange={(e) => setDisputeReason(e.target.value)}
+                                                                                    placeholder="Provide a detailed reason for disputing this return..."
+                                                                                    className="w-full bg-white border border-rose-200 rounded-xl p-3 text-xs outline-none focus:border-rose-400 min-h-[80px]"
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                />
+                                                                                <div className="flex gap-2 justify-end">
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); setShowDisputeInput(false); setDisputeReason(''); }}
+                                                                                        className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-50 transition-all"
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={async (e) => {
+                                                                                            e.stopPropagation();
+                                                                                            if (!disputeReason.trim()) return toast.error('Please enter a dispute reason');
+                                                                                            try {
+                                                                                                const res = await updateRTVStatus(rtv.id, 'DISPUTED', disputeReason);
+                                                                                                const updated = res.data || res;
+                                                                                                setReturns(prev => prev.map(r => r.id === rtv.id ? updated : r));
+                                                                                                setShowDisputeInput(false);
+                                                                                                setDisputeReason('');
+                                                                                                toast.success('Dispute raised successfully.');
+                                                                                            } catch (err) {
+                                                                                                toast.error('Failed to raise dispute');
+                                                                                            }
+                                                                                        }}
+                                                                                        className="px-4 py-2 bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-rose-700 transition-all shadow-sm"
+                                                                                    >
+                                                                                        Submit Dispute
+                                                                                    </button>
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </VCard>
+                                            </motion.div>
+                                        ))}
+                                        {returns.length > 10 && (
+                                            <div className="flex items-center justify-between bg-white px-4 py-3 border border-slate-200 rounded-xl shadow-sm mt-4">
+                                                <span className="text-[12px] font-medium text-slate-500">
+                                                    Showing <span className="font-bold text-slate-800">{(returnsPage - 1) * 10 + 1}</span> to <span className="font-bold text-slate-800">{Math.min(returnsPage * 10, returns.length)}</span> of <span className="font-bold text-slate-800">{returns.length}</span> entries
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        disabled={returnsPage === 1}
+                                                        onClick={() => setReturnsPage(p => p - 1)}
+                                                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                        Prev
+                                                    </button>
+                                                    <span className="text-[12px] font-bold text-slate-800 px-2">{returnsPage}</span>
+                                                    <button
+                                                        disabled={returnsPage * 10 >= returns.length}
+                                                        onClick={() => setReturnsPage(p => p + 1)}
+                                                        className="px-3 py-1.5 border border-slate-200 rounded-lg text-[12px] font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
 
                                 {tab === 'docs' && (
                                     <VCard className="py-16 text-center border-dashed border-slate-200 bg-white shadow-sm">
