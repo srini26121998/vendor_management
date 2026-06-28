@@ -44,6 +44,15 @@ const authService = {
     },
 
     /**
+     * Register a new user
+     * @param {Object} userData
+     * @returns {Promise<any>}
+     */
+    register: async (userData) => {
+        return await api.post('/auth/register', userData);
+    },
+
+    /**
      * Send password reset link to user email
      * @param {ForgotPasswordRequest} data 
      * @returns {Promise<ForgotPasswordResponse>}

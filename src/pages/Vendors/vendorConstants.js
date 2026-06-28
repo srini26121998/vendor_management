@@ -158,4 +158,3 @@ export const VENDOR_ROUTES = {
     roleManagement: '/vendors/roles',
     branchManagement: '/vendors/branches',
 };
-

@@ -15,14 +15,7 @@ export const REGISTERED_USERS = [
     { id: 'USR007', name: 'Karthik Sundaram', email: 'karthik@crazy.com', role: 'Branch Manager' },
 ];
 
-// ── Mock warehouses for linking dropdown ──
-export const WAREHOUSES = [
-    { id: 'WH001', name: 'Warehouse A — Pallikarnai Central' },
-    { id: 'WH002', name: 'Warehouse B — Red Hills North' },
-    { id: 'WH003', name: 'Warehouse C — Tambaram West' },
-    { id: 'WH004', name: 'Warehouse D — Anna Nagar Hub' },
-    { id: 'WH005', name: 'Warehouse E — Porur Depot' },
-];
+
 
 const TOAST_STYLE = { borderRadius: '12px', background: '#1e293b', color: '#fff', fontSize: '14px', fontWeight: 'bold' };
 

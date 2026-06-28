@@ -432,24 +432,21 @@ export const updateSTOStatus = (id, status, approverId = null) => {
   const headers = approverId ? { 'X-User-Id': approverId } : {};
   return api.patch(`/inventory/sto/${id}/status`, null, { params: { status }, headers });
 };
-
-// â”€â”€â”€ Purchase Order Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Maps to the existing PurchaseController endpoints (Bug 3 fix):
-// PUT /api/purchase-orders/{id}/status    â†’ status-only update
-// PUT /api/purchase-orders/{id}/vendor-response â†’ Vendor Accept/Decline
+// ─── Purchase Order Updates ──────────────────────────────────────────
 export const updatePO = (id, payload) =>
   api.put(`/purchase-orders/${id}`, payload);
 
 export const updatePOStatus = (id, status) =>
   api.put(`/purchase-orders/${id}/status`, null, { params: { status } });
 
-export const vendorRespondToPO = (id, status, deliveryDate = null) => {
-  const params = { status };
-  if (deliveryDate) params.deliveryDate = deliveryDate;
-  return api.put(`/purchase-orders/${id}/vendor-response`, null, { params });
+export const vendorRespondToPO = (id, status, expectedDeliveryDate = null, vendorNotes = null) => {
+  const payload = { status };
+  if (expectedDeliveryDate) payload.expectedDeliveryDate = expectedDeliveryDate;
+  if (vendorNotes) payload.vendorNotes = vendorNotes;
+  return api.post(`/purchase-orders/${id}/respond`, payload);
 };
 
-// â”€â”€â”€ Vendor Product CRUD Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Vendor Product CRUD Endpoints ────────────────────────────────────
 export const fetchAllVendorProducts = () =>
   api.get('/vendor-products').catch(() => []);
 
@@ -511,8 +508,33 @@ export const fetchCategories = () => api.get('/categories').catch(() => {
 });
 export const fetchWarehouseProducts = () => api.get('/vendor-products/in-stock').catch(() => []);
 export const fetchWarehouseCategories = async () => { try { const res = await api.get('/vendor-categories'); return res || []; } catch (e) { return [{ id: 'CAT1', name: 'Dairy', color: '#10b981' }]; } };
-export const fetchWarehouseRacks = async () => { return [{ id: 'R-01', categoryId: 'CAT1' }, { id: 'R-02', categoryId: 'CAT2' }]; };
+export const fetchWarehouseRacks = async () => {
+    try {
+        const res = await api.get('/warehouse/racks');
+        return res.data || res || [];
+    } catch (e) {
+        return [];
+    }
+};
+// ── Warehouse Entity APIs ──
+export const fetchWarehouseEntities = async () =>
+  api.get('/warehouse/entities');
+export const getWarehouseEntityById = async (id) =>
+  api.get(`/warehouse/entities/${id}`);
+export const createWarehouseEntity = async (data) =>
+  api.post('/warehouse/entities', data);
+export const updateWarehouseEntity = async (id, data) =>
+  api.put(`/warehouse/entities/${id}`, data);
+export const deleteWarehouseEntity = async (id) =>
+  api.delete(`/warehouse/entities/${id}`);
+
 export const fetchWarehouseStock = async () => { return []; };
 export const fetchWarehouseMovements = async () => { return []; };
 export const adjustWarehouseStock = async () => { return true; };
-export const updateWarehouseRackCategory = async () => { return true; };
+export const updateWarehouseRackCategory = async (rackId, categoryId) => {
+    const res = await api.put(`/warehouse/racks/${rackId}/category`, { categoryId });
+    return res.data || res;
+};export const createWarehouseRack = async (payload) => {
+    const res = await api.post('/warehouse/racks', payload);
+    return res.data || res;
+};

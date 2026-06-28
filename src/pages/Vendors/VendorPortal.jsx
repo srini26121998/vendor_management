@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchPurchaseOrders, fetchInvoices, vendorRespondToPO, raiseDispute, fetchVendors, fetchPayments, fetchVendorReturns, fetchRTVRequests, updateRTVStatus } from '../../api/vendorService';
+import { fetchPurchaseOrders, fetchPOById, fetchInvoices, vendorRespondToPO, raiseDispute, fetchVendors, fetchPayments, fetchVendorReturns, fetchRTVRequests, updateRTVStatus } from '../../api/vendorService';
 import { VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, VModal, VendorBreadcrumb } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout, FileText, Scale, CreditCard, Settings, Download, CheckCircle, Info, ShieldCheck, RotateCcw, Package, XCircle } from 'lucide-react';
@@ -30,8 +30,15 @@ export default function VendorPortal() {
     const [disputeForm, setDisputeForm] = useState({
         relatedInstrument: '',
         category: 'Payment not received',
+        category: 'Payment not received',
         narrative: ''
     });
+
+    const [expandedPo, setExpandedPo] = useState(null);
+    const [fullPos, setFullPos] = useState({});
+    const [ackModalOpen, setAckModalOpen] = useState(false);
+    const [ackPoId, setAckPoId] = useState(null);
+    const [ackForm, setAckForm] = useState({ expectedDeliveryDate: '', vendorNotes: '' });
 
     useEffect(() => {
         fetchPurchaseOrders().then(d => setPos(Array.isArray(d) ? d : []));
@@ -52,13 +59,38 @@ export default function VendorPortal() {
         }).catch(err => console.error("Failed to fetch mock vendor ID", err));
     }, []);
 
-    const handleAcknowledge = async (id) => {
+    const openAckModal = (id) => {
+        setAckPoId(id);
+        setAckForm({ expectedDeliveryDate: '', vendorNotes: '' });
+        setAckModalOpen(true);
+    };
+
+    const handleAcknowledgeSubmit = async () => {
+        if (!ackPoId) return;
         try {
-            await vendorRespondToPO(id, 'ACCEPTED');
+            await vendorRespondToPO(ackPoId, 'ACCEPTED', ackForm.expectedDeliveryDate, ackForm.vendorNotes);
             toast.success(`PO Acknowledged successfully!`);
-            setPos(prev => prev.map(po => po.id === id ? { ...po, status: 'ACCEPTED' } : po));
+            setPos(prev => prev.map(po => po.id === ackPoId ? { ...po, status: 'ACCEPTED', expectedDeliveryDate: ackForm.expectedDeliveryDate } : po));
+            setAckModalOpen(false);
+            setAckPoId(null);
         } catch (error) {
             toast.error('Failed to acknowledge PO');
+        }
+    };
+
+    const togglePoExpand = async (id) => {
+        if (expandedPo === id) {
+            setExpandedPo(null);
+        } else {
+            setExpandedPo(id);
+            if (!fullPos[id]) {
+                const poData = await fetchPOById(id);
+                if (poData && poData.data) {
+                    setFullPos(prev => ({ ...prev, [id]: poData.data }));
+                } else if (poData) {
+                    setFullPos(prev => ({ ...prev, [id]: poData }));
+                }
+            }
         }
     };
 
@@ -147,16 +179,16 @@ export default function VendorPortal() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.3, delay: i * 0.05 }}
                                             >
-                                                <VCard className="group hover:border-emerald-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-white border border-slate-200 shadow-sm">
+                                                <VCard className="group hover:border-emerald-300 hover:shadow-xl transition-all duration-300 relative overflow-hidden bg-white border border-slate-200 shadow-sm mb-4">
                                                     <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10">
+                                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10 cursor-pointer" onClick={() => togglePoExpand(po.id)}>
                                                         <div className="w-14 h-14 bg-[#e2f5e3] rounded-2xl flex items-center justify-center text-emerald-600 border border-[#bbf7d0] transition-all shadow-inner group-hover:scale-110 shrink-0">
                                                             <Layout size={22} className="opacity-80 group-hover:opacity-100" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex flex-wrap items-center gap-3 mb-1.5">
                                                                 <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50/80 px-2.5 py-1 rounded-md border border-emerald-200/50 shadow-sm">{po.id}</span>
-                                                                <h3 className="text-[17px] font-extrabold text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors">{formatCurrency(po.grandTotal || po.amount || 0)} <span className="text-slate-300 font-normal mx-1">|</span> <span className="text-[13px] font-semibold text-slate-500">{po.items?.length || 0} Items</span></h3>
+                                                                <h3 className="text-[17px] font-extrabold text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors">{formatCurrency(po.grandTotal || po.amount || 0)} <span className="text-slate-300 font-normal mx-1">|</span> <span className="text-[13px] font-semibold text-slate-500">{po.itemCount || po.items?.length || 0} Items</span></h3>
                                                             </div>
                                                             <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                                                 <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100"><span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Expected: {po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toLocaleDateString('en-IN') : 'TBD'}</span>
@@ -167,8 +199,8 @@ export default function VendorPortal() {
                                                             <SecondaryBtn onClick={() => toast.success(`PO PDF downloaded`)} className="flex-1 md:flex-none">
                                                                 <Download size={14} /> PDF
                                                             </SecondaryBtn>
-                                                            {((po.status || '').toUpperCase() === 'ACTIVE') ? (
-                                                                <button onClick={() => handleAcknowledge(po.id)}
+                                                            {((po.status || '').toUpperCase() === 'ACTIVE' || (po.status || '').toUpperCase() === 'PENDING') ? (
+                                                                <button onClick={(e) => { e.stopPropagation(); openAckModal(po.id); }}
                                                                     className="flex-1 px-5 py-2 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[11px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-[#bbf7d0] shadow-sm">
                                                                     <CheckCircle size={14} /> Acknowledge
                                                                 </button>
@@ -179,6 +211,52 @@ export default function VendorPortal() {
                                                             )}
                                                         </div>
                                                     </div>
+
+                                                    {/* Expanded PO details */}
+                                                    <AnimatePresence>
+                                                        {expandedPo === po.id && (
+                                                            <motion.div
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: 'auto', opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }}
+                                                                className="overflow-hidden mt-4 pt-4 border-t border-slate-100"
+                                                            >
+                                                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                                    <h4 className="text-[12px] font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                                        <Package size={14} /> Purchase Items
+                                                                    </h4>
+                                                                    {!fullPos[po.id] ? (
+                                                                        <div className="text-[12px] font-medium text-slate-500 animate-pulse">Loading items...</div>
+                                                                    ) : fullPos[po.id].items?.length === 0 ? (
+                                                                        <div className="text-[12px] font-medium text-slate-500">No items found for this PO.</div>
+                                                                    ) : (
+                                                                        <div className="overflow-x-auto">
+                                                                            <table className="w-full text-left border-collapse">
+                                                                                <thead>
+                                                                                    <tr className="border-b border-slate-200">
+                                                                                        <th className="pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Product Name</th>
+                                                                                        <th className="pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Qty</th>
+                                                                                        <th className="pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Rate</th>
+                                                                                        <th className="pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Total</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    {fullPos[po.id].items.map((item, idx) => (
+                                                                                        <tr key={idx} className="border-b border-slate-100 last:border-0">
+                                                                                            <td className="py-2 text-[12px] font-semibold text-slate-800">{item.productName || 'Unknown Product'}</td>
+                                                                                            <td className="py-2 text-[12px] font-bold text-slate-700 text-right">{item.quantity}</td>
+                                                                                            <td className="py-2 text-[12px] text-slate-600 text-right">{formatCurrency(item.purchaseRate || 0)}</td>
+                                                                                            <td className="py-2 text-[12px] font-bold text-slate-800 text-right">{formatCurrency(item.totalAmount || 0)}</td>
+                                                                                        </tr>
+                                                                                    ))}
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
                                                 </VCard>
                                             </motion.div>
                                         ))}
@@ -633,6 +711,39 @@ export default function VendorPortal() {
                         <button onClick={saveSettings}
                             className="px-6 py-2.5 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[12px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 border border-[#bbf7d0] shadow-sm">
                             Apply Config
+                        </button>
+                    </div>
+                </div>
+            </VModal>
+            {/* Acknowledge PO Modal */}
+            <VModal open={ackModalOpen} onClose={() => { setAckModalOpen(false); setAckPoId(null); }} title="Acknowledge Purchase Order" width="max-w-md">
+                <div className="space-y-4">
+                    <div>
+                        <label className={labelCls}>Expected Delivery Date</label>
+                        <input
+                            type="date"
+                            value={ackForm.expectedDeliveryDate}
+                            onChange={(e) => setAckForm({ ...ackForm, expectedDeliveryDate: e.target.value })}
+                            className="w-full text-[12px] font-bold border border-slate-200 rounded-lg px-4 py-2 bg-slate-50 focus:border-emerald-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Vendor Notes (Optional)</label>
+                        <textarea
+                            value={ackForm.vendorNotes}
+                            onChange={(e) => setAckForm({ ...ackForm, vendorNotes: e.target.value })}
+                            placeholder="e.g., All products available, except..."
+                            rows={3}
+                            className="w-full text-[12px] font-bold border border-slate-200 rounded-lg px-4 py-2 bg-slate-50 focus:border-emerald-500 outline-none resize-none"
+                        ></textarea>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                        <SecondaryBtn onClick={() => { setAckModalOpen(false); setAckPoId(null); }}>
+                            Cancel
+                        </SecondaryBtn>
+                        <button onClick={handleAcknowledgeSubmit}
+                            className="px-6 py-2 bg-[#e2f5e3] hover:bg-[#d1f0d3] text-slate-800 text-[11px] font-bold uppercase tracking-wider rounded-full transition-all active:scale-95 flex items-center justify-center gap-1.5 border border-[#bbf7d0] shadow-sm">
+                            <CheckCircle size={14} /> Confirm
                         </button>
                     </div>
                 </div>

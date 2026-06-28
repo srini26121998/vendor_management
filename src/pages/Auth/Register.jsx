@@ -1,27 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { User, Phone, Lock, Eye, EyeOff, Briefcase, Mail } from 'lucide-react';
+import api from '../../api/axios';
+import authService from '../../api/authService';
 
 const Register = () => {
     const navigate = useNavigate();
     
     const [formData, setFormData] = useState({
         name: '',
-        role: 'Vendor',
-        phoneNumber: '',
+        email: '',
+        userId: '',
+        role: '',
         password: '',
         confirmPassword: '',
-        // Conditional fields
-        companyName: '',
-        department: '',
     });
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [roles, setRoles] = useState([]);
 
-    const roles = ['Vendor', 'Manager', 'Supervisor', 'Staff'];
+    useEffect(() => {
+        const fetchRoles = async () => {
+            try {
+                const data = await api.get('/roles');
+                setRoles(data || []);
+            } catch (error) {
+                console.error("Failed to fetch roles", error);
+                toast.error("Failed to load roles");
+            }
+        };
+        fetchRoles();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -35,14 +47,29 @@ const Register = () => {
             toast.error('Passwords do not match');
             return;
         }
+        if (!formData.role) {
+            toast.error('Please select a role');
+            return;
+        }
 
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
+        try {
+            await authService.register({
+                name: formData.name,
+                email: formData.email,
+                userId: formData.userId,
+                password: formData.password,
+                role: formData.role
+            });
             toast.success('Registration successful! Please login.');
             navigate('/login');
-        }, 1500);
+        } catch (error) {
+            console.error("Registration error:", error);
+            const msg = error.response?.data?.message || error.response?.data?.error || 'Registration failed. Please try again.';
+            toast.error(msg);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -96,8 +123,9 @@ const Register = () => {
                                     className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all appearance-none font-medium"
                                     required
                                 >
-                                    {roles.map(role => (
-                                        <option key={role} value={role}>{role}</option>
+                                    <option value="" disabled>Select a role</option>
+                                    {roles.map(r => (
+                                        <option key={r.id || r.name} value={r.name}>{r.name}</option>
                                     ))}
                                 </select>
                                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
@@ -106,26 +134,43 @@ const Register = () => {
                             </div>
                         </div>
 
-                        {/* Dynamic Fields based on Role */}
-                        {formData.role === 'Vendor' && (
-                            <div className="space-y-2 animate-entry">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Company Name</label>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                        <Briefcase size={18} />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="companyName"
-                                        value={formData.companyName}
-                                        onChange={handleChange}
-                                        placeholder="Acme Corp"
-                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-400 font-medium"
-                                        required
-                                    />
+                        {/* Email Field */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                                    <Mail size={18} />
                                 </div>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="john@example.com"
+                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-400 font-medium"
+                                    required
+                                />
                             </div>
-                        )}
+                        </div>
+
+                        {/* User ID Field */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">User ID</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                                    <User size={18} />
+                                </div>
+                                <input
+                                    type="text"
+                                    name="userId"
+                                    value={formData.userId}
+                                    onChange={handleChange}
+                                    placeholder="johndoe123"
+                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-400 font-medium"
+                                    required
+                                />
+                            </div>
+                        </div>
 
                         {formData.role === 'Staff' && (
                             <div className="space-y-2 animate-entry">
@@ -147,24 +192,7 @@ const Register = () => {
                             </div>
                         )}
 
-                        {/* Phone Number Field */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Phone Number</label>
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                    <Phone size={18} />
-                                </div>
-                                <input
-                                    type="tel"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
-                                    onChange={handleChange}
-                                    placeholder="+1 (555) 000-0000"
-                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all placeholder:text-slate-400 font-medium"
-                                    required
-                                />
-                            </div>
-                        </div>
+
 
                         {/* Password Field */}
                         <div className="space-y-2">

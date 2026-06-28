@@ -600,7 +600,7 @@ export default function StockTransferAdvanced() {
                                 <div>
                                     <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Product Catalog</h3>
                                     <p style={{ margin: '3px 0 0', fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
-                                        {loadingProducts ? 'Loading…' : `${filteredProducts.length} of ${products.length} products`}
+                                        {loadingProducts ? 'Loading…' : !searchQuery.trim() ? 'Search to view products' : `${filteredProducts.length} results`}
                                     </p>
                                 </div>
                                 {fromOutlet && (
@@ -641,13 +641,21 @@ export default function StockTransferAdvanced() {
                                     <div className="sta-spin" style={{ width: 34, height: 34, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#16a34a' }} />
                                     <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading products…</span>
                                 </div>
+                            ) : !searchQuery.trim() ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
+                                    <div style={{ width: 60, height: 60, borderRadius: 18, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Search size={28} color="#cbd5e1" />
+                                    </div>
+                                    <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Search for products</span>
+                                    <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>Enter a product name or SKU to view catalog</span>
+                                </div>
                             ) : filteredProducts.length === 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
                                     <div style={{ width: 60, height: 60, borderRadius: 18, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Package size={28} color="#cbd5e1" />
                                     </div>
                                     <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>No products found</span>
-                                    {searchQuery && <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>Try a different search term</span>}
+                                    <span style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>Try a different search term</span>
                                 </div>
                             ) : (
                                 filteredProducts.map(product => {
@@ -912,168 +920,6 @@ export default function StockTransferAdvanced() {
                                 )}
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                {/* ── STO Log Table ──────────────────────────────────────── */}
-                <div style={{ background: '#fff', borderRadius: 18, border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-
-                    {/* Table header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 38, height: 38, borderRadius: 11, background: '#f8fafc', border: '1.5px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <TrendingUp size={17} color="#16a34a" />
-                            </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Transfer Order Log</h3>
-                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
-                                    {loadingSTOs ? 'Loading…' : `${filteredSTOs.length} of ${stos.length} orders`}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Search */}
-                        <div style={{ position: 'relative' }}>
-                            <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                            <input
-                                type="text"
-                                placeholder="Search orders…"
-                                value={stoSearch}
-                                onChange={e => setStoSearch(e.target.value)}
-                                style={{
-                                    width: 240, paddingLeft: 36, paddingRight: 14, paddingTop: 9, paddingBottom: 9,
-                                    background: '#f8fafc', border: '1.5px solid #bbf7d0', borderRadius: 10,
-                                    fontSize: 13, fontWeight: 500, color: '#1e293b', outline: 'none', fontFamily: 'inherit'
-                                }}
-                                onFocus={e => e.target.style.borderColor = '#16a34a'}
-                                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #f1f5f9' }}>
-                                    {['STO Number', 'Route', 'Product', 'Qty', 'Date', 'Priority', 'Status', 'Action'].map(h => (
-                                        <th key={h} style={{ padding: '12px 18px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loadingSTOs ? (
-                                    <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                                            <div className="sta-spin" style={{ width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#16a34a', borderRadius: '50%' }} />
-                                            <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Loading orders…</span>
-                                        </div>
-                                    </td></tr>
-                                ) : filteredSTOs.length === 0 ? (
-                                    <tr><td colSpan={8} style={{ padding: '56px 0', textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0.5 }}>
-                                            <div style={{ width: 60, height: 60, borderRadius: 18, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <ArrowRightLeft size={28} color="#cbd5e1" />
-                                            </div>
-                                            <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>No stock transfer orders found</span>
-                                            {stoSearch && <span style={{ fontSize: 11, color: '#cbd5e1' }}>Try clearing your search filter</span>}
-                                        </div>
-                                    </td></tr>
-                                ) : filteredSTOs.map((sto, idx) => {
-                                    const statusCfg = STATUS_CFG[sto.status] || STATUS_CFG.DRAFT;
-                                    const dt = sto.transferDate
-                                        ? new Date(sto.transferDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
-                                        : '—';
-                                    const priorityColor = sto.priority === 'Critical' ? { bg: '#fef2f2', color: '#dc2626' } : sto.priority === 'Urgent' ? { bg: '#fffbeb', color: '#d97706' } : { bg: '#f1f5f9', color: '#64748b' };
-
-                                    return (
-                                        <tr key={sto.id} className="sta-tr" style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.12s' }}>
-                                            {/* STO Number */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#16a34a', background: '#f0fdf4', padding: '3px 8px', borderRadius: 7 }}>
-                                                    {sto.stoNumber || `STO-${(sto.id || '').toString().slice(0, 8).toUpperCase()}`}
-                                                </span>
-                                            </td>
-
-                                            {/* Route */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block' }}>{sto.sourceBranchName}</span>
-                                                    <ArrowRight size={11} color="#94a3b8" style={{ flexShrink: 0 }} />
-                                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block' }}>{sto.destBranchName}</span>
-                                                </div>
-                                            </td>
-
-                                            {/* Product */}
-                                            <td style={{ padding: '14px 18px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13, fontWeight: 600, color: '#1e293b' }}>
-                                                {sto.productName || '—'}
-                                            </td>
-
-                                            {/* Qty */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', background: '#f8fafc', padding: '2px 10px', borderRadius: 7, border: '1px solid #e2e8f0' }}>
-                                                    {sto.transferQuantity}
-                                                </span>
-                                            </td>
-
-                                            {/* Date */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                    <Clock size={11} color="#cbd5e1" />
-                                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>{dt}</span>
-                                                </div>
-                                            </td>
-
-                                            {/* Priority */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', padding: '3px 9px', borderRadius: 99, background: priorityColor.bg, color: priorityColor.color }}>
-                                                    {sto.priority || 'Normal'}
-                                                </span>
-                                            </td>
-
-                                            {/* Status */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                <StatusBadge status={sto.status} />
-                                            </td>
-
-                                            {/* Action */}
-                                            <td style={{ padding: '14px 18px' }}>
-                                                {sto.status === 'DRAFT' && (
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(sto.id, 'IN_TRANSIT')}
-                                                        style={{
-                                                            display: 'flex', alignItems: 'center', gap: 5,
-                                                            padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                                                            background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
-                                                        }}
-                                                    >
-                                                        <Truck size={12} /> Dispatch
-                                                    </button>
-                                                )}
-                                                {sto.status === 'IN_TRANSIT' && (
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(sto.id, 'RECEIVED')}
-                                                        style={{
-                                                            display: 'flex', alignItems: 'center', gap: 5,
-                                                            padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                                                            background: '#10b981', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit'
-                                                        }}
-                                                    >
-                                                        <CheckCircle2 size={12} /> Mark Received
-                                                    </button>
-                                                )}
-                                                {sto.status === 'RECEIVED' && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                        <CheckCircle2 size={14} color="#10b981" />
-                                                        <span style={{ fontSize: 11, fontWeight: 700, color: '#10b981' }}>Completed</span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 

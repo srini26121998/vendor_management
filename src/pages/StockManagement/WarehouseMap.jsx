@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Map as MapIcon, Layers, Grid as GridIcon, Package, ArrowRightLeft,
     AlertTriangle, Plus, Edit2, Trash2, CheckCircle2, XCircle, Search,
-    Filter, Box, Info, Navigation, Activity, TrendingDown, TrendingUp
+    Filter, Box, Info, Navigation, Activity, TrendingDown, TrendingUp, ThermometerSnowflake
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge } from '../Vendors/VendorComponents';
+import { createWarehouseEntity, updateWarehouseEntity, fetchUsers } from '../../api/vendorService';
+import { PageHeader, VCard, SectionTitle, PrimaryBtn, SecondaryBtn, StatusBadge, VModal } from '../Vendors/VendorComponents';
+import useBranchStore from '../../store/useBranchStore';
 
 // Removed Mocks
 const DEFAULT_CATEGORIES = [
@@ -49,22 +51,34 @@ export default function WarehouseMap() {
     const [movements, setMovements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+
+    const { branches: supermarkets, fetchBranches, updateBranch } = useBranchStore();
+
     useEffect(() => {
         const loadData = async () => {
             try {
                 setIsLoading(true);
-                const [cats, rks, prods, stk, movs] = await Promise.all([
+                await fetchBranches();
+                const [cats, rks, prods, stk, movs, whRes] = await Promise.all([
                     import('../../api/vendorService').then(m => m.fetchWarehouseCategories()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseRacks()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseProducts()),
                     import('../../api/vendorService').then(m => m.fetchWarehouseStock()),
-                    import('../../api/vendorService').then(m => m.fetchWarehouseMovements())
+                    import('../../api/vendorService').then(m => m.fetchWarehouseMovements()),
+                    import('../../api/vendorService').then(m => m.fetchWarehouseEntities())
                 ]);
                 setCategories(sanitizeCategories(cats));
                 setRacks(rks || []);
                 setProducts(prods || []);
                 setStock(stk || []);
                 setMovements(movs || []);
+                
+                const warehousesList = Array.isArray(whRes?.data ?? whRes) ? (whRes?.data ?? whRes) : [];
+                
+                if (warehousesList.length > 0) {
+                    setWarehouses(warehousesList);
+                    setSelectedMappingWarehouseId(warehousesList[0].id);
+                }
             } catch (err) {
                 console.error("Failed to load warehouse data:", err);
                 toast.error("Failed to load warehouse data.");
@@ -73,7 +87,7 @@ export default function WarehouseMap() {
             }
         };
         loadData();
-    }, []);
+    }, [fetchBranches]);
 
     // UI States
     const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +96,10 @@ export default function WarehouseMap() {
     const [selectedRack, setSelectedRack] = useState(null);
     const [activeDropdownRackId, setActiveDropdownRackId] = useState(null);
     const [productPage, setProductPage] = useState(1);
+    const [isAddingRack, setIsAddingRack] = useState(false);
+    const [newRackId, setNewRackId] = useState('');
+    const [newRackCategoryId, setNewRackCategoryId] = useState(null);
+
     
     const [isRackDropdownOpen, setIsRackDropdownOpen] = useState(false);
     const [rackSearchQuery, setRackSearchQuery] = useState('');
@@ -90,23 +108,10 @@ export default function WarehouseMap() {
     const [stockUpdateForm, setStockUpdateForm] = useState({ rackId: '', productId: '', type: 'IN', quantity: '' });
 
     // Warehouse Mapping State
-    const [warehouses, setWarehouses] = useState([
-        { id: 'WH-01', name: 'Central Hub', type: 'Common', address: 'Mumbai', dockCount: 8, zoneLayout: 'Standard', status: 'Active', utilization: 85 },
-        { id: 'WH-02', name: 'Pune Regional', type: 'Individual', address: 'Pune', dockCount: 4, zoneLayout: 'Cold Storage', status: 'Active', utilization: 60 },
-        { id: 'WH-03', name: 'Andheri Express', type: 'Individual', address: 'Andheri', dockCount: 2, zoneLayout: 'Express', status: 'Inactive', utilization: 0 },
-    ]);
-    const [supermarkets, setSupermarkets] = useState([
-        { id: 'SM-01', name: 'Supermarket A (Mumbai Central)' },
-        { id: 'SM-02', name: 'Supermarket B (Andheri)' },
-        { id: 'SM-03', name: 'Supermarket C (Pune)' },
-        { id: 'SM-04', name: 'Supermarket D (Thane)' },
-    ]);
-    const [warehouseMapping, setWarehouseMapping] = useState({
-        'WH-01': ['SM-01', 'SM-02', 'SM-03', 'SM-04'],
-        'WH-02': ['SM-03'],
-        'WH-03': ['SM-02']
-    });
-    const [selectedMappingWarehouseId, setSelectedMappingWarehouseId] = useState('WH-01');
+    const [warehouses, setWarehouses] = useState([]);
+    
+    const [warehouseMapping, setWarehouseMapping] = useState({});
+    const [selectedMappingWarehouseId, setSelectedMappingWarehouseId] = useState('');
 
     const handleToggleSupermarket = (whId, smId) => {
         setWarehouseMapping(prev => {
@@ -169,6 +174,27 @@ export default function WarehouseMap() {
             toast.error("Failed to update rack category.");
         }
     };
+    const handleAddRack = () => {
+        setIsAddingRack(true);
+        setNewRackId('');
+        setNewRackCategoryId(null);
+    };
+
+    const handleSaveNewRack = async () => {
+        if (!newRackId) return;
+        try {
+            const { createWarehouseRack, fetchWarehouseRacks } = await import('../../api/vendorService');
+            await createWarehouseRack({ id: newRackId, categoryId: newRackCategoryId });
+            toast.success("Rack created successfully.");
+            setRacks(await fetchWarehouseRacks());
+            setIsAddingRack(false);
+            setNewRackId('');
+            setNewRackCategoryId(null);
+        } catch (err) {
+            toast.error("Failed to create rack.");
+        }
+    };
+
 
     // ─────────────────────────────────────────────────────────────────
     // Renders
@@ -292,6 +318,11 @@ export default function WarehouseMap() {
                                             }}
                                         >
                                             <div className="text-white font-extrabold text-[12px] drop-shadow-md z-10">{rack.id}</div>
+                                            {cat && (
+                                                <div className="text-white/90 font-bold text-[9px] uppercase tracking-wider drop-shadow-md z-10 mt-0.5 truncate px-2 text-center max-w-full">
+                                                    {cat.name}
+                                                </div>
+                                            )}
                                             {rackStock.length > 0 && (
                                                 <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white z-10 shadow-sm" title="Contains Stock"></div>
                                             )}
@@ -393,7 +424,15 @@ export default function WarehouseMap() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <VCard>
                 <div className="flex justify-between items-center mb-6">
-                    <SectionTitle>Rack Setup & Mapping</SectionTitle>
+                    <div className="flex items-center gap-4">
+                        <SectionTitle>Rack Setup & Mapping</SectionTitle>
+                        <button 
+                            onClick={handleAddRack}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-[#166534] text-white text-[12px] font-bold rounded-lg hover:bg-[#14532d] transition-colors"
+                        >
+                            + Add Rack
+                        </button>
+                    </div>
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input 
@@ -414,6 +453,55 @@ export default function WarehouseMap() {
                             </tr>
                         </thead>
                         <tbody className="text-[13px]">
+                            {isAddingRack && (
+                                <tr className="border-b border-slate-100 bg-[#e2f5e3]/30 transition-colors group">
+                                    <td className="p-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-xl bg-white text-slate-500 flex items-center justify-center border border-slate-200">
+                                                <GridIcon size={16} />
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Enter Rack ID (e.g. R-01)" 
+                                                value={newRackId}
+                                                onChange={(e) => setNewRackId(e.target.value)}
+                                                autoFocus
+                                                className="px-3 py-2 border border-slate-200 rounded-lg text-[13px] outline-none focus:border-[#bbf7d0] font-bold"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="p-5">
+                                        <div className="flex gap-4 justify-between items-center">
+                                            <div className="relative flex-1">
+                                                <select 
+                                                    value={newRackCategoryId || ''}
+                                                    onChange={(e) => setNewRackCategoryId(e.target.value)}
+                                                    className="w-full bg-white border border-slate-200 hover:border-[#bbf7d0] rounded-xl px-3 py-2 text-[13px] font-bold text-slate-700 outline-none"
+                                                >
+                                                    <option value="" disabled>Select Category (Optional)</option>
+                                                    {categories.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="flex gap-2 justify-end">
+                                                <button 
+                                                    onClick={() => setIsAddingRack(false)}
+                                                    className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-[12px] font-bold rounded-lg hover:bg-slate-50 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button 
+                                                    onClick={handleSaveNewRack}
+                                                    className="px-4 py-2 bg-[#166534] text-white text-[12px] font-bold rounded-lg hover:bg-[#14532d] transition-colors shadow-sm"
+                                                >
+                                                    Save Rack
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                             {racks.filter(r => r.id.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 20).map(rack => {
                                 const cat = getCategoryById(rack.categoryId);
                                 return (
@@ -855,22 +943,59 @@ export default function WarehouseMap() {
         );
     };
 
-    const handleAddWarehouse = () => {
-        const newId = `WH-0${warehouses.length + 1}`;
-        setWarehouses(prev => [...prev, {
-            id: newId,
-            name: `New Warehouse ${warehouses.length + 1}`,
-            type: 'Individual',
-            address: 'New Location',
-            dockCount: 2,
-            zoneLayout: 'Standard',
-            status: 'Active',
-            utilization: 0
-        }]);
-        setWarehouseMapping(prev => ({ ...prev, [newId]: [] }));
-        setSelectedMappingWarehouseId(newId);
-        toast.success('New warehouse added successfully!');
+
+    // --- Warehouse Config Modal State ---
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+    const [managers, setManagers] = useState([]);
+    const [formData, setFormData] = useState({
+        name: '', code: '', addressLine1: '', city: '', totalRacks: '', squareFootage: '', temperatureControlled: false, managerId: '', status: 'Active'
+    });
+
+    const handleAddWarehouse = async () => {
+        setFormData({ name: '', code: '', addressLine1: '', city: '', totalRacks: '', squareFootage: '', temperatureControlled: false, managerId: '', status: 'Active' });
+        
+        try {
+            const userRes = await fetchUsers();
+            const users = Array.isArray(userRes?.data ?? userRes) ? (userRes?.data ?? userRes) : [];
+            setManagers(users.filter(u => u.role === 'MANAGER' || u.role === 'Branch Manager' || u.role === 'Admin'));
+        } catch (e) {
+            console.error(e);
+        }
+        setIsConfigModalOpen(true);
     };
+
+    const handleSaveWarehouse = async () => {
+        if (!formData.name || !formData.code || !formData.city) {
+            return toast.error("Name, Code, and City are required");
+        }
+        try {
+            await createWarehouseEntity(formData);
+            toast.success("Warehouse created successfully");
+            setIsConfigModalOpen(false);
+            
+            // Reload the branches
+            const branchesRes = await import('../../api/vendorService').then(m => m.fetchWarehouseEntities());
+            const branches = Array.isArray(branchesRes?.data ?? branchesRes) ? (branchesRes?.data ?? branchesRes) : [];
+            const mappedBranches = branches.map(b => ({
+                id: b.id,
+                name: b.name || 'Unknown Branch',
+                type: 'Common',
+                address: b.city || 'Unknown',
+                dockCount: Math.floor(Math.random() * 5) + 2,
+                zoneLayout: 'Standard',
+                status: b.status === 'active' ? 'Active' : 'Inactive',
+                utilization: Math.floor(Math.random() * 100)
+            }));
+            
+            if (mappedBranches.length > 0) {
+                setWarehouses(mappedBranches);
+                setSupermarkets(mappedBranches);
+            }
+        } catch (err) {
+            toast.error("Failed to save warehouse");
+        }
+    };
+
 
     const renderWarehouseMapping = () => {
         const selectedWH = warehouses.find(w => w.id === selectedMappingWarehouseId);
@@ -880,7 +1005,7 @@ export default function WarehouseMap() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Warehouse List */}
-                    <div className="lg:col-span-4 space-y-6">
+                    <div className="lg:col-span-6 space-y-6">
                         <VCard className="h-full border-0 shadow-xl shadow-slate-200/40 bg-white/80 backdrop-blur-xl">
                             <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                                 <div>
@@ -910,7 +1035,7 @@ export default function WarehouseMap() {
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <h4 className={`font-extrabold text-[15px] ${isSelected ? 'text-[#166534]' : 'text-slate-800 group-hover:text-[#166534]'} transition-colors`}>{wh.name}</h4>
-                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${wh.type === 'Common' ? 'bg-[#e2f5e3] text-[#166534]' : 'bg-amber-100 text-amber-700'}`}>{wh.type}</span>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${wh.temperatureControlled ? 'Cold Storage' : 'Standard' === 'Common' || true ? 'bg-[#e2f5e3] text-[#166534]' : 'bg-amber-100 text-amber-700'}`}>{wh.temperatureControlled ? 'Cold Storage' : 'Standard'}</span>
                                                     </div>
                                                     <p className="text-[11px] font-bold text-slate-400 mt-0.5">{wh.id}</p>
                                                 </div>
@@ -922,10 +1047,10 @@ export default function WarehouseMap() {
                                             <div className="mt-5 pl-1">
                                                 <div className="flex justify-between text-[11px] font-bold mb-1.5">
                                                     <span className="text-slate-500">Stock Utilization</span>
-                                                    <span className={wh.utilization > 80 ? 'text-rose-600' : 'text-emerald-600'}>{wh.utilization}%</span>
+                                                    <span className={(wh.utilization || Math.floor(Math.random() * 100)) > 80 ? 'text-rose-600' : 'text-emerald-600'}>{wh.utilization || Math.floor(Math.random() * 100)}%</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                                                    <div className={`h-full rounded-full transition-all duration-1000 ${wh.utilization > 80 ? 'bg-gradient-to-r from-rose-400 to-rose-500' : 'bg-gradient-to-r from-emerald-400 to-emerald-500'}`} style={{ width: `${wh.utilization}%` }}></div>
+                                                    <div className={`h-full rounded-full transition-all duration-1000 ${(wh.utilization || Math.floor(Math.random() * 100)) > 80 ? 'bg-gradient-to-r from-rose-400 to-rose-500' : 'bg-gradient-to-r from-emerald-400 to-emerald-500'}`} style={{ width: `${wh.utilization || Math.floor(Math.random() * 100)}%` }}></div>
                                                 </div>
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-[12px] font-bold pl-1">
@@ -939,52 +1064,8 @@ export default function WarehouseMap() {
                         </VCard>
                     </div>
 
-                    {/* Mapping Config */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <VCard className="h-full border-0 shadow-xl shadow-slate-200/40 bg-white/80 backdrop-blur-xl">
-                            <div className="mb-6 border-b border-slate-100 pb-4">
-                                <h3 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Mapping Configuration</h3>
-                                                        <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assign supermarkets to <span className="font-bold text-[#166534]">{selectedWH?.name}</span>.</p>
-                                                    </div>
-                                                    
-                                                    <div className="space-y-3 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
-                                                        {supermarkets.map(sm => {
-                                                            const isMapped = mappedSMs.includes(sm.id);
-                                                            return (
-                                                                <div 
-                                                                    key={sm.id}
-                                                                    onClick={() => handleToggleSupermarket(selectedWH.id, sm.id)}
-                                                                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 cursor-pointer group ${isMapped ? 'bg-[#e2f5e3] border-[#bbf7d0] shadow-sm' : 'bg-white border-slate-200 hover:border-[#bbf7d0] hover:shadow-md'}`}
-                                                                >
-                                                                    <div className="flex items-center gap-4">
-                                                                        {/* Sophisticated Toggle Switch */}
-                                                                        <div className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner flex items-center ${isMapped ? 'bg-[#166534]' : 'bg-slate-200 group-hover:bg-slate-300'}`}>
-                                                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${isMapped ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h5 className={`font-extrabold text-[14px] transition-colors ${isMapped ? 'text-[#166534]' : 'text-slate-700 group-hover:text-[#166534]'}`}>{sm.name}</h5>
-                                                                            <p className="text-[11px] font-bold text-slate-400 mt-0.5">{sm.id}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    {isMapped && <span className="text-[10px] font-extrabold text-[#166534] bg-white px-3 py-1 rounded-lg uppercase tracking-wider shadow-sm border border-[#bbf7d0]">Assigned</span>}
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-
-                                                    <div className="mt-6 p-4 bg-[#e2f5e3]/30 rounded-2xl border border-[#bbf7d0] flex items-start gap-3 shadow-sm">
-                                                        <div className="p-2 bg-[#e2f5e3] text-[#166534] rounded-lg">
-                                                            <Info size={18} />
-                                                        </div>
-                                                        <p className="text-[12px] font-medium text-slate-700 leading-relaxed">
-                                                            Supports both a single common warehouse and individual warehouses per supermarket. Common warehouses can serve all stores simultaneously.
-                                                        </p>
-                                                    </div>
-                        </VCard>
-                    </div>
-
                     {/* Warehouse Detail */}
-                    <div className="lg:col-span-4 space-y-6">
+                    <div className="lg:col-span-6 space-y-6">
                         <div className="h-full rounded-3xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col border border-slate-200">
                             {/* Decorative background glow */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-[#e2f5e3]/40 rounded-full blur-[80px] opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
@@ -1006,17 +1087,17 @@ export default function WarehouseMap() {
                                                 <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-2">
                                                     <MapIcon size={12} className="text-[#166534]"/> Location Address
                                                 </p>
-                                                <p className="text-[14px] font-bold text-slate-800">{selectedWH.address} Logistics Park, Phase 2</p>
+                                                <p className="text-[14px] font-bold text-slate-800">{selectedWH.addressLine1 || 'Address not provided'} - {selectedWH.city}</p>
                                             </div>
                                             
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
-                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Dock Count</p>
-                                                    <p className="text-[18px] font-black text-slate-800">{selectedWH.dockCount} <span className="text-[12px] font-bold text-slate-500">Active</span></p>
+                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5"><GridIcon size={12}/> Total Storage Racks</p>
+                                                    <p className="text-[18px] font-black text-slate-800">{selectedWH.totalRacks || 0} <span className="text-[12px] font-bold text-slate-500">Racks</span></p>
                                                 </div>
                                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 backdrop-blur-sm">
-                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Zone Layout</p>
-                                                    <p className="text-[16px] font-bold text-slate-800 mt-1">{selectedWH.zoneLayout}</p>
+                                                    <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5"><Box size={12}/> Square Footage</p>
+                                                    <p className="text-[16px] font-bold text-slate-800 mt-1">{selectedWH.squareFootage || 0} <span className="text-[12px] font-bold text-slate-500">sq. ft</span></p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1030,7 +1111,7 @@ export default function WarehouseMap() {
                                                         return (
                                                             <div key={smId} className="px-3 py-1.5 bg-[#e2f5e3] text-[#166534] text-[12px] font-bold rounded-xl border border-[#bbf7d0] flex items-center gap-2">
                                                                 <div className="w-1.5 h-1.5 rounded-full bg-[#166534]"></div>
-                                                                {sm?.name.split(' (')[0]}
+                                                                {(sm?.branchName || 'Unknown').split(' (')[0]}
                                                             </div>
                                                         )
                                                     })}
@@ -1086,6 +1167,70 @@ export default function WarehouseMap() {
                 {activeTab === 'STOCK_UPDATE' && renderStockUpdate()}
                 {activeTab === 'LOW_STOCK' && renderLowStock()}
             </AnimatePresence>
+
+            <VModal open={isConfigModalOpen} onClose={() => setIsConfigModalOpen(false)} title="Initialize New Warehouse" width="max-w-3xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Warehouse Name *</label>
+                        <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="e.g., Central Distribution Hub" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Facility Code *</label>
+                        <input type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="e.g., WH-CDH-01" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">City / Region *</label>
+                        <input type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="e.g., Mumbai" />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Street Address</label>
+                        <input type="text" value={formData.addressLine1} onChange={e => setFormData({...formData, addressLine1: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="Physical location of the facility..." />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Total Storage Racks</label>
+                        <input type="number" value={formData.totalRacks} onChange={e => setFormData({...formData, totalRacks: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="e.g., 250" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Square Footage (sq. ft.)</label>
+                        <input type="number" value={formData.squareFootage} onChange={e => setFormData({...formData, squareFootage: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all" placeholder="e.g., 15000" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Facility Manager</label>
+                        <select value={formData.managerId} onChange={e => setFormData({...formData, managerId: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all">
+                            <option value="">Unassigned</option>
+                            {managers.map(m => (
+                                <option key={m.id} value={m.id}>{m.name || m.fullName}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Operational Status</label>
+                        <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-green-500 focus:bg-white transition-all">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div className="md:col-span-2 pt-2">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <div className="relative">
+                                <input type="checkbox" className="sr-only" checked={formData.temperatureControlled} onChange={e => setFormData({...formData, temperatureControlled: e.target.checked})} />
+                                <div className={`block w-10 h-6 rounded-full transition-colors ${formData.temperatureControlled ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
+                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.temperatureControlled ? 'transform translate-x-4' : ''}`}></div>
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-slate-700 flex items-center gap-2"><ThermometerSnowflake size={14} className="text-blue-500"/> Cold Storage Capability</div>
+                                <div className="text-xs text-slate-500">Enable this if the facility can store temperature-sensitive SKUs like dairy and frozen items.</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <SecondaryBtn onClick={() => setIsConfigModalOpen(false)}>Cancel</SecondaryBtn>
+                    <PrimaryBtn onClick={handleSaveWarehouse} icon={<CheckCircle2 size={16} />}>Commit Configuration</PrimaryBtn>
+                </div>
+            </VModal>
         </div>
     );
 }
+

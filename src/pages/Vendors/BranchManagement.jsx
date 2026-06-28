@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { PageHeader, VCard, PrimaryBtn, SecondaryBtn, SearchBar, VModal, StatusBadge, FilterBar, Pagination, EmptyState } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import useBranchStore, { WAREHOUSES } from '../../store/useBranchStore';
+import useBranchStore from '../../store/useBranchStore';
 import { fetchUsers } from '../../api/vendorService';
 import {
     Building2, Plus, Edit3, Trash2, Eye, MapPin, Phone, User, Warehouse,
@@ -134,7 +134,7 @@ const BranchDetailScreen = ({ branch, onBack, onEdit, onToggleStatus, onDelete }
 
 // ── Create/Edit Branch Form Modal ──
 const BranchFormModal = ({ open, onClose, editBranch }) => {
-    const { addBranch, updateBranch } = useBranchStore();
+    const { addBranch, updateBranch, branches } = useBranchStore();
     const currentSupermarket = useBranchStore(s => s.currentSupermarket);
     const defaultForm = { branchName: '', branchCode: '', supermarket: currentSupermarket, addressLine1: '', addressLine2: '', city: '', branchManager: '', branchManagerId: '', contactNumber: '', warehouseLinked: '', warehouseId: '', status: 'active' };
     const [form, setForm] = useState(defaultForm);
@@ -168,8 +168,8 @@ const BranchFormModal = ({ open, onClose, editBranch }) => {
         setForm(f => ({ ...f, branchManagerId: userId, branchManager: user?.name || user?.fullName || '' }));
     };
     const handleWarehouseChange = (whId) => {
-        const wh = WAREHOUSES.find(w => w.id === whId);
-        setForm(f => ({ ...f, warehouseId: whId, warehouseLinked: wh?.name || '' }));
+        const wh = branches.find(w => w.id === whId);
+        setForm(f => ({ ...f, warehouseId: whId, warehouseLinked: wh?.branchName || '' }));
     };
 
     const fields = [
@@ -224,7 +224,7 @@ const BranchFormModal = ({ open, onClose, editBranch }) => {
                                     <select value={form.warehouseId || ''} onChange={e => handleWarehouseChange(e.target.value)}
                                         className="w-full text-[13px] font-semibold text-slate-800 border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:border-[oklch(0.45_0.12_150)] focus:ring-4 focus:ring-green-600/10 transition-all appearance-none cursor-pointer">
                                         <option value="">No warehouse linked</option>
-                                        {WAREHOUSES.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                                        {branches.map(w => <option key={w.id} value={w.id}>{w.branchName}</option>)}
                                     </select>
                                 )}
                                 {f.type === 'toggle' && (

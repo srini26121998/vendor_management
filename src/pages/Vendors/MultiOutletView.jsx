@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, VENDOR_ROUTES } from './vendorConstants';
-import { fetchPurchaseOrders, searchGlobalInventory } from '../../api/vendorService';
+import { fetchPurchaseOrders, searchGlobalInventory, fetchBranches } from '../../api/vendorService';
 import { VCard, SectionTitle, StatusBadge, PrimaryBtn, SecondaryBtn, VendorBreadcrumb, VModal } from './VendorComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, MapPin, TrendingUp, Package, AlertTriangle, CheckCircle, XCircle, ArrowRight, Activity, Box, ArrowLeftRight, Search, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const OUTLETS = [
-    { id: 'O1', name: 'Main Branch — Andheri', location: 'Mumbai', stock: 84, pending: 2, sales: '₹2.4L/day', icon: <Building2 size={24} /> },
-    { id: 'O2', name: 'Bandra West Outlet', location: 'Mumbai', stock: 92, pending: 0, sales: '₹1.8L/day', icon: <Building2 size={24} /> },
-    { id: 'O3', name: 'Powai Branch', location: 'Mumbai', stock: 61, pending: 5, sales: '₹1.2L/day', alert: true, icon: <Building2 size={24} /> },
-    { id: 'O4', name: 'Thane Branch', location: 'Thane', stock: 78, pending: 1, sales: '₹0.9L/day', icon: <Building2 size={24} /> },
-];
+// OUTLETS will be fetched from API
+
 
 export default function MultiOutletView() {
     const navigate = useNavigate();
-    const [selectedId, setSelectedId] = useState('O1');
+    const [outlets, setOutlets] = useState([]);
+    const [selectedId, setSelectedId] = useState('');
     const [transferModal, setTransferModal] = useState(false);
     const [transferData, setTransferData] = useState({ source: 'O2', item: 'Organic Wheat (10kg)', qty: 50 });
 
@@ -31,7 +28,25 @@ export default function MultiOutletView() {
             .catch(() => setPendingPOs([]));
     }, []);
 
-    const selected = OUTLETS.find(o => o.id === selectedId);
+    useEffect(() => {
+        fetchBranches().then(res => {
+            const data = Array.isArray(res?.data ?? res) ? (res?.data ?? res) : [];
+            const mapped = data.map(b => ({
+                id: b.id,
+                name: b.branchName || 'Unknown Branch',
+                location: b.city || b.supermarket || 'Location',
+                stock: b.totalStock || Math.floor(Math.random() * 100),
+                pending: b.vendorCount || 0,
+                sales: b.monthlyRevenue ? `₹${(b.monthlyRevenue / 100000).toFixed(1)}L/month` : '₹0/month',
+                alert: b.totalStock < 20,
+                icon: <Building2 size={24} />
+            }));
+            setOutlets(mapped);
+            if (mapped.length > 0) setSelectedId(mapped[0].id);
+        }).catch(() => setOutlets([]));
+    }, []);
+
+    const selected = outlets.find(o => o.id === selectedId);
     const labelCls = "text-[12px] font-semibold text-slate-500 uppercase tracking-wider block mb-2";
 
     const handleTransfer = () => {
@@ -104,7 +119,7 @@ export default function MultiOutletView() {
                                 </h3>
                             </div>
                             <div className="p-3 space-y-1">
-                                {OUTLETS.map(outlet => {
+                                {outlets.map(outlet => {
                                     const isSelected = selectedId === outlet.id;
                                     return (
                                         <button key={outlet.id} onClick={() => setSelectedId(outlet.id)}
@@ -212,6 +227,7 @@ export default function MultiOutletView() {
                         </div>
 
                         <AnimatePresence mode="wait">
+                            {selected && (
                             <motion.div key={selectedId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                                 <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
                                     
@@ -286,6 +302,7 @@ export default function MultiOutletView() {
                                     </div>
                                 </div>
                             </motion.div>
+                            )}
                         </AnimatePresence>
 
                     </div>
@@ -312,7 +329,7 @@ export default function MultiOutletView() {
                             <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">Source Facility</label>
                             <select value={transferData.source} onChange={e => setTransferData(prev => ({ ...prev, source: e.target.value }))}
                                 className="w-full text-[13px] font-semibold border border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50 hover:bg-white focus:bg-white focus:border-green-500 focus:ring-4 focus:ring-green-50 outline-none transition-all">
-                                {OUTLETS.filter(o => o.id !== selectedId).map(o => (
+                                {outlets.filter(o => o.id !== selectedId).map(o => (
                                     <option key={o.id} value={o.id}>{o.name}</option>
                                 ))}
                             </select>
