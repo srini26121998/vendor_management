@@ -8,6 +8,7 @@ import useLoadingStore from './store/useLoadingStore';
 import Login from './pages/Auth/Login';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
+import Register from './pages/Auth/Register';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 // ── Vendor Management Module (lazy-loaded) ──────────────────────────────────
@@ -78,6 +79,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:tokenParam?" element={<ResetPassword />} />
 

@@ -137,9 +137,9 @@ const Login = () => {
 
                         <div className="pt-6 text-center">
                             <p className="text-slate-400 text-sm font-medium">
-                                Not a registered vendor?{" "}
-                                <Link to="/vendors/onboarding" className="text-blue-600 font-bold hover:underline">
-                                    Join the Network
+                                Don't have an account?{" "}
+                                <Link to="/register" className="text-blue-600 font-bold hover:underline">
+                                    Create Account
                                 </Link>
                             </p>
                         </div>
