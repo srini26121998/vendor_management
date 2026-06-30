@@ -5,7 +5,7 @@ import { PageHeader, VCard, PrimaryBtn, SecondaryBtn, VendorBreadcrumb } from '.
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Camera, Box, Scale, Droplets, CheckCircle2, AlertTriangle, CheckSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fetchPurchaseOrders, fetchPOById, createGRN, approveGRN } from '../../api/vendorService';
+import { fetchPurchaseOrders, fetchPOById, createGRN, approveGRN, fetchVendorProducts } from '../../api/vendorService';
 import api from '../../api/axios';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -44,7 +44,7 @@ export default function GRNEntry() {
         hsnCode: '',
         minStock: '10',
         mrp: '',
-        categoryId: null
+        categoryName: ''
     });
 
     useEffect(() => {
@@ -104,6 +104,23 @@ export default function GRNEntry() {
             const po = poData?.data || poData;
             if (po && Array.isArray(po.items)) {
                 setSelectedPOData(po);
+
+                let vendorProductsMap = {};
+                try {
+                    const vendorId = po.vendor?.id;
+                    if (vendorId) {
+                        const vpRes = await fetchVendorProducts(vendorId);
+                        const vProducts = vpRes?.data || vpRes;
+                        if (Array.isArray(vProducts)) {
+                            vProducts.forEach(vp => {
+                                vendorProductsMap[vp.id] = vp.category || '';
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch vendor products for category mapping", e);
+                }
+
                 // Map PO items to GRN items state
                 const mappedItems = po.items.map(it => {
                     const poQty = it.quantity || 0;
@@ -123,6 +140,7 @@ export default function GRNEntry() {
                         rejected: 0,
                         unitPrice: it.purchaseRate || 0,
                         status: 'Matched',
+                        categoryName: vendorProductsMap[it.vendorProductId] || it.product?.categoryName || '',
                         isUnmapped: !it.product?.id
                     };
                 });
@@ -195,6 +213,7 @@ export default function GRNEntry() {
                 hsnCode: newProductData.hsnCode || '',
                 minStock: parseFloat(newProductData.minStock) || 0,
                 mrp: parseFloat(newProductData.mrp) || 0,
+                categoryName: newProductData.categoryName || '',
                 isActive: true
             };
 
@@ -466,7 +485,7 @@ export default function GRNEntry() {
                                                                 hsnCode: '',
                                                                 minStock: '10',
                                                                 mrp: item.unitPrice ? (item.unitPrice * 1.3).toFixed(2) : 0,
-                                                                categoryId: null
+                                                                categoryName: item.categoryName || ''
                                                             });
                                                             setShowCreateModal(true);
                                                         }} className="text-[9px] font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
@@ -637,6 +656,10 @@ export default function GRNEntry() {
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Brand Name</label>
                                                 <input type="text" placeholder="e.g. Sprite" value={newProductData.brand} onChange={e => setNewProductData({ ...newProductData, brand: e.target.value })} className={inputCls} />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Product Category</label>
+                                                <input type="text" placeholder="e.g. Dairy, Snacks" value={newProductData.categoryName} onChange={e => setNewProductData({ ...newProductData, categoryName: e.target.value })} className={inputCls} />
                                             </div>
                                             <div>
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Unit of Measure</label>
